@@ -149,7 +149,7 @@ def run_all_metrics(testset, metrics, filters):
 
 # --------------------  APP  --------------------
 
-st.title("Welcome to MT-Telescope!")
+st.title("Welcome to NLP-Telescope!")
 testset = MultipleTestset.read_data()
 
 if testset:

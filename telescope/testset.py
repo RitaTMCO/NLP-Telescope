@@ -156,20 +156,19 @@ class MultipleTestset(Testset):
     def __init__(
         self,
         src: List[str],
-        system_x: List[str],
-        system_y: List[str],
+        n_systems_output: List[List[str]],
         refs: List[List[str]],
         language_pair: str,
         filenames: List[str],
     ) -> None:
         self.src = src
         self.refs = refs
-        self.system_x = system_x
-        self.system_y = system_y
+        self.n_systems_output = n_systems_output
         self.language_pair = language_pair
         self.filenames = filenames
 
         ref = refs[0]
+        system_x = n_systems_output[0]
 
         for r in refs[1:]:
             assert len(ref) == len(
@@ -182,11 +181,12 @@ class MultipleTestset(Testset):
         ), "mismatch between references and sources ({} > {})".format(
             len(ref), len(src)
         )
-        assert len(system_x) == len(
-            system_y
-        ), "mismatch between system x and system y ({} > {})".format(
-            len(system_x), len(system_y)
-        )
+        for system_y in n_systems_output[1:]:
+            assert len(system_x) == len(
+                system_y
+            ), "mismatch between system x and system y ({} > {})".format(
+                len(system_x), len(system_y)
+            )
         assert len(system_x) == len(
             ref
         ), "mismatch between system x and references ({} > {})".format(
@@ -207,12 +207,9 @@ class MultipleTestset(Testset):
         ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
         references = [read_lines(ref_file) for ref_file in ref_files]
 
-        left2, right2 = st.columns(2)
-        x_file = left2.file_uploader("Upload System X Translations", type=["txt"])
-        x = read_lines(x_file)
-
-        y_file = right2.file_uploader("Upload System Y Translations", type=["txt"])
-        y = read_lines(y_file)
+        outputs = []
+        outputs_files = st.file_uploader("Upload Systems Translations", type=["txt"], accept_multiple_files=True)
+        outputs = [read_lines(output_file) for output_file in outputs_files]
 
         language_pair = st.text_input(
             "Please input the lanaguage pair of the files to analyse (e.g. 'en-ru'):",
@@ -222,8 +219,7 @@ class MultipleTestset(Testset):
         if (
             (ref_files is not None)
             and (source_file is not None)
-            and (y_file is not None)
-            and (x_file is not None)
+            and (outputs_files is not None)
             and (language_pair != "")
         ):
             st.success(
@@ -231,22 +227,20 @@ class MultipleTestset(Testset):
             )
             return cls(
                 sources,
-                x,
-                y,
+                outputs,
                 references,
                 language_pair,
-                [source_file.name, x_file.name, y_file.name] + [ref_file.name for ref_file in ref_files],
+                [source_file.name] + [output_file.name for output_file in outputs_files] + [ref_file.name for ref_file in ref_files],
             )
 
     def __len__(self) -> int:
         return len(self.refs[0])
 
     def __getitem__(self, i) -> Tuple[str]:
-        return self.src[i], self.system_x[i], self.system_y[i], [ref[i] for ref in self.refs]
+        return self.src[i], [output[i] for output in self.n_systems_output], [ref[i] for ref in self.refs]
 
     def apply_filter(self, filter):
         to_keep = filter.apply_filter()
         self.src = [self.src[idx] for idx in to_keep]
-        self.system_x = [self.system_x[idx] for idx in to_keep]
-        self.system_y = [self.system_y[idx] for idx in to_keep]
+        self.n_systems_output =  [[output[idx] for idx in to_keep] for output in self.n_systems_output]
         self.refs = [[ref[idx] for idx in to_keep] for ref in self.refs]
