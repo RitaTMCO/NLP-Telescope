@@ -37,8 +37,8 @@ def load_image(image_url):
     img = Image.open(requests.get(image_url, stream=True).raw)
     return img
 
-logo = load_image("https://github.com/Unbabel/MT-Telescope/blob/master/data/mt-telescope-logo.jpg?raw=true")
-st.sidebar.image(logo)
+#logo = load_image("https://github.com/Unbabel/MT-Telescope/blob/master/data/mt-telescope-logo.jpg?raw=true")
+st.sidebar.image("data/nlp-telescope-logo.png")
 
 # --------------------  APP Settings --------------------
 metrics = st.sidebar.multiselect(
