@@ -26,7 +26,7 @@ from telescope.plotting import (
     plot_pairwise_distributions,
     plot_segment_comparison,
 )
-from telescope.testset import PairwiseTestset
+from telescope.testset import MultipleTestset
 
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
@@ -104,7 +104,7 @@ def hash_metrics(metrics):
 
 
 @st.cache(
-    hash_funcs={PairwiseTestset: PairwiseTestset.hash_func},
+    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
     suppress_st_warning=True,
     show_spinner=False,
     allow_output_mutation=True,
@@ -125,7 +125,7 @@ def apply_filters(testset, filters):
 
 
 @st.cache(
-    hash_funcs={PairwiseTestset: PairwiseTestset.hash_func},
+    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
     show_spinner=False,
     allow_output_mutation=True,
     ttl=cache_time,
@@ -150,7 +150,7 @@ def run_all_metrics(testset, metrics, filters):
 # --------------------  APP  --------------------
 
 st.title("Welcome to MT-Telescope!")
-testset = PairwiseTestset.read_data()
+testset = MultipleTestset.read_data()
 
 if testset:
     if metric not in metrics:

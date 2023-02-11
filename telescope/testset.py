@@ -149,3 +149,104 @@ class PairwiseTestset(Testset):
         self.system_x = [self.system_x[idx] for idx in to_keep]
         self.system_y = [self.system_y[idx] for idx in to_keep]
         self.ref = [self.ref[idx] for idx in to_keep]
+
+
+
+class MultipleTestset(Testset):
+    def __init__(
+        self,
+        src: List[str],
+        system_x: List[str],
+        system_y: List[str],
+        refs: List[List[str]],
+        language_pair: str,
+        filenames: List[str],
+    ) -> None:
+        self.src = src
+        self.refs = refs
+        self.system_x = system_x
+        self.system_y = system_y
+        self.language_pair = language_pair
+        self.filenames = filenames
+
+        ref = refs[0]
+
+        for r in refs[1:]:
+            assert len(ref) == len(
+                r
+            ), "mismatch between references ({} > {})".format(
+                len(ref), len(r)
+            )
+        assert len(ref) == len(
+            src
+        ), "mismatch between references and sources ({} > {})".format(
+            len(ref), len(src)
+        )
+        assert len(system_x) == len(
+            system_y
+        ), "mismatch between system x and system y ({} > {})".format(
+            len(system_x), len(system_y)
+        )
+        assert len(system_x) == len(
+            ref
+        ), "mismatch between system x and references ({} > {})".format(
+            len(system_x), len(ref)
+        )
+
+    @staticmethod
+    def hash_func(testset):
+        return " ".join(testset.filenames)
+
+    @classmethod
+    def read_data(cls):
+        st.subheader("Upload Files for analysis:")
+        source_file = st.file_uploader("Upload Sources", type=["txt"])
+        sources = read_lines(source_file)
+
+        references = []
+        ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
+        references = [read_lines(ref_file) for ref_file in ref_files]
+
+        left2, right2 = st.columns(2)
+        x_file = left2.file_uploader("Upload System X Translations", type=["txt"])
+        x = read_lines(x_file)
+
+        y_file = right2.file_uploader("Upload System Y Translations", type=["txt"])
+        y = read_lines(y_file)
+
+        language_pair = st.text_input(
+            "Please input the lanaguage pair of the files to analyse (e.g. 'en-ru'):",
+            "",
+        )
+
+        if (
+            (ref_files is not None)
+            and (source_file is not None)
+            and (y_file is not None)
+            and (x_file is not None)
+            and (language_pair != "")
+        ):
+            st.success(
+                "Source, References, Translations and LP were successfully uploaded!"
+            )
+            return cls(
+                sources,
+                x,
+                y,
+                references,
+                language_pair,
+                [source_file.name, x_file.name, y_file.name] + [ref_file.name for ref_file in ref_files],
+            )
+
+    def __len__(self) -> int:
+        return len(self.refs[0])
+
+    def __getitem__(self, i) -> Tuple[str]:
+        return self.src[i], self.system_x[i], self.system_y[i], [ref[i] for ref in self.refs]
+
+    def apply_filter(self, filter):
+        to_keep = filter.apply_filter()
+        self.src = [self.src[idx] for idx in to_keep]
+        self.system_x = [self.system_x[idx] for idx in to_keep]
+        self.system_y = [self.system_y[idx] for idx in to_keep]
+        self.refs = [[ref[idx] for idx in to_keep] for ref in self.refs]

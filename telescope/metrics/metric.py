@@ -44,8 +44,8 @@ class Metric(metaclass=abc.ABCMeta):
 
     def pairwise_comparison(self, testset: PairwiseTestset):
         """ Function that scores the two candidate systems inside a paired testset. """
-        x_result = self.score(testset.src, testset.system_x, testset.ref)
-        y_result = self.score(testset.src, testset.system_y, testset.ref)
+        x_result = self.score(testset.src, testset.system_x, testset.refs[0])
+        y_result = self.score(testset.src, testset.system_y, testset.refs[0])
         return PairwiseResult(x_result, y_result)
 
     @classmethod
