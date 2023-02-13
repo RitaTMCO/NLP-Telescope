@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import abc
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -111,4 +111,51 @@ class BootstrapResult:
             "ties (%)": win_count[2] / sum(win_count),
             "x-mean": np.mean(self.x_scores),
             "y-mean": np.mean(self.y_scores),
+        }
+
+
+class MultipleResult:
+    def __init__(
+        self,
+        systems_metric_results: Dict[str, MetricResult],
+    ) -> None:
+
+        self.systems_metric_results = systems_metric_results
+        systems_metric_results_list = list(self.systems_metric_results.values())
+        x_result = systems_metric_results_list[0]
+
+        for y_result in systems_metric_results_list[1:]:
+            assert x_result.metric == y_result.metric
+            assert x_result.src == y_result.src
+            assert x_result.ref == y_result.ref
+
+        self.metric = x_result.metric
+        self.src = x_result.src
+        self.ref = x_result.ref
+
+
+    @property
+    def system_cand(self,system_name) -> List[str]:
+        return self.systems_metric_results[system_name].cand
+
+    @staticmethod
+    def results_to_dataframe(multiple_results: list, systems_names: list) -> pd.DataFrame:
+
+        summary = { 
+            system: [m_res.systems_metric_results[system].sys_score for m_res in multiple_results] 
+            for system in systems_names
+        }
+
+        df = pd.DataFrame.from_dict(summary)
+        df.index = [m_res.metric for m_res in multiple_results]
+        return df
+
+    @staticmethod
+    def results_to_dict(pairwise_results: list, systems_names:list) -> pd.DataFrame:
+        return {
+            p_res.metric: {
+                            system: m_res.systems_metric_results[system].sys_score 
+                            for system in systems_names
+                        }
+            for p_res in pairwise_results
         }

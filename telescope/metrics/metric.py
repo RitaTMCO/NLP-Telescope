@@ -16,8 +16,8 @@ import abc
 from typing import List, Tuple
 
 import numpy as np
-from telescope.metrics.result import BootstrapResult, MetricResult, PairwiseResult
-from telescope.testset import PairwiseTestset
+from telescope.metrics.result import BootstrapResult, MetricResult, PairwiseResult, MultipleResult
+from telescope.testset import PairwiseTestset, MultipleTestset
 
 
 class Metric(metaclass=abc.ABCMeta):
@@ -44,9 +44,16 @@ class Metric(metaclass=abc.ABCMeta):
 
     def pairwise_comparison(self, testset: PairwiseTestset):
         """ Function that scores the two candidate systems inside a paired testset. """
-        x_result = self.score(testset.src, testset.n_systems_output[0], testset.refs[0])
-        y_result = self.score(testset.src, testset.n_systems_output[1], testset.refs[0])
+        x_result = self.score(testset.src, testset.system_x, testset.ref)
+        y_result = self.score(testset.src, testset.system_y, testset.ref)
         return PairwiseResult(x_result, y_result)
+
+    def multiple_comparison(self, testset: MultipleTestset, ref_filename: str):
+        """ Function that scores the multiple candidate systems inside a testset. """
+        ref = testset.refs[ref_filename]
+        src = testset.src
+        systems_metric_results = {name: self.score(src,output,ref) for name,output in testset.n_systems_output.items()}
+        return MultipleResult(systems_metric_results)
 
     @classmethod
     def bootstrap_resampling(

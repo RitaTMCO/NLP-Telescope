@@ -19,7 +19,7 @@ from PIL import Image
 
 from telescope.filters import AVAILABLE_FILTERS
 from telescope.metrics import AVAILABLE_METRICS
-from telescope.metrics.result import PairwiseResult
+from telescope.metrics.result import MultipleResult
 from telescope.plotting import (
     plot_bootstraping_result,
     plot_bucket_comparison,
@@ -131,10 +131,10 @@ def apply_filters(testset, filters):
     ttl=cache_time,
     max_entries=cache_max_entries,
 )
-def run_metric(testset, metric):
-    with st.spinner(f"Running {metric}..."):
+def run_metric(testset, metric, ref_filename):
+    with st.spinner(f"Running {metric} for reference {ref_filename}..."):
         metric = available_metrics[metric](language=testset.target_language)
-        return metric.pairwise_comparison(testset)
+        return metric.multiple_comparison(testset,ref_filename)
 
 
 def run_all_metrics(testset, metrics, filters):
@@ -144,7 +144,10 @@ def run_all_metrics(testset, metrics, filters):
         st.success(
             "Corpus reduced in {:.2f}%".format((1 - (len(testset) / corpus_size)) * 100)
         )
-    return {metric: run_metric(testset, metric) for metric in metrics}
+    return {
+        ref_filename: {metric: run_metric(testset, metric, ref_filename) for metric in metrics}
+        for ref_filename in testset.refs_filenames()
+        }
 
 
 # --------------------  APP  --------------------
@@ -157,34 +160,39 @@ if testset:
         metrics = [
             metric,
         ] + metrics
-    results = run_all_metrics(testset, metrics, filters)
-    if len(results) > 0:
-        st.dataframe(PairwiseResult.results_to_dataframe(list(results.values())))
+    results_per_ref = run_all_metrics(testset, metrics, filters)
 
-    if metric in results:
-        if metric == "COMET":
-            st.header("Error-type analysis:")
-            plot_bucket_comparison(results[metric])
+    for ref_filename, results in results_per_ref.items():
+        st.header("Reference: " + ref_filename)
+        if len(results) > 0:
+            st.dataframe(
+                MultipleResult.results_to_dataframe(list(results.values()), testset.systems_names())
+                )
 
-        st.header("Segment-level comparison:")
-        plot_segment_comparison(results[metric])
+    #if metric in results:
+        #if metric == "COMET":
+            #st.header("Error-type analysis:")
+            #plot_bucket_comparison(results[metric])
 
-        st.header("Segment-level scores histogram:")
-        plot_pairwise_distributions(results[metric])
+        #st.header("Segment-level comparison:")
+        #plot_segment_comparison(results[metric])
+
+        #st.header("Segment-level scores histogram:")
+        #plot_pairwise_distributions(results[metric])
 
         # Bootstrap Resampling
-        _, middle, _ = st.beta_columns(3)
-        if middle.button("Perform Bootstrap Resampling:"):
-            st.warning(
-                "Running metrics for {} partitions of size {}".format(
-                    num_samples, sample_ratio * len(testset)
-                )
-            )
-            st.header("Bootstrap resampling results:")
-            with st.spinner("Running bootstrap resampling..."):
-                for metric in metrics:
-                    bootstrap_result = available_metrics[metric].bootstrap_resampling(
-                        testset, int(num_samples), sample_ratio, results[metric]
-                    )
+        #_, middle, _ = st.beta_columns(3)
+        #if middle.button("Perform Bootstrap Resampling:"):
+            #st.warning(
+                #"Running metrics for {} partitions of size {}".format(
+                    #num_samples, sample_ratio * len(testset)
+                #)
+            #)
+            #st.header("Bootstrap resampling results:")
+            #with st.spinner("Running bootstrap resampling..."):
+                #for metric in metrics:
+                    #bootstrap_result = available_metrics[metric].bootstrap_resampling(
+                        #testset, int(num_samples), sample_ratio, results[metric]
+                    #)
 
-                    plot_bootstraping_result(bootstrap_result)
+                    #plot_bootstraping_result(bootstrap_result)
