@@ -22,7 +22,7 @@ from telescope.metrics import AVAILABLE_METRICS
 from telescope.metrics.result import MultipleResult
 from telescope.plotting import (
     plot_bootstraping_result,
-    plot_bucket_comparison,
+    plot_bucket_mutplite_comparison,
     plot_pairwise_distributions,
     plot_segment_comparison,
 )
@@ -169,10 +169,10 @@ if testset:
                 MultipleResult.results_to_dataframe(list(results.values()), testset.systems_names())
                 )
 
-    #if metric in results:
-        #if metric == "COMET":
-            #st.header("Error-type analysis:")
-            #plot_bucket_comparison(results[metric])
+        if metric in results:
+            if metric == "COMET":
+                st.subheader("Error-type analysis:")
+                plot_bucket_mutplite_comparison(results[metric])
 
         #st.header("Segment-level comparison:")
         #plot_segment_comparison(results[metric])
