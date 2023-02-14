@@ -468,7 +468,7 @@ def update_multiple_buckets(
     return plt
 
 
-def plot_bucket_mutplite_comparison(
+def plot_bucket_multiple_comparison(
     multiple_result: MultipleResult, saving_dir: str = None
 ) -> None:
 
@@ -533,3 +533,25 @@ def plot_bucket_mutplite_comparison(
         - **Red bucket:** Translations with critical errors.
         """
         )
+
+def plot_multiple_distributions(
+    multiple_result: MultipleResult, saving_dir: str = None
+) -> None:
+    scores_list = [
+        metric_system.seg_scores 
+        for metric_system in list(multiple_result.systems_metric_results.values())]
+
+    scores = np.array(scores_list).T
+    hist_data = [scores[:, i] for i in range(scores.shape[1])]
+    fig = ff.create_distplot(
+        hist_data,
+        list(multiple_result.systems_metric_results.keys()),
+        bin_size=[0.1 for _ in range(scores.shape[1])],
+    )
+    if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        fig.write_html(saving_dir + "/scores-distribution.html")
+
+    if st._is_running_with_streamlit:
+        st.plotly_chart(fig)

@@ -22,8 +22,8 @@ from telescope.metrics import AVAILABLE_METRICS
 from telescope.metrics.result import MultipleResult
 from telescope.plotting import (
     plot_bootstraping_result,
-    plot_bucket_mutplite_comparison,
-    plot_pairwise_distributions,
+    plot_bucket_multiple_comparison,
+    plot_multiple_distributions,
     plot_segment_comparison,
 )
 from telescope.testset import MultipleTestset
@@ -172,13 +172,13 @@ if testset:
         if metric in results:
             if metric == "COMET":
                 st.subheader("Error-type analysis:")
-                plot_bucket_mutplite_comparison(results[metric])
+                plot_bucket_multiple_comparison(results[metric])
 
         #st.header("Segment-level comparison:")
         #plot_segment_comparison(results[metric])
 
-        #st.header("Segment-level scores histogram:")
-        #plot_pairwise_distributions(results[metric])
+            st.subheader("Segment-level scores histogram:")
+            plot_multiple_distributions(results[metric])
 
         # Bootstrap Resampling
         #_, middle, _ = st.beta_columns(3)
