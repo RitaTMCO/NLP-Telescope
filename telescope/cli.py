@@ -327,18 +327,12 @@ def streamlit(ctx):
     type=click.File(),
 )
 @click.option(
-    "--system_x",
-    "-x",
+    "--system_output",
+    "-c",
     required=True,
-    help="System X MT outputs.",
+    help="System MT outputs.",
     type=click.File(),
-)
-@click.option(
-    "--system_y",
-    "-y",
-    required=True,
-    help="System Y MT outputs.",
-    type=click.File(),
+    multiple=True,
 )
 @click.option(
     "--reference",
@@ -403,8 +397,7 @@ def streamlit(ctx):
 )
 def compare_n_sys(
     source: click.File,
-    system_x: click.File,
-    system_y: click.File,
+    system_output: Tuple[click.File],
     reference: Tuple[click.File],
     language: str,
     metric: Union[Tuple[str], str],
@@ -415,8 +408,11 @@ def compare_n_sys(
     output_folder: str,
 ):  
 
-    outputs = {system_x.name.replace("/","_"):[l.strip() for l in system_x.readlines()],
-                        system_y.name.replace("/","_"):[l.strip() for l in system_y.readlines()]}
+    outputs = {
+        sys.name.replace("/","_"):[l.strip() for l in sys.readlines()]
+        for sys in system_output
+        }
+
     references = {
         ref.name.replace("/","_"):[l.strip() for l in ref.readlines()] 
         for ref in reference
@@ -424,7 +420,7 @@ def compare_n_sys(
 
     testset = MultipleTestset(
         src=[l.strip() for l in source.readlines()],
-        n_systems_output = outputs,
+        n_systems_output=outputs,
         refs=references,
         language_pair="X-" + language,
         filenames=[source.name] +  list(outputs.keys()) + list(references.keys()),
@@ -477,14 +473,20 @@ def compare_n_sys(
             for m in metric
         }
 
-        results_df = MultipleResult.results_to_dataframe(list(results.values()), systems_names)
+        results_dict = MultipleResult.results_to_dict(list(results.values()), systems_names)
 
         click.secho('Reference: ' + ref_filename, fg="yellow")
-        click.secho(str(results_df) + '\n', fg="yellow")
+
+        for met, systems in results_dict.items():
+            click.secho(str(met), fg="yellow")
+            for sys_name, sys_score in systems.items():
+                click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
+        
         if output_folder != "":
             if not output_folder.endswith("/"):
                 output_folder += "/"    
             saving_dir = output_folder + ref_filename + "/"
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
-            results_df.to_json(saving_dir + "results.json", orient="index", indent=4)
+            with open(saving_dir + "results.json", "w") as result_file:
+                json.dump(results_dict, result_file, indent=4)

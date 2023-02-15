@@ -151,11 +151,11 @@ class MultipleResult:
         return df
 
     @staticmethod
-    def results_to_dict(pairwise_results: list, systems_names:list) -> pd.DataFrame:
+    def results_to_dict(multiple_results: list, systems_names:list):
         return {
-            p_res.metric: {
+            m_res.metric: {
                             system: m_res.systems_metric_results[system].sys_score 
                             for system in systems_names
                         }
-            for p_res in pairwise_results
+            for m_res in multiple_results
         }
