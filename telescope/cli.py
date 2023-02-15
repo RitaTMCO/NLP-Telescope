@@ -24,7 +24,8 @@ import click
 import json
 
 from telescope.metrics import AVAILABLE_METRICS, PairwiseResult
-from telescope.testset import PairwiseTestset
+from telescope.metrics.result import MultipleResult
+from telescope.testset import PairwiseTestset, MultipleTestset
 from telescope.filters import AVAILABLE_FILTERS
 from telescope.plotting import (
     plot_segment_comparison,
@@ -311,3 +312,179 @@ def streamlit(ctx):
     file_path = os.path.realpath(__file__)
     script_path = "/".join(file_path.split("/")[:-1]) + "/app.py"
     os.system("streamlit run " + script_path)
+
+
+###################################################
+############|Command for N systems|################
+###################################################
+
+@telescope.command()
+@click.option(
+    "--source",
+    "-s",
+    required=True,
+    help="Source segments.",
+    type=click.File(),
+)
+@click.option(
+    "--system_x",
+    "-x",
+    required=True,
+    help="System X MT outputs.",
+    type=click.File(),
+)
+@click.option(
+    "--system_y",
+    "-y",
+    required=True,
+    help="System Y MT outputs.",
+    type=click.File(),
+)
+@click.option(
+    "--reference",
+    "-r",
+    required=True,
+    help="Reference segments.",
+    type=click.File(),
+    multiple=True,
+)
+@click.option(
+    "--language",
+    "-l",
+    required=True,
+    help="Language of the evaluated text.",
+)
+@click.option(
+    "--metric",
+    "-m",
+    type=click.Choice(list(available_metrics.keys())),
+    required=True,
+    multiple=True,
+    help="MT metric to run.",
+)
+@click.option(
+    "--filter",
+    "-f",
+    type=click.Choice(list(available_filters.keys())),
+    required=False,
+    default=[],
+    multiple=True,
+    help="MT metric to run.",
+)
+@click.option(
+    "--length_min_val",
+    type=float,
+    required=False,
+    default=0.0,
+    help="Min interval value for length filtering.",
+)
+@click.option(
+    "--length_max_val",
+    type=float,
+    required=False,
+    default=0.0,
+    help="Max interval value for length filtering.",
+)
+@click.option(
+    "--seg_metric",
+    type=click.Choice([m.name for m in available_metrics.values() if m.segment_level]),
+    required=False,
+    default="COMET",
+    help="Segment-level metric to use for segment-level analysis.",
+)
+@click.option(
+    "--output_folder",
+    "-o",
+    required=False,
+    default="",
+    callback=output_folder_exists,
+    type=str,
+    help="Folder you wish to use to save plots.",
+)
+def compare_n_sys(
+    source: click.File,
+    system_x: click.File,
+    system_y: click.File,
+    reference: Tuple[click.File],
+    language: str,
+    metric: Union[Tuple[str], str],
+    filter: Union[Tuple[str], str],
+    length_min_val: float,
+    length_max_val: float,
+    seg_metric: str,
+    output_folder: str,
+):  
+
+    outputs = {system_x.name.replace("/","_"):[l.strip() for l in system_x.readlines()],
+                        system_y.name.replace("/","_"):[l.strip() for l in system_y.readlines()]}
+    references = {
+        ref.name.replace("/","_"):[l.strip() for l in ref.readlines()] 
+        for ref in reference
+        }
+
+    testset = MultipleTestset(
+        src=[l.strip() for l in source.readlines()],
+        n_systems_output = outputs,
+        refs=references,
+        language_pair="X-" + language,
+        filenames=[source.name] +  list(outputs.keys()) + list(references.keys()),
+
+    )
+
+    corpus_size = len(testset)
+    if filter:
+        filters = [available_filters[f](testset) for f in filter if f != "length"]
+        if "length" in filter:
+            filters.append(available_filters["length"](testset, int(length_min_val*100), int(length_max_val*100)))
+        
+        for filter in filters:
+            testset.apply_filter(filter)
+
+        if (1 - (len(testset) / corpus_size)) * 100 == 100:
+            click.secho("The current filters reduce the Corpus on 100%!", fg="ref")
+            return
+    
+        click.secho(
+            "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
+                (1 - (len(testset) / corpus_size)) * 100
+            ),
+            fg="green",
+        )
+
+    if seg_metric not in metric:
+        metric = tuple(
+            [
+                seg_metric,
+            ]
+            + list(metric)
+        )
+    else:
+        # Put COMET in first place
+        metric = list(metric)
+        metric.remove(seg_metric)
+        metric = tuple(
+            [
+                seg_metric,
+            ]
+            + metric
+        )
+
+    systems_names = list(testset.n_systems_output.keys())
+    for ref_filename in list(testset.refs.keys()):
+        results = {
+            m: available_metrics[m](language=testset.target_language).multiple_comparison(
+            testset, ref_filename)
+            for m in metric
+        }
+
+        results_df = MultipleResult.results_to_dataframe(list(results.values()), systems_names)
+
+        click.secho('Reference: ' + ref_filename, fg="yellow")
+        click.secho(str(results_df) + '\n', fg="yellow")
+        if output_folder != "":
+            if not output_folder.endswith("/"):
+                output_folder += "/"    
+            saving_dir = output_folder + ref_filename + "/"
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
+            results_df.to_json(saving_dir + "results.json", orient="index", indent=4)
