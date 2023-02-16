@@ -31,6 +31,7 @@ from telescope.plotting import (
     plot_segment_comparison,
     plot_pairwise_distributions,
     plot_bucket_comparison,
+    plot_bucket_multiple_comparison,
 )
 
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
@@ -473,20 +474,26 @@ def compare_n_sys(
             for m in metric
         }
 
-        results_dict = MultipleResult.results_to_dict(list(results.values()), systems_names)
+        results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_names)
 
         click.secho('Reference: ' + ref_filename, fg="yellow")
 
-        for met, systems in results_dict.items():
-            click.secho(str(met), fg="yellow")
+        for met, systems in results_dicts.items():
+            click.secho("metric: " + str(met), fg="yellow")
+            click.secho("\t" + "systems:", fg="yellow")
             for sys_name, sys_score in systems.items():
                 click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
         
         if output_folder != "":
             if not output_folder.endswith("/"):
                 output_folder += "/"    
+
             saving_dir = output_folder + ref_filename + "/"
+
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
+
             with open(saving_dir + "results.json", "w") as result_file:
-                json.dump(results_dict, result_file, indent=4)
+                json.dump(results_dicts, result_file, indent=4)
+
+            #plot_bucket_multiple_comparison(results[seg_metric], saving_dir)
