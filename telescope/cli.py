@@ -30,6 +30,7 @@ from telescope.filters import AVAILABLE_FILTERS
 from telescope.plotting import (
     plot_segment_comparison,
     plot_pairwise_distributions,
+    plot_multiple_distributions,
     plot_bucket_comparison,
     plot_bucket_multiple_comparison,
 )
@@ -505,3 +506,4 @@ def compare_n_sys(
                 json.dump(results_dicts, result_file, indent=4)
 
             plot_bucket_multiple_comparison(results[seg_metric], saving_dir)
+            plot_multiple_distributions(results[seg_metric], saving_dir)
