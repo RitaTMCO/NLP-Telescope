@@ -408,19 +408,19 @@ def compare_n_sys(
     seg_metric: str,
     output_folder: str,
 ):  
-
-    outputs = {
-        sys.name.replace("/","_"):[l.strip() for l in sys.readlines()]
-        for sys in system_output
-        }
+    n = len(system_output)
+    files_index = {"Sys " + str(i+1):sys for sys, i in zip(system_output,range(n))}
+    n_systems_index = {i:sys.name for i, sys in files_index.items()}
+    outputs = {i:[l.strip() for l in sys.readlines()] for i, sys in files_index.items()}
 
     references = {
-        ref.name.replace("/","_"):[l.strip() for l in ref.readlines()] 
+        ref.name:[l.strip() for l in ref.readlines()] 
         for ref in reference
         }
 
     testset = MultipleTestset(
         src=[l.strip() for l in source.readlines()],
+        systems_index=n_systems_index,
         n_systems_output=outputs,
         refs=references,
         language_pair="X-" + language,
@@ -466,7 +466,15 @@ def compare_n_sys(
             + metric
         )
 
-    systems_names = list(testset.n_systems_output.keys())
+
+    text = "\nSystems: \n"
+    for index, system in testset.systems_index.items():
+        text += index + ": " + system + " \n"
+    
+    click.secho(text, fg="bright_blue")
+
+    systems_names = testset.systems_names()
+    
     for ref_filename in list(testset.refs.keys()):
         results = {
             m: available_metrics[m](language=testset.target_language).multiple_comparison(
@@ -488,7 +496,7 @@ def compare_n_sys(
             if not output_folder.endswith("/"):
                 output_folder += "/"    
 
-            saving_dir = output_folder + ref_filename + "/"
+            saving_dir = output_folder + ref_filename.replace("/","_") + "/"
 
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
@@ -496,4 +504,4 @@ def compare_n_sys(
             with open(saving_dir + "results.json", "w") as result_file:
                 json.dump(results_dicts, result_file, indent=4)
 
-            #plot_bucket_multiple_comparison(results[seg_metric], saving_dir)
+            plot_bucket_multiple_comparison(results[seg_metric], saving_dir)

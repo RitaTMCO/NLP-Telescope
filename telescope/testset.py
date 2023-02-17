@@ -156,6 +156,7 @@ class MultipleTestset(Testset):
     def __init__(
         self,
         src: List[str],
+        systems_index: Dict[str, str],
         n_systems_output: Dict[str, List[str]],
         refs: Dict[str, List[str]],
         language_pair: str,
@@ -163,6 +164,7 @@ class MultipleTestset(Testset):
     ) -> None:
         self.src = src
         self.refs = refs
+        self.systems_index = systems_index
         self.n_systems_output = n_systems_output
         self.language_pair = language_pair
         self.filenames = filenames
@@ -213,10 +215,13 @@ class MultipleTestset(Testset):
         sources = read_lines(source_file)
 
         ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
-        references = {ref_file.name[:-4]: read_lines(ref_file) for ref_file in ref_files}
+        references = {ref_file.name: read_lines(ref_file) for ref_file in ref_files}
 
         outputs_files = st.file_uploader("Upload Systems Translations", type=["txt"], accept_multiple_files=True)
-        outputs = {output_file.name[:-4]: read_lines(output_file) for output_file in outputs_files}
+        n = len(outputs_files)
+        files_index = {"Sys " + str(i+1):output_file for output_file, i in zip(outputs_files,range(n))}
+        systems_index = {i:output_file.name for i, output_file in files_index.items()}
+        outputs = {i:read_lines(output_file) for i, output_file in files_index.items()}
 
         language_pair = st.text_input(
             "Please input the lanaguage pair of the files to analyse (e.g. 'en-ru'):",
@@ -234,10 +239,11 @@ class MultipleTestset(Testset):
             )
             return cls(
                 sources,
+                systems_index,
                 outputs,
                 references,
                 language_pair,
-                [source_file.name] +  list(outputs.keys()) + list(references.keys()),
+                [source_file.name] +  list(systems_index.values()) + list(references.keys()),
             )
 
     def __len__(self) -> int:

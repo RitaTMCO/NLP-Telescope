@@ -162,6 +162,12 @@ if testset:
         ] + metrics
     results_per_ref = run_all_metrics(testset, metrics, filters)
 
+    text = ""
+    for index, system in testset.systems_index.items():
+        text += index + ": " + system + " \n"
+    
+    st.text(text)
+
     for ref_filename, results in results_per_ref.items():
         st.header("Reference: " + ref_filename)
         if len(results) > 0:
