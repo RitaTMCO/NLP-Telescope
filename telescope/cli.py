@@ -410,8 +410,8 @@ def compare_n_sys(
     output_folder: str,
 ):  
     n = len(system_output)
-    files_index = {"Sys " + str(i+1):sys for sys, i in zip(system_output,range(n))}
-    n_systems_index = {i:sys.name for i, sys in files_index.items()}
+    files_index = {"Sys " + str(i+1):sys for sys, i in zip(range(n), system_output)}
+    n_systems_index = {sys.name:i for i, sys in files_index.items()}
     outputs = {i:[l.strip() for l in sys.readlines()] for i, sys in files_index.items()}
 
     references = {

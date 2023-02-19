@@ -219,19 +219,19 @@ class MultipleTestset(Testset):
 
         outputs_files = st.file_uploader("Upload Systems Translations", type=["txt"], accept_multiple_files=True)
         n = len(outputs_files)
-        files_index = {"Sys " + str(i+1):output_file for output_file, i in zip(outputs_files,range(n))}
-        systems_index = {i:output_file.name for i, output_file in files_index.items()}
+        files_index = {"Sys " + str(i+1):output_file for i, output_file in zip(range(n),outputs_files)}
+        systems_index = {output_file.name:i for i, output_file in files_index.items()}
         outputs = {i:read_lines(output_file) for i, output_file in files_index.items()}
 
         language_pair = st.text_input(
-            "Please input the lanaguage pair of the files to analyse (e.g. 'en-ru'):",
+            "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
             "",
         )
 
         if (
-            (ref_files is not None)
+            (ref_files != [])
             and (source_file is not None)
-            and (outputs_files is not None)
+            and (outputs_files != [])
             and (language_pair != "")
         ):
             st.success(

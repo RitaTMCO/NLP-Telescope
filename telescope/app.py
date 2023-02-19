@@ -24,7 +24,7 @@ from telescope.plotting import (
     plot_bootstraping_result,
     plot_bucket_multiple_comparison,
     plot_multiple_distributions,
-    plot_segment_comparison,
+    plot_multiple_segment_comparison,
 )
 from telescope.testset import MultipleTestset
 
@@ -162,29 +162,36 @@ if testset:
         ] + metrics
     results_per_ref = run_all_metrics(testset, metrics, filters)
 
-    text = ""
-    for index, system in testset.systems_index.items():
+    text = "Systems:\n"
+    for system, index in testset.systems_index.items():
         text += index + ": " + system + " \n"
     
     st.text(text)
 
-    for ref_filename, results in results_per_ref.items():
-        st.header("Reference: " + ref_filename)
-        if len(results) > 0:
-            st.dataframe(
-                MultipleResult.results_to_dataframe(list(results.values()), testset.systems_names())
-                )
+    ref_filename = st.selectbox(
+    "Select the reference:",
+    list(results_per_ref.keys()),
+    index=0,
+    )
 
-        if metric in results:
-            if metric == "COMET":
-                st.subheader("Error-type analysis:")
-                plot_bucket_multiple_comparison(results[metric])
+    results = results_per_ref[ref_filename]
 
-        #st.header("Segment-level comparison:")
-        #plot_segment_comparison(results[metric])
+    if len(results) > 0:
+        st.dataframe(
+            MultipleResult.results_to_dataframe(list(results.values()), testset.systems_names())
+        )
 
-            st.subheader("Segment-level scores histogram:")
-            plot_multiple_distributions(results[metric])
+    if metric in results:
+        if metric == "COMET":
+            st.subheader("Error-type analysis:")
+            plot_bucket_multiple_comparison(results[metric])
+
+        st.subheader("Segment-level scores histogram:")
+        plot_multiple_distributions(results[metric])
+
+        st.header("Segment-level comparison:")
+        plot_multiple_segment_comparison(results[metric])
+
 
         # Bootstrap Resampling
         #_, middle, _ = st.beta_columns(3)

@@ -555,3 +555,65 @@ def plot_multiple_distributions(
 
     if st._is_running_with_streamlit:
         st.plotly_chart(fig)
+
+
+def plot_multiple_segment_comparison(
+    multiple_result: MultipleResult, saving_dir: str = None
+) -> None:
+
+
+    left, right = st.beta_columns(2)
+    
+    system_x = left.selectbox(
+    "Select the system x:",
+    list(multiple_result.systems_metric_results.keys()),
+    index=0,
+    key = multiple_result.ref,
+    )
+
+    system_y = right.selectbox(
+    "Select the system y:",
+    list(multiple_result.systems_metric_results.keys()),
+    index=0,
+    key = multiple_result.ref,
+    )
+
+    scores = np.array(
+        [multiple_result.systems_metric_results[system_x].seg_scores, multiple_result.systems_metric_results[system_y].seg_scores]
+    ).T
+    chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
+
+    chart_data["difference"] = np.absolute(scores[:, 0] - scores[:, 1])
+    chart_data["source"] = multiple_result.src
+    chart_data["reference"] = multiple_result.ref
+    chart_data["x"] = multiple_result.systems_metric_results[system_x].seg_scores
+    chart_data["y"] = multiple_result.systems_metric_results[system_y].seg_scores
+
+    c = (
+        alt.Chart(chart_data, width="container")
+        .mark_circle()
+        .encode(
+            x="x_score",
+            y="y_score",
+            size="difference",
+            color=alt.Color("difference"),
+            tooltip=[
+                "x",
+                "y",
+                "reference",
+                "difference",
+                "source",
+                "x_score",
+                "y_score",
+            ],
+        )
+    )
+    if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        c.properties(width=1300, height=600).save(
+            saving_dir + "/segment-comparison.html", format="html"
+        )
+
+    if st._is_running_with_streamlit:
+        st.altair_chart(c, use_container_width=True)
