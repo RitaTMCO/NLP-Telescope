@@ -29,6 +29,7 @@ from telescope.testset import PairwiseTestset, MultipleTestset
 from telescope.filters import AVAILABLE_FILTERS
 from telescope.plotting import (
     plot_segment_comparison,
+    plot_multiple_segment_comparison,
     plot_pairwise_distributions,
     plot_multiple_distributions,
     plot_bucket_comparison,
@@ -332,7 +333,7 @@ def streamlit(ctx):
     "--system_output",
     "-c",
     required=True,
-    help="System MT outputs.",
+    help="System MT candidate.",
     type=click.File(),
     multiple=True,
 )
@@ -343,6 +344,20 @@ def streamlit(ctx):
     help="Reference segments.",
     type=click.File(),
     multiple=True,
+)
+@click.option(
+    "--system_x",
+    "-x",
+    required=True,
+    help="System X MT outputs for segment-level comparison.",
+    type=click.File(),
+)
+@click.option(
+    "--system_y",
+    "-y",
+    required=True,
+    help="System Y MT outputs for segment-level comparison.",
+    type=click.File(),
 )
 @click.option(
     "--language",
@@ -397,10 +412,12 @@ def streamlit(ctx):
     type=str,
     help="Folder you wish to use to save plots.",
 )
-def compare_n_sys(
+def n_compare(
     source: click.File,
     system_output: Tuple[click.File],
     reference: Tuple[click.File],
+    system_x: click.File,
+    system_y: click.File,
     language: str,
     metric: Union[Tuple[str], str],
     filter: Union[Tuple[str], str],
@@ -410,9 +427,12 @@ def compare_n_sys(
     output_folder: str,
 ):  
     n = len(system_output)
-    files_index = {"Sys " + str(i+1):sys for sys, i in zip(range(n), system_output)}
+    files_index = {"Sys " + str(i+1):sys for i, sys in zip(range(n), system_output)}
     n_systems_index = {sys.name:i for i, sys in files_index.items()}
     outputs = {i:[l.strip() for l in sys.readlines()] for i, sys in files_index.items()}
+
+    if system_x.name not in list(n_systems_index.keys()) or system_y.name not in list(n_systems_index.keys()):
+        raise click.BadParameter("The value of -x or -y must one of values of -c.")
 
     references = {
         ref.name:[l.strip() for l in ref.readlines()] 
@@ -469,7 +489,7 @@ def compare_n_sys(
 
 
     text = "\nSystems: \n"
-    for index, system in testset.systems_index.items():
+    for system, index in testset.systems_index.items():
         text += index + ": " + system + " \n"
     
     click.secho(text, fg="bright_blue")
@@ -507,3 +527,6 @@ def compare_n_sys(
 
             plot_bucket_multiple_comparison(results[seg_metric], saving_dir)
             plot_multiple_distributions(results[seg_metric], saving_dir)
+            plot_multiple_segment_comparison(results[seg_metric], 
+            n_systems_index[system_x.name], n_systems_index[system_y.name],
+            saving_dir)

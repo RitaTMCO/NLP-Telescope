@@ -375,8 +375,12 @@ def update_multiple_buckets(
         major_err.update({system:n_major_err})
         crit_err.update({system:n_crit_err})
 
+    ratio = int((number_of_systems)/2)
 
     r = [i for i in range(number_of_systems)]
+
+    plt.figure(figsize=(12+ratio,10+ratio))
+    
     raw_data = {
         "T4Bars": list(crit_err.values()),
         "T3Bars": list(major_err.values()),
@@ -421,6 +425,7 @@ def update_multiple_buckets(
         h2 = r2.get_height()
         h3 = r3.get_height()
         h4 = r4.get_height()
+
         plt.text(
             r1.get_x() + r1.get_width() / 2.0,
             h1 / 2.0,
@@ -428,7 +433,7 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=12,
+            fontsize=14,
             fontweight="bold",
         )
         plt.text(
@@ -438,7 +443,7 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=12,
+            fontsize=14,
             fontweight="bold",
         )
         plt.text(
@@ -448,7 +453,7 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=12,
+            fontsize=14,
             fontweight="bold",
         )
         plt.text(
@@ -458,13 +463,15 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=12,
+            fontsize=14,
             fontweight="bold",
         )
 
     # Custom x axis
-    plt.xticks(r, names)
-    plt.xlabel("Model")
+    plt.xticks(r, names,fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.xlabel("Model",fontsize=14)
+
     return plt
 
 
@@ -558,28 +565,12 @@ def plot_multiple_distributions(
 
 
 def plot_multiple_segment_comparison(
-    multiple_result: MultipleResult, saving_dir: str = None
+    multiple_result: MultipleResult, system_x:str, system_y:str, saving_dir: str = None
 ) -> None:
 
-
-    left, right = st.beta_columns(2)
-    
-    system_x = left.selectbox(
-    "Select the system x:",
-    list(multiple_result.systems_metric_results.keys()),
-    index=0,
-    key = multiple_result.ref,
-    )
-
-    system_y = right.selectbox(
-    "Select the system y:",
-    list(multiple_result.systems_metric_results.keys()),
-    index=0,
-    key = multiple_result.ref,
-    )
-
     scores = np.array(
-        [multiple_result.systems_metric_results[system_x].seg_scores, multiple_result.systems_metric_results[system_y].seg_scores]
+        [multiple_result.systems_metric_results[system_x].seg_scores, 
+        multiple_result.systems_metric_results[system_y].seg_scores]
     ).T
     chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
 

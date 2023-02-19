@@ -182,15 +182,29 @@ if testset:
         )
 
     if metric in results:
-        if metric == "COMET":
-            st.subheader("Error-type analysis:")
+        if metric == "COMET" or metric == "GLEU":
+            st.header("Error-type analysis:")
             plot_bucket_multiple_comparison(results[metric])
 
-        st.subheader("Segment-level scores histogram:")
+        st.header("Segment-level scores histogram:")
         plot_multiple_distributions(results[metric])
 
         st.header("Segment-level comparison:")
-        plot_multiple_segment_comparison(results[metric])
+
+        left, right = st.columns(2)
+    
+        system_x = left.selectbox(
+        "Select the system x:",
+        list(results[metric].systems_metric_results.keys()),
+        index=0,
+        )
+
+        system_y = right.selectbox(
+        "Select the system y:",
+        list(results[metric].systems_metric_results.keys()),
+        index=0,
+        )
+        plot_multiple_segment_comparison(results[metric],system_x,system_y)
 
 
         # Bootstrap Resampling
