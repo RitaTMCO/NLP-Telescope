@@ -377,7 +377,7 @@ def update_multiple_buckets(
 
     ratio = int((number_of_systems)/2)
 
-    r = [i for i in range(number_of_systems)]
+    r = [i* number_of_systems for i in range(number_of_systems)]
 
     plt.figure(figsize=(12+ratio,10+ratio))
     
@@ -395,7 +395,8 @@ def update_multiple_buckets(
     T1Bars = raw_data["T1Bars"]
 
     # plot
-    barWidth = 0.85
+    barWidth = 0.85 + ratio
+    font=20
     names = tuple(systems_names)
     plt.clf()
     
@@ -433,7 +434,7 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=14,
+            fontsize=font,
             fontweight="bold",
         )
         plt.text(
@@ -443,7 +444,7 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=14,
+            fontsize=font,
             fontweight="bold",
         )
         plt.text(
@@ -453,7 +454,7 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=14,
+            fontsize=font,
             fontweight="bold",
         )
         plt.text(
@@ -463,14 +464,14 @@ def update_multiple_buckets(
             ha="center",
             va="center",
             color="white",
-            fontsize=14,
+            fontsize=font,
             fontweight="bold",
         )
 
     # Custom x axis
-    plt.xticks(r, names,fontsize=14)
-    plt.yticks(fontsize=14)
-    plt.xlabel("Model",fontsize=14)
+    plt.xticks(r, names,fontsize=font)
+    plt.yticks(fontsize=font)
+    plt.xlabel("Model",fontsize=font)
 
     return plt
 

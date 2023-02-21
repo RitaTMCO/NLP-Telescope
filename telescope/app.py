@@ -182,44 +182,68 @@ if testset:
         )
 
     if metric in results:
-        if metric == "COMET" or metric == "GLEU":
+        if metric == "COMET":
             st.header("Error-type analysis:")
             plot_bucket_multiple_comparison(results[metric])
 
         st.header("Segment-level scores histogram:")
         plot_multiple_distributions(results[metric])
 
-        st.header("Segment-level comparison:")
+        if len(results[metric].systems_metric_results) > 1:
 
-        left, right = st.columns(2)
+            st.header("Segment-level comparison:")
+
+            left_1, right_1 = st.columns(2)
     
-        system_x = left.selectbox(
-        "Select the system x:",
-        list(results[metric].systems_metric_results.keys()),
-        index=0,
-        )
+            system_x = left_1.selectbox(
+            "Select the system x:",
+            list(results[metric].systems_metric_results.keys()),
+            index=0,
+            key="comparison",
+            )
 
-        system_y = right.selectbox(
-        "Select the system y:",
-        list(results[metric].systems_metric_results.keys()),
-        index=0,
-        )
-        plot_multiple_segment_comparison(results[metric],system_x,system_y)
+            system_y = right_1.selectbox(
+            "Select the system y:",
+            list(results[metric].systems_metric_results.keys()),
+            index=0,
+            key="comparison",
+            )
+            plot_multiple_segment_comparison(results[metric],system_x,system_y)
 
 
-        # Bootstrap Resampling
-        #_, middle, _ = st.beta_columns(3)
-        #if middle.button("Perform Bootstrap Resampling:"):
-            #st.warning(
-                #"Running metrics for {} partitions of size {}".format(
-                    #num_samples, sample_ratio * len(testset)
-                #)
-            #)
-            #st.header("Bootstrap resampling results:")
-            #with st.spinner("Running bootstrap resampling..."):
-                #for metric in metrics:
-                    #bootstrap_result = available_metrics[metric].bootstrap_resampling(
-                        #testset, int(num_samples), sample_ratio, results[metric]
-                    #)
+            # Bootstrap Resampling
+            left_2, right_2 = st.columns(2)
 
-                    #plot_bootstraping_result(bootstrap_result)
+            system_x = left_2.selectbox(
+            "Select the system x:",
+            list(results[metric].systems_metric_results.keys()),
+            index=0,
+            key="bootstrap",
+            )
+
+            system_y = right_2.selectbox(
+            "Select the system y:",
+            list(results[metric].systems_metric_results.keys()),
+            index=1,
+            key="bootstrap",
+            )
+
+            if system_x == system_y:
+                st.warning("The system x cannot be the same as system y")
+
+            _, middle, _ = st.columns(3)
+            if middle.button("Perform Bootstrap Resampling:") and system_x != system_y:
+                st.warning(
+                    "Running metrics for {} partitions of size {}".format(
+                        num_samples, sample_ratio * len(testset)
+                    )
+                )
+                st.subheader("Bootstrap resampling results:")
+                with st.spinner("Running bootstrap resampling..."):
+                    for metric in metrics:
+                        bootstrap_result = available_metrics[metric].multiple_bootstrap_resampling(
+                            testset, int(num_samples), sample_ratio, 
+                            system_x, system_y, ref_filename, results[metric]
+                        )
+
+                        plot_bootstraping_result(bootstrap_result)
