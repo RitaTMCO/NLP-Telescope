@@ -22,6 +22,7 @@ from typing import List, Union, Tuple
 import os
 import click
 import json
+import pandas as pd
 
 from telescope.metrics import AVAILABLE_METRICS, PairwiseResult
 from telescope.metrics.result import MultipleResult
@@ -412,6 +413,35 @@ def streamlit(ctx):
     type=str,
     help="Folder you wish to use to save plots.",
 )
+@click.option("--bootstrap", is_flag=True)
+@click.option(
+    "--num_splits",
+    required=False,
+    default=300,
+    type=int,
+    help="Number of random partitions used in Bootstrap resampling.",
+)
+@click.option(
+    "--sample_ratio",
+    required=False,
+    default=0.5,
+    type=float,
+    help="Proportion (P) of the initial sample.",
+)
+@click.option(
+    "--x_bootstrap",
+    required=False,
+    help="System x in Bootstrap resampling.",
+    type=click.File(),
+)
+
+@click.option(
+    "--y_bootstrap",
+    required=False,
+    help="System y in Bootstrap resampling.",
+    type=click.File(),
+)
+
 def n_compare(
     source: click.File,
     system_output: Tuple[click.File],
@@ -425,6 +455,11 @@ def n_compare(
     length_max_val: float,
     seg_metric: str,
     output_folder: str,
+    bootstrap: bool,
+    num_splits: int,
+    sample_ratio: float,
+    x_bootstrap: click.File,
+    y_bootstrap: click.File,
 ):  
     n = len(system_output)
     files_index = {"Sys " + str(i+1):sys for i, sys in zip(range(n), system_output)}
@@ -512,6 +547,29 @@ def n_compare(
             click.secho("\t" + "systems:", fg="yellow")
             for sys_name, sys_score in systems.items():
                 click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
+
+        bootstrap_df = pd.DataFrame.from_dict({})
+        if (bootstrap and (x_bootstrap is not None) and (y_bootstrap is not None) 
+        and x_bootstrap.name in list(n_systems_index.keys())
+        and y_bootstrap.name in list(n_systems_index.keys())):
+
+            bootstrap_results = []
+            for m in metric:
+                bootstrap_results.append(
+                    available_metrics[m]
+                    .multiple_bootstrap_resampling(testset, num_splits, sample_ratio, 
+                    n_systems_index[x_bootstrap.name], n_systems_index[y_bootstrap.name], ref_filename, results[m])
+                    .stats
+                )
+            bootstrap_results = {
+                k: [dic[k] for dic in bootstrap_results] for k in bootstrap_results[0]
+            }
+            
+            bootstrap_df = pd.DataFrame.from_dict(bootstrap_results)
+            bootstrap_df.index = metric
+        
+            click.secho("\nBootstrap resampling results:", fg="yellow")
+            click.secho(str(bootstrap_df), fg="yellow")
         
         if output_folder != "":
             if not output_folder.endswith("/"):
@@ -525,6 +583,7 @@ def n_compare(
             with open(saving_dir + "results.json", "w") as result_file:
                 json.dump(results_dicts, result_file, indent=4)
 
+            bootstrap_df.to_json(saving_dir + "bootstrap_results.json", orient="index", indent=4)
             plot_bucket_multiple_comparison(results[seg_metric], saving_dir)
             plot_multiple_distributions(results[seg_metric], saving_dir)
             plot_multiple_segment_comparison(results[seg_metric], 
