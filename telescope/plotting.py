@@ -338,7 +338,7 @@ def update_multiple_buckets(
     minor_err_thr: float = 0.6,
 ):
 
-    systems_names = list(systems_results_seg_scores.keys())
+    systems_indexes = list(systems_results_seg_scores.keys())
     number_of_systems = len(systems_results_seg_scores)
     total = len(list(systems_results_seg_scores.values())[0])
 
@@ -377,7 +377,7 @@ def update_multiple_buckets(
 
     ratio = int((number_of_systems)/2)
 
-    r = [i* number_of_systems for i in range(number_of_systems)]
+    r = [i* (number_of_systems) for i in range(number_of_systems)]
 
     plt.figure(figsize=(12+ratio,10+ratio))
     
@@ -397,7 +397,8 @@ def update_multiple_buckets(
     # plot
     barWidth = 0.85 + ratio
     font=20
-    names = tuple(systems_names)
+    color = "black"
+    names = tuple(systems_indexes)
     plt.clf()
     
     ax1 = plt.bar(r, T4Bars, color=T4_COLOR, edgecolor="white", width=barWidth)
@@ -433,9 +434,8 @@ def update_multiple_buckets(
             "{:.2f}".format(h1),
             ha="center",
             va="center",
-            color="white",
+            color=color,
             fontsize=font,
-            fontweight="bold",
         )
         plt.text(
             r2.get_x() + r2.get_width() / 2.0,
@@ -443,9 +443,8 @@ def update_multiple_buckets(
             "{:.2f}".format(h2),
             ha="center",
             va="center",
-            color="white",
+            color=color,
             fontsize=font,
-            fontweight="bold",
         )
         plt.text(
             r3.get_x() + r3.get_width() / 2.0,
@@ -453,9 +452,8 @@ def update_multiple_buckets(
             "{:.2f}".format(h3),
             ha="center",
             va="center",
-            color="white",
+            color=color,
             fontsize=font,
-            fontweight="bold",
         )
         plt.text(
             r4.get_x() + r4.get_width() / 2.0,
@@ -463,15 +461,14 @@ def update_multiple_buckets(
             "{:.2f}".format(h4),
             ha="center",
             va="center",
-            color="white",
+            color=color,
             fontsize=font,
-            fontweight="bold",
         )
 
     # Custom x axis
-    plt.xticks(r, names,fontsize=font)
-    plt.yticks(fontsize=font)
-    plt.xlabel("Model",fontsize=font)
+    plt.xticks(r, names,fontsize=18)
+    plt.yticks(fontsize=22)
+    plt.xlabel("Model",fontsize=22)
 
     return plt
 
@@ -502,7 +499,7 @@ def plot_bucket_multiple_comparison(
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/bucket-analysis.png")
+        plot.savefig(saving_dir + "/multiple-bucket-analysis.png")
 
     if st._is_running_with_streamlit:
         col1, col2, col3 = st.columns(3)
@@ -559,7 +556,7 @@ def plot_multiple_distributions(
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        fig.write_html(saving_dir + "/scores-distribution.html")
+        fig.write_html(saving_dir + "/multiple-scores-distribution.html")
 
     if st._is_running_with_streamlit:
         st.plotly_chart(fig)
@@ -604,7 +601,7 @@ def plot_multiple_segment_comparison(
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
         c.properties(width=1300, height=600).save(
-            saving_dir + "/segment-comparison.html", format="html"
+            saving_dir + "/multiple-segment-comparison.html", format="html"
         )
 
     if st._is_running_with_streamlit:

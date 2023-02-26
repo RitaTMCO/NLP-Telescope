@@ -151,57 +151,59 @@ class PairwiseTestset(Testset):
         self.ref = [self.ref[idx] for idx in to_keep]
 
 
-
 class MultipleTestset(Testset):
     def __init__(
         self,
         src: List[str],
-        systems_index: Dict[str, str],
-        n_systems_output: Dict[str, List[str]],
-        refs: Dict[str, List[str]],
+        ref: List[str],
+        systems_output: Dict[str, List[str]],
         language_pair: str,
         filenames: List[str],
     ) -> None:
         self.src = src
-        self.refs = refs
-        self.systems_index = systems_index
-        self.n_systems_output = n_systems_output
+        self.ref = ref
+        self.systems_output = systems_output
         self.language_pair = language_pair
         self.filenames = filenames
 
-        refs_list = list(self.n_systems_output.values())
-        ref = refs_list[0]
-        n_systems_output_list = list(self.n_systems_output.values())
-        system_x = n_systems_output_list[0]
+        systems_output_list = list(self.systems_output.values())
+        system_x = systems_output_list[0]
 
-        for r in refs_list[1:]:
-            assert len(ref) == len(
-                r
-            ), "mismatch between references ({} > {})".format(
-                len(ref), len(r)
-            )
-        assert len(ref) == len(
-            src
-        ), "mismatch between references and sources ({} > {})".format(
-            len(ref), len(src)
-        )
-        for system_y in n_systems_output_list[1:]:
-            assert len(system_x) == len(
-                system_y
-            ), "mismatch between system x and system y ({} > {})".format(
-                len(system_x), len(system_y)
-            )
-        assert len(system_x) == len(
-            ref
-        ), "mismatch between system x and references ({} > {})".format(
-            len(system_x), len(ref)
-        )
+        assert len(ref) == len(src), "mismatch between reference and sources ({} > {})".format(len(ref), len(src))
+        for system_y in systems_output_list[1:]:
+            assert len(system_x) == len(system_y), "mismatch between system x and system y ({} > {})".format(len(system_x), len(system_y))
+        assert len(system_x) == len(ref), "mismatch between system x and references ({} > {})".format(len(system_x), len(ref))
+
+    def __getitem__(self, i) -> Tuple[str]:
+        return tuple([self.src[i]] + [self.ref[i]]+ [output[i] for output in list(self.systems_output.values())])
+
+    def apply_filter(self, filter):
+        to_keep = filter.apply_filter()
+        self.src = [self.src[idx] for idx in to_keep]
+        self.ref = [self.ref[idx] for idx in to_keep]
+        self.systems_output = {name: [output[idx] for idx in to_keep] for name,output in self.systems_output.items()}
+
+
+class NLPTestset:
+    def __init__(
+        self,
+        src_name: str,
+        refs_names: List[str],
+        systems_indexes: Dict[str, str],
+        language_pair: str,
+        filenames: List[str],
+        multiple_testsets: List[MultipleTestset]
+    ) -> None:
+        self.src_name = src_name
+        self.refs_names = refs_names
+        self.systems_indexes = systems_indexes
+        self.language_pair = language_pair
+        self.filenames = filenames
+        self.multiple_testsets = multiple_testsets
+
 
     def systems_names(self) -> List[str]:
-        return list(self.n_systems_output.keys())
-    
-    def refs_filenames(self) -> List[str]:
-        return list(self.refs.keys())
+        return list(self.systems_indexes.values())
 
     @staticmethod
     def hash_func(testset):
@@ -215,13 +217,20 @@ class MultipleTestset(Testset):
         sources = read_lines(source_file)
 
         ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
-        references = {ref_file.name: read_lines(ref_file) for ref_file in ref_files}
+        references = {}
+        for ref_file in ref_files:
+            if ref_file.name not in references:
+                references[ref_file.name] = read_lines(ref_file)
 
         outputs_files = st.file_uploader("Upload Systems Translations", type=["txt"], accept_multiple_files=True)
         n = len(outputs_files)
         files_index = {"Sys " + str(i+1):output_file for i, output_file in zip(range(n),outputs_files)}
-        systems_index = {output_file.name:i for i, output_file in files_index.items()}
-        outputs = {i:read_lines(output_file) for i, output_file in files_index.items()}
+        systems_index = {}
+        outputs = {}
+        for i, output_file in files_index.items():
+            if output_file.name not in systems_index:
+                systems_index[output_file.name] = i 
+                outputs[i] = read_lines(output_file)
 
         language_pair = st.text_input(
             "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
@@ -234,26 +243,18 @@ class MultipleTestset(Testset):
             and (outputs_files != [])
             and (language_pair != "")
         ):
-            st.success(
-                "Source, References, Translations and LP were successfully uploaded!"
-            )
+            st.success("Source, References, Translations and LP were successfully uploaded!")
+
+            multiple_testsets = {}
+            for ref_filename, ref in references.items():
+                filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, language_pair, filenames)
+
             return cls(
-                sources,
+                source_file.name,
+                references.keys(),
                 systems_index,
-                outputs,
-                references,
                 language_pair,
-                [source_file.name] +  list(systems_index.values()) + list(references.keys()),
+                [source_file.name] +  list(references.keys()) + list(systems_index.keys()),
+                multiple_testsets,
             )
-
-    def __len__(self) -> int:
-        return len(self.src)
-
-    def __getitem__(self, i) -> Tuple[str]:
-        return tuple([self.src[i]] + [output[i] for output in list(self.n_systems_output.values())] + [ref[i] for ref in list(self.refs.values())])
-
-    def apply_filter(self, filter):
-        to_keep = filter.apply_filter()
-        self.src = [self.src[idx] for idx in to_keep]
-        self.n_systems_output = {name: [output[idx] for idx in to_keep] for name,output in self.n_systems_output.items()}
-        self.refs = {name: [ref[idx] for idx in to_keep] for name,ref in self.refs.items()}

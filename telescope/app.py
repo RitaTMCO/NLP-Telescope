@@ -26,7 +26,7 @@ from telescope.plotting import (
     plot_multiple_distributions,
     plot_multiple_segment_comparison,
 )
-from telescope.testset import MultipleTestset
+from telescope.testset import MultipleTestset, NLPTestset
 
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
@@ -104,7 +104,7 @@ def hash_metrics(metrics):
 
 
 @st.cache(
-    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
+    hash_funcs={NLPTestset: NLPTestset.hash_func},
     suppress_st_warning=True,
     show_spinner=False,
     allow_output_mutation=True,
@@ -125,7 +125,7 @@ def apply_filters(testset, filters):
 
 
 @st.cache(
-    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
+    hash_funcs={NLPTestset: NLPTestset.hash_func},
     show_spinner=False,
     allow_output_mutation=True,
     ttl=cache_time,
@@ -134,26 +134,26 @@ def apply_filters(testset, filters):
 def run_metric(testset, metric, ref_filename):
     with st.spinner(f"Running {metric} for reference {ref_filename}..."):
         metric = available_metrics[metric](language=testset.target_language)
-        return metric.multiple_comparison(testset,ref_filename)
+        return metric.multiple_comparison(testset)
 
 
 def run_all_metrics(testset, metrics, filters):
     if filters:
-        corpus_size = len(testset)
-        testset = apply_filters(testset, filters)
-        st.success(
-            "Corpus reduced in {:.2f}%".format((1 - (len(testset) / corpus_size)) * 100)
-        )
+        for ref_name in testset.refs_names:
+            corpus_size = len(testset.multiple_testsets[ref_name])
+            testset.multiple_testsets[ref_name] = apply_filters(testset.multiple_testsets[ref_name], filters)
+            st.success("Corpus reduced in {:.2f}%".format((1 - (len(testset.multiple_testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name)
+
     return {
-        ref_filename: {metric: run_metric(testset, metric, ref_filename) for metric in metrics}
-        for ref_filename in testset.refs_filenames()
+        ref_name: {metric: run_metric(testset.multiple_testsets[ref_name], metric, ref_name) for metric in metrics}
+        for ref_name in testset.refs_names
         }
 
 
 # --------------------  APP  --------------------
 
 st.title("Welcome to NLP-Telescope!")
-testset = MultipleTestset.read_data()
+testset = NLPTestset.read_data()
 
 if testset:
     if metric not in metrics:
@@ -163,24 +163,22 @@ if testset:
     results_per_ref = run_all_metrics(testset, metrics, filters)
 
     text = "Systems:\n"
-    for system, index in testset.systems_index.items():
+    for system, index in testset.systems_indexes.items():
         text += index + ": " + system + " \n"
     
     st.text(text)
 
     ref_filename = st.selectbox(
     "Select the reference:",
-    list(results_per_ref.keys()),
+    testset.refs_names,
     index=0,
     )
 
     results = results_per_ref[ref_filename]
 
     if len(results) > 0:
-        st.dataframe(
-            MultipleResult.results_to_dataframe(list(results.values()), testset.systems_names())
-        )
-
+        st.dataframe(MultipleResult.results_to_dataframe(list(results.values()), testset.systems_names()))
+    
     if metric in results:
         if metric == "COMET":
             st.header("Error-type analysis:")
@@ -199,51 +197,32 @@ if testset:
             "Select the system x:",
             list(results[metric].systems_metric_results.keys()),
             index=0,
-            key="comparison",
             )
 
             system_y = right_1.selectbox(
             "Select the system y:",
             list(results[metric].systems_metric_results.keys()),
-            index=0,
-            key="comparison",
-            )
-            plot_multiple_segment_comparison(results[metric],system_x,system_y)
-
-
-            # Bootstrap Resampling
-            left_2, right_2 = st.columns(2)
-
-            system_x = left_2.selectbox(
-            "Select the system x:",
-            list(results[metric].systems_metric_results.keys()),
-            index=0,
-            key="bootstrap",
-            )
-
-            system_y = right_2.selectbox(
-            "Select the system y:",
-            list(results[metric].systems_metric_results.keys()),
             index=1,
-            key="bootstrap",
             )
-
             if system_x == system_y:
                 st.warning("The system x cannot be the same as system y")
+            
+            else:
+                plot_multiple_segment_comparison(results[metric],system_x,system_y)
 
-            _, middle, _ = st.columns(3)
-            if middle.button("Perform Bootstrap Resampling:") and system_x != system_y:
-                st.warning(
-                    "Running metrics for {} partitions of size {}".format(
-                        num_samples, sample_ratio * len(testset)
-                    )
-                )
-                st.subheader("Bootstrap resampling results:")
-                with st.spinner("Running bootstrap resampling..."):
-                    for metric in metrics:
-                        bootstrap_result = available_metrics[metric].multiple_bootstrap_resampling(
-                            testset, int(num_samples), sample_ratio, 
-                            system_x, system_y, ref_filename, results[metric]
+
+                #Bootstrap Resampling
+                _, middle, _ = st.columns(3)
+                if middle.button("Perform Bootstrap Resampling:"):
+                    st.warning(
+                        "Running metrics for {} partitions of size {}".format(
+                            num_samples, sample_ratio * len(testset.multiple_testsets[ref_filename])
                         )
+                    )
+                    st.subheader("Bootstrap resampling results:")
+                    with st.spinner("Running bootstrap resampling..."):
+                        for metric in metrics:
+                            bootstrap_result = available_metrics[metric].multiple_bootstrap_resampling(testset.multiple_testsets[ref_filename], 
+                            int(num_samples), sample_ratio, system_x, system_y, results[metric])
 
-                        plot_bootstraping_result(bootstrap_result)
+                            plot_bootstraping_result(bootstrap_result)

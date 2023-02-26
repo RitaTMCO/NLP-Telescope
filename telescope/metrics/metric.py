@@ -49,11 +49,11 @@ class Metric(metaclass=abc.ABCMeta):
         y_result = self.score(testset.src, testset.system_y, testset.ref)
         return PairwiseResult(x_result, y_result)
 
-    def multiple_comparison(self, testset: MultipleTestset, ref_filename: str):
+    def multiple_comparison(self, testset: MultipleTestset):
         """ Function that scores the multiple candidate systems inside a testset. """
-        ref = testset.refs[ref_filename]
+        ref = testset.ref
         src = testset.src
-        systems_metric_results = {name: self.score(src,output,ref) for name,output in testset.n_systems_output.items()}
+        systems_metric_results = {name: self.score(src,output,ref) for name,output in testset.systems_output.items()}
         return MultipleResult(systems_metric_results)
 
     @classmethod
@@ -142,7 +142,6 @@ class Metric(metaclass=abc.ABCMeta):
         sample_ratio: float,
         system_x: str,
         system_y: str,
-        ref_filename: str,
         multiple_result: MultipleResult = None,
     ):
 
@@ -187,18 +186,18 @@ class Metric(metaclass=abc.ABCMeta):
                 result = cls(testset.target_language).multiple_comparison(
                     MultipleTestset(
                         reduced_src,
-                        testset.systems_index,
+                        reduced_ref,
                         reducted_n_systems_output,
-                        reduced_refs,
                         language_pair=testset.language_pair,
                         filenames=testset.filenames,
-                    ),
-                    ref_filename
+                    )
                 )
                 return (result.systems_metric_results[system_x].sys_score, 
                         result.systems_metric_results[system_y].sys_score)
 
         n = len(testset)
+
+        print(n)
         ids = list(range(n))
         sample_size = max(int(n * sample_ratio), 1)
 
@@ -211,11 +210,10 @@ class Metric(metaclass=abc.ABCMeta):
 
             # Calculate accuracy on the reduced sample and save stats
             reduced_src = [testset.src[i] for i in reduced_ids]
+            reduced_ref = [testset.ref[i] for i in reduced_ids]
             reducted_n_systems_output = { system: [output[i] for i in reduced_ids]
-                for system, output in testset.n_systems_output.items()}
+                for system, output in testset.systems_output.items()}
 
-            reduced_refs = {ref: [text[i] for i in reduced_ids]
-                for ref, text in testset.refs.items()}
 
             x_result, y_result = recompute_sys_scores(multiple_result)
             wins = update_wins(x_result, y_result, wins)

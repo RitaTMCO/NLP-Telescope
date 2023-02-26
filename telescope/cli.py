@@ -26,7 +26,7 @@ import pandas as pd
 
 from telescope.metrics import AVAILABLE_METRICS, PairwiseResult
 from telescope.metrics.result import MultipleResult
-from telescope.testset import PairwiseTestset, MultipleTestset
+from telescope.testset import PairwiseTestset, MultipleTestset,NLPTestset
 from telescope.filters import AVAILABLE_FILTERS
 from telescope.plotting import (
     plot_segment_comparison,
@@ -347,20 +347,6 @@ def streamlit(ctx):
     multiple=True,
 )
 @click.option(
-    "--system_x",
-    "-x",
-    required=True,
-    help="System X MT outputs for segment-level comparison.",
-    type=click.File(),
-)
-@click.option(
-    "--system_y",
-    "-y",
-    required=True,
-    help="System Y MT outputs for segment-level comparison.",
-    type=click.File(),
-)
-@click.option(
     "--language",
     "-l",
     required=True,
@@ -413,7 +399,22 @@ def streamlit(ctx):
     type=str,
     help="Folder you wish to use to save plots.",
 )
+@click.option("--seg_level_comparison", is_flag=True)
 @click.option("--bootstrap", is_flag=True)
+@click.option(
+    "--system_x",
+    "-x",
+    required=False,
+    help="System X MT outputs for segment-level comparison and bootstrap resampling.",
+    type=click.File(),
+)
+@click.option(
+    "--system_y",
+    "-y",
+    required=False,
+    help="System Y MT outputs for segment-level comparison and bootstrap resampling.",
+    type=click.File(),
+)
 @click.option(
     "--num_splits",
     required=False,
@@ -428,26 +429,10 @@ def streamlit(ctx):
     type=float,
     help="Proportion (P) of the initial sample.",
 )
-@click.option(
-    "--x_bootstrap",
-    required=False,
-    help="System x in Bootstrap resampling.",
-    type=click.File(),
-)
-
-@click.option(
-    "--y_bootstrap",
-    required=False,
-    help="System y in Bootstrap resampling.",
-    type=click.File(),
-)
-
 def n_compare(
     source: click.File,
     system_output: Tuple[click.File],
     reference: Tuple[click.File],
-    system_x: click.File,
-    system_y: click.File,
     language: str,
     metric: Union[Tuple[str], str],
     filter: Union[Tuple[str], str],
@@ -458,51 +443,60 @@ def n_compare(
     bootstrap: bool,
     num_splits: int,
     sample_ratio: float,
-    x_bootstrap: click.File,
-    y_bootstrap: click.File,
+    seg_level_comparison: bool,
+    system_x: click.File,
+    system_y: click.File,
 ):  
     n = len(system_output)
+
     files_index = {"Sys " + str(i+1):sys for i, sys in zip(range(n), system_output)}
-    n_systems_index = {sys.name:i for i, sys in files_index.items()}
-    outputs = {i:[l.strip() for l in sys.readlines()] for i, sys in files_index.items()}
+    systems_index = {}
+    outputs = {}
+    for i, sys in files_index.items():
+        if sys.name not in systems_index:
+            systems_index[sys.name] = i 
+            outputs[i] = [l.strip() for l in sys.readlines()]
+    
+    references = {}
+    for ref in reference:
+        if ref.name not in references:
+            references[ref.name] = [l.strip() for l in ref.readlines()] 
 
-    if system_x.name not in list(n_systems_index.keys()) or system_y.name not in list(n_systems_index.keys()):
-        raise click.BadParameter("The value of -x or -y must one of values of -c.")
+    multiple_testsets = {}
+    src = [l.strip() for l in source.readlines()]
+    for ref_filename, ref in references.items():
+        filenames = list(source.name) + list(ref_filename) + list(systems_index.keys())
+        multiple_testsets[ref_filename] = MultipleTestset(src, ref, outputs, "X-" + language, filenames)
 
-    references = {
-        ref.name:[l.strip() for l in ref.readlines()] 
-        for ref in reference
-        }
-
-    testset = MultipleTestset(
-        src=[l.strip() for l in source.readlines()],
-        systems_index=n_systems_index,
-        n_systems_output=outputs,
-        refs=references,
+    testset = NLPTestset(
+        src_name=source.name,
+        refs_names=list(references.keys()),
+        systems_indexes=systems_index,
         language_pair="X-" + language,
         filenames=[source.name] +  list(outputs.keys()) + list(references.keys()),
-
+        multiple_testsets = multiple_testsets,
     )
 
-    corpus_size = len(testset)
     if filter:
-        filters = [available_filters[f](testset) for f in filter if f != "length"]
-        if "length" in filter:
-            filters.append(available_filters["length"](testset, int(length_min_val*100), int(length_max_val*100)))
+        for ref_name in testset.refs_names:
+            corpus_size = len(testset.multiple_testsets[ref_name])
+            filters = [available_filters[f](testset.multiple_testsets[ref_name]) for f in filter if f != "length"]
+            if "length" in filter:
+                filters.append(available_filters["length"](testset.multiple_testsets[ref_name], int(length_min_val*100), int(length_max_val*100)))
         
-        for filter in filters:
-            testset.apply_filter(filter)
+            for f in filters:
+                testset.multiple_testsets[ref_name].apply_filter(f)
 
-        if (1 - (len(testset) / corpus_size)) * 100 == 100:
-            click.secho("The current filters reduce the Corpus on 100%!", fg="ref")
-            return
+            if (1 - (len(testset.multiple_testsets[ref_name]) / corpus_size)) * 100 == 100:
+                click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="ref")
+                return
     
-        click.secho(
-            "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
-                (1 - (len(testset) / corpus_size)) * 100
-            ),
-            fg="green",
-        )
+            click.secho(
+                "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
+                    (1 - (len(testset.multiple_testsets[ref_name]) / corpus_size)) * 100
+                ) + " for reference " + ref_name,
+                fg="green",
+            )   
 
     if seg_metric not in metric:
         metric = tuple(
@@ -524,21 +518,19 @@ def n_compare(
 
 
     text = "\nSystems: \n"
-    for system, index in testset.systems_index.items():
+    for system, index in testset.systems_indexes.items():
         text += index + ": " + system + " \n"
     
     click.secho(text, fg="bright_blue")
 
-    systems_names = testset.systems_names()
+    systems_indexes = testset.systems_names()
     
-    for ref_filename in list(testset.refs.keys()):
+    for ref_filename in list(testset.refs_names):
         results = {
-            m: available_metrics[m](language=testset.target_language).multiple_comparison(
-            testset, ref_filename)
-            for m in metric
-        }
+            m: available_metrics[m](language=testset.multiple_testsets[ref_filename].target_language).multiple_comparison(
+            testset.multiple_testsets[ref_filename]) for m in metric }
 
-        results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_names)
+        results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_indexes)
 
         click.secho('Reference: ' + ref_filename, fg="yellow")
 
@@ -549,16 +541,16 @@ def n_compare(
                 click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
 
         bootstrap_df = pd.DataFrame.from_dict({})
-        if (bootstrap and (x_bootstrap is not None) and (y_bootstrap is not None) 
-        and x_bootstrap.name in list(n_systems_index.keys())
-        and y_bootstrap.name in list(n_systems_index.keys())):
+        if (bootstrap and (system_x is not None) and (system_y is not None) 
+        and system_x.name in list(systems_index.keys())
+        and system_y.name in list(systems_index.keys())):
 
             bootstrap_results = []
             for m in metric:
                 bootstrap_results.append(
                     available_metrics[m]
-                    .multiple_bootstrap_resampling(testset, num_splits, sample_ratio, 
-                    n_systems_index[x_bootstrap.name], n_systems_index[y_bootstrap.name], ref_filename, results[m])
+                    .multiple_bootstrap_resampling(testset.multiple_testsets[ref_filename], num_splits, sample_ratio, 
+                    systems_index[system_x.name], systems_index[system_y.name], results[m])
                     .stats
                 )
             bootstrap_results = {
@@ -586,6 +578,7 @@ def n_compare(
             bootstrap_df.to_json(saving_dir + "bootstrap_results.json", orient="index", indent=4)
             plot_bucket_multiple_comparison(results[seg_metric], saving_dir)
             plot_multiple_distributions(results[seg_metric], saving_dir)
-            plot_multiple_segment_comparison(results[seg_metric], 
-            n_systems_index[system_x.name], n_systems_index[system_y.name],
-            saving_dir)
+
+            if (seg_level_comparison and (system_x is not None) and (system_y is not None) and system_x.name in list(systems_index.keys())
+            and system_y.name in list(systems_index.keys())):
+                plot_multiple_segment_comparison(results[seg_metric], systems_index[system_x.name], systems_index[system_y.name],saving_dir)
