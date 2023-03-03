@@ -196,8 +196,6 @@ class Metric(metaclass=abc.ABCMeta):
                         result.systems_metric_results[system_y].sys_score)
 
         n = len(testset)
-
-        print(n)
         ids = list(range(n))
         sample_size = max(int(n * sample_ratio), 1)
 

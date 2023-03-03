@@ -111,15 +111,14 @@ def hash_metrics(metrics):
     ttl=cache_time,
     max_entries=cache_max_entries,
 )
-def apply_filters(testset, filters):
-    filters = [available_filters[f](testset, *length_interval) for f in filters]
+def apply_filters(testset, filters, ref_name):
     for filter in filters:
-        with st.spinner(f"Applying {filter.name} filter..."):
-            testset.apply_filter(filter)
+        with st.spinner(f"Applying {filter} filter for reference {ref_name}..." ):
+            testset.apply_filter(available_filters[filter](testset, *length_interval))
 
     # HACK
     # I'll add a new prefix to all testset filenames to "fool" streamlit cache
-    filter_prefix = " ".join([f.name for f in filters]) + str(length_interval)
+    filter_prefix = " ".join([f for f in filters]) + str(length_interval)
     testset.filenames = [filter_prefix + f for f in testset.filenames]
     return testset
 
@@ -141,7 +140,7 @@ def run_all_metrics(testset, metrics, filters):
     if filters:
         for ref_name in testset.refs_names:
             corpus_size = len(testset.multiple_testsets[ref_name])
-            testset.multiple_testsets[ref_name] = apply_filters(testset.multiple_testsets[ref_name], filters)
+            testset.multiple_testsets[ref_name] = apply_filters(testset.multiple_testsets[ref_name], filters, ref_name)
             st.success("Corpus reduced in {:.2f}%".format((1 - (len(testset.multiple_testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name)
 
     return {
@@ -197,12 +196,14 @@ if testset:
             "Select the system x:",
             list(results[metric].systems_metric_results.keys()),
             index=0,
+            key = ref_filename
             )
 
             system_y = right_1.selectbox(
             "Select the system y:",
             list(results[metric].systems_metric_results.keys()),
             index=1,
+            key = ref_filename
             )
             if system_x == system_y:
                 st.warning("The system x cannot be the same as system y")
@@ -213,13 +214,13 @@ if testset:
 
                 #Bootstrap Resampling
                 _, middle, _ = st.columns(3)
-                if middle.button("Perform Bootstrap Resampling:"):
+                if middle.button("Perform Bootstrap Resampling",key = ref_filename):
                     st.warning(
                         "Running metrics for {} partitions of size {}".format(
                             num_samples, sample_ratio * len(testset.multiple_testsets[ref_filename])
                         )
                     )
-                    st.subheader("Bootstrap resampling results:")
+                    st.header("Bootstrap resampling results:")
                     with st.spinner("Running bootstrap resampling..."):
                         for metric in metrics:
                             bootstrap_result = available_metrics[metric].multiple_bootstrap_resampling(testset.multiple_testsets[ref_filename], 

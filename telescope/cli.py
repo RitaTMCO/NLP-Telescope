@@ -447,15 +447,14 @@ def n_compare(
     system_x: click.File,
     system_y: click.File,
 ):  
-    n = len(system_output)
-
-    files_index = {"Sys " + str(i+1):sys for i, sys in zip(range(n), system_output)}
     systems_index = {}
     outputs = {}
-    for i, sys in files_index.items():
+    i = 1
+    for sys in system_output:
         if sys.name not in systems_index:
-            systems_index[sys.name] = i 
-            outputs[i] = [l.strip() for l in sys.readlines()]
+            systems_index[sys.name] = "Sys " + str(i) 
+            outputs["Sys " + str(i)] = [l.strip() for l in sys.readlines()]
+            i += 1
     
     references = {}
     for ref in reference:
@@ -480,15 +479,16 @@ def n_compare(
     if filter:
         for ref_name in testset.refs_names:
             corpus_size = len(testset.multiple_testsets[ref_name])
-            filters = [available_filters[f](testset.multiple_testsets[ref_name]) for f in filter if f != "length"]
-            if "length" in filter:
-                filters.append(available_filters["length"](testset.multiple_testsets[ref_name], int(length_min_val*100), int(length_max_val*100)))
         
-            for f in filters:
-                testset.multiple_testsets[ref_name].apply_filter(f)
+            for f in filter:
+                if f != "length":
+                    fil = available_filters[f](testset.multiple_testsets[ref_name])
+                else:
+                    fil = available_filters["length"](testset.multiple_testsets[ref_name], int(length_min_val*100), int(length_max_val*100))
+                testset.multiple_testsets[ref_name].apply_filter(fil)
 
             if (1 - (len(testset.multiple_testsets[ref_name]) / corpus_size)) * 100 == 100:
-                click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="ref")
+                click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="green")
                 return
     
             click.secho(

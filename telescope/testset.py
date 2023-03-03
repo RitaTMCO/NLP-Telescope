@@ -223,14 +223,14 @@ class NLPTestset:
                 references[ref_file.name] = read_lines(ref_file)
 
         outputs_files = st.file_uploader("Upload Systems Translations", type=["txt"], accept_multiple_files=True)
-        n = len(outputs_files)
-        files_index = {"Sys " + str(i+1):output_file for i, output_file in zip(range(n),outputs_files)}
         systems_index = {}
         outputs = {}
-        for i, output_file in files_index.items():
+        i = 1
+        for output_file in outputs_files:
             if output_file.name not in systems_index:
-                systems_index[output_file.name] = i 
-                outputs[i] = read_lines(output_file)
+                systems_index[output_file.name] = "Sys " + str(i)
+                outputs["Sys " + str(i)] = read_lines(output_file)
+                i += 1
 
         language_pair = st.text_input(
             "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
