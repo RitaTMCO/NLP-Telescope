@@ -19,6 +19,7 @@ from PIL import Image
 
 from telescope.filters import AVAILABLE_FILTERS
 from telescope.metrics import AVAILABLE_METRICS
+from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleResult
 from telescope.plotting import (
     plot_bootstraping_result,
@@ -26,10 +27,11 @@ from telescope.plotting import (
     plot_multiple_distributions,
     plot_multiple_segment_comparison,
 )
-from telescope.testset import MultipleTestset, NLPTestset
+from telescope.testset import NLPTestsets
 
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
+available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
 
 @st.cache
@@ -41,6 +43,12 @@ def load_image(image_url):
 st.sidebar.image("data/nlp-telescope-logo.png")
 
 # --------------------  APP Settings --------------------
+task = st.sidebar.selectbox(
+    "Select the natural language processing task:",
+    list(t.name for t in available_tasks.values()),
+    index=0,
+)
+
 metrics = st.sidebar.multiselect(
     "Select the system-level metric you wish to run:",
     list(available_metrics.keys()),
@@ -104,7 +112,7 @@ def hash_metrics(metrics):
 
 
 @st.cache(
-    hash_funcs={NLPTestset: NLPTestset.hash_func},
+    hash_funcs={NLPTestsets: NLPTestsets.hash_func},
     suppress_st_warning=True,
     show_spinner=False,
     allow_output_mutation=True,
@@ -124,7 +132,7 @@ def apply_filters(testset, filters, ref_name):
 
 
 @st.cache(
-    hash_funcs={NLPTestset: NLPTestset.hash_func},
+    hash_funcs={NLPTestsets: NLPTestsets.hash_func},
     show_spinner=False,
     allow_output_mutation=True,
     ttl=cache_time,
@@ -152,7 +160,7 @@ def run_all_metrics(testset, metrics, filters):
 # --------------------  APP  --------------------
 
 st.title("Welcome to NLP-Telescope!")
-testset = NLPTestset.read_data()
+testset = available_tasks[task].input_interface()
 
 if testset:
     if metric not in metrics:

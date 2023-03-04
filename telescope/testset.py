@@ -157,22 +157,22 @@ class MultipleTestset(Testset):
         src: List[str],
         ref: List[str],
         systems_output: Dict[str, List[str]],
-        language_pair: str,
         filenames: List[str],
+        language_pair = ""
     ) -> None:
         self.src = src
         self.ref = ref
         self.systems_output = systems_output
-        self.language_pair = language_pair
         self.filenames = filenames
+        self.language_pair = language_pair
 
         systems_output_list = list(self.systems_output.values())
         system_x = systems_output_list[0]
 
         assert len(ref) == len(src), "mismatch between reference and sources ({} > {})".format(len(ref), len(src))
         for system_y in systems_output_list[1:]:
-            assert len(system_x) == len(system_y), "mismatch between system x and system y ({} > {})".format(len(system_x), len(system_y))
-        assert len(system_x) == len(ref), "mismatch between system x and references ({} > {})".format(len(system_x), len(ref))
+            assert len(system_x) == len(system_y), "mismatch between systems ({} > {})".format(len(system_x), len(system_y))
+        assert len(system_x) == len(ref), "mismatch between system and references ({} > {})".format(len(system_x), len(ref))
 
     def __getitem__(self, i) -> Tuple[str]:
         return tuple([self.src[i]] + [self.ref[i]]+ [output[i] for output in list(self.systems_output.values())])
@@ -184,20 +184,18 @@ class MultipleTestset(Testset):
         self.systems_output = {name: [output[idx] for idx in to_keep] for name,output in self.systems_output.items()}
 
 
-class NLPTestset:
+class NLPTestsets:
     def __init__(
         self,
         src_name: str,
         refs_names: List[str],
         systems_indexes: Dict[str, str],
-        language_pair: str,
         filenames: List[str],
         multiple_testsets: List[MultipleTestset]
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
         self.systems_indexes = systems_indexes
-        self.language_pair = language_pair
         self.filenames = filenames
         self.multiple_testsets = multiple_testsets
 
@@ -212,6 +210,63 @@ class NLPTestset:
     @classmethod
     def read_data(cls):
         st.subheader("Upload Files for analysis:")
+        
+        source_file = st.file_uploader("Upload Sources", type=["txt"])
+        sources = read_lines(source_file)
+
+        ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
+        references = {}
+        for ref_file in ref_files:
+            if ref_file.name not in references:
+                references[ref_file.name] = read_lines(ref_file)
+
+        outputs_files = st.file_uploader("Upload Systems Outputs", type=["txt"], accept_multiple_files=True)
+        systems_index = {}
+        outputs = {}
+        i = 1
+        for output_file in outputs_files:
+            if output_file.name not in systems_index:
+                systems_index[output_file.name] = "Sys " + str(i)
+                outputs["Sys " + str(i)] = read_lines(output_file)
+                i += 1
+
+        if (
+            (ref_files != [])
+            and (source_file is not None)
+            and (outputs_files != [])
+        ):
+            st.success("Source, References and Outputs were successfully uploaded!")
+
+            multiple_testsets = {}
+            for ref_filename, ref in references.items():
+                filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+
+            return cls(
+                source_file.name,
+                references.keys(),
+                systems_index,
+                [source_file.name] +  list(references.keys()) + list(systems_index.keys()),
+                multiple_testsets
+            )
+
+
+class MTTestsets(NLPTestsets):
+    def __init__(
+        self,
+        src_name: str,
+        refs_names: List[str],
+        systems_indexes: Dict[str, str],
+        filenames: List[str],
+        multiple_testsets: List[MultipleTestset],
+        language_pair: str
+    ) -> None:
+        super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets)
+        self.language_pair = language_pair
+
+    @classmethod
+    def read_data(cls):
+        st.subheader("Upload Files for Machine Translation analysis:")
         
         source_file = st.file_uploader("Upload Sources", type=["txt"])
         sources = read_lines(source_file)
@@ -248,13 +303,180 @@ class NLPTestset:
             multiple_testsets = {}
             for ref_filename, ref in references.items():
                 filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
-                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, language_pair, filenames)
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames, language_pair)
 
             return cls(
                 source_file.name,
                 references.keys(),
                 systems_index,
-                language_pair,
                 [source_file.name] +  list(references.keys()) + list(systems_index.keys()),
                 multiple_testsets,
+                language_pair
+            )
+
+class SummTestsets(NLPTestsets):
+    def __init__(
+        self,
+        src_name: str,
+        refs_names: List[str],
+        systems_indexes: Dict[str, str],
+        filenames: List[str],
+        multiple_testsets: List[MultipleTestset],
+    ) -> None:
+        super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets)
+
+    @classmethod
+    def read_data(cls):
+        st.subheader("Upload Files for Summarization analysis:")
+        
+        source_file = st.file_uploader("Upload Sources", type=["txt"])
+        sources = read_lines(source_file)
+
+        ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
+        references = {}
+        for ref_file in ref_files:
+            if ref_file.name not in references:
+                references[ref_file.name] = read_lines(ref_file)
+
+        outputs_files = st.file_uploader("Upload Systems Summaries", type=["txt"], accept_multiple_files=True)
+        systems_index = {}
+        outputs = {}
+        i = 1
+        for output_file in outputs_files:
+            if output_file.name not in systems_index:
+                systems_index[output_file.name] = "Sys " + str(i)
+                outputs["Sys " + str(i)] = read_lines(output_file)
+                i += 1
+
+        if (
+            (ref_files != [])
+            and (source_file is not None)
+            and (outputs_files != [])
+            and (language_pair != "")
+        ):
+            st.success("Source, References and Summaries were successfully uploaded!")
+
+            multiple_testsets = {}
+            for ref_filename, ref in references.items():
+                filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+
+            return cls(
+                source_file.name,
+                references.keys(),
+                systems_index,
+                [source_file.name] +  list(references.keys()) + list(systems_index.keys()),
+                multiple_testsets
+            )
+
+
+class DialogueTestsets(NLPTestsets):
+    def __init__(
+        self,
+        src_name: str,
+        refs_names: List[str],
+        systems_indexes: Dict[str, str],
+        filenames: List[str],
+        multiple_testsets: List[MultipleTestset],
+    ) -> None:
+        super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets)
+
+    @classmethod
+    def read_data(cls):
+        st.subheader("Upload Files for Dialogue System analysis:")
+        
+        source_file = st.file_uploader("Upload Sources", type=["txt"])
+        sources = read_lines(source_file)
+
+        ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
+        references = {}
+        for ref_file in ref_files:
+            if ref_file.name not in references:
+                references[ref_file.name] = read_lines(ref_file)
+
+        outputs_files = st.file_uploader("Upload Systems Dialogues", type=["txt"], accept_multiple_files=True)
+        systems_index = {}
+        outputs = {}
+        i = 1
+        for output_file in outputs_files:
+            if output_file.name not in systems_index:
+                systems_index[output_file.name] = "Sys " + str(i)
+                outputs["Sys " + str(i)] = read_lines(output_file)
+                i += 1
+
+        if (
+            (ref_files != [])
+            and (source_file is not None)
+            and (outputs_files != [])
+            and (language_pair != "")
+        ):
+            st.success("Source, References and Dialogues were successfully uploaded!")
+
+            multiple_testsets = {}
+            for ref_filename, ref in references.items():
+                filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+
+            return cls(
+                source_file.name,
+                references.keys(),
+                systems_index,
+                [source_file.name] +  list(references.keys()) + list(systems_index.keys()),
+                multiple_testsets
+            )
+
+
+class ClassTestsets(NLPTestsets):
+    def __init__(
+        self,
+        src_name: str,
+        refs_names: List[str],
+        systems_indexes: Dict[str, str],
+        filenames: List[str],
+        multiple_testsets: List[MultipleTestset],
+    ) -> None:
+        super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets)
+
+    @classmethod
+    def read_data(cls):
+        st.subheader("Upload Files for Classification analysis:")
+        
+        source_file = st.file_uploader("Upload Sources", type=["txt"])
+        sources = read_lines(source_file)
+
+        ref_files = st.file_uploader("Upload References", type=["txt"], accept_multiple_files=True)
+        references = {}
+        for ref_file in ref_files:
+            if ref_file.name not in references:
+                references[ref_file.name] = read_lines(ref_file)
+
+        outputs_files = st.file_uploader("Upload Systems Classifications", type=["txt"], accept_multiple_files=True)
+        systems_index = {}
+        outputs = {}
+        i = 1
+        for output_file in outputs_files:
+            if output_file.name not in systems_index:
+                systems_index[output_file.name] = "Sys " + str(i)
+                outputs["Sys " + str(i)] = read_lines(output_file)
+                i += 1
+
+        if (
+            (ref_files != [])
+            and (source_file is not None)
+            and (outputs_files != [])
+            and (language_pair != "")
+        ):
+            st.success("Source, References and Classifications were successfully uploaded!")
+
+            multiple_testsets = {}
+            for ref_filename, ref in references.items():
+                filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+
+            return cls(
+                source_file.name,
+                references.keys(),
+                systems_index,
+                [source_file.name] +  list(references.keys()) + list(systems_index.keys()),
+                multiple_testsets
             )
