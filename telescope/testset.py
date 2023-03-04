@@ -158,7 +158,7 @@ class MultipleTestset(Testset):
         ref: List[str],
         systems_output: Dict[str, List[str]],
         filenames: List[str],
-        language_pair = ""
+        language_pair: str
     ) -> None:
         self.src = src
         self.ref = ref
@@ -229,18 +229,25 @@ class NLPTestsets:
                 systems_index[output_file.name] = "Sys " + str(i)
                 outputs["Sys " + str(i)] = read_lines(output_file)
                 i += 1
+        
+        language = st.text_input(
+            "Please input the language of the files to analyse (e.g. 'en'):",
+            "",
+        )
 
         if (
             (ref_files != [])
             and (source_file is not None)
             and (outputs_files != [])
+            and (language != "")
         ):
-            st.success("Source, References and Outputs were successfully uploaded!")
+            st.success("Source, References, Outputs and Language were successfully uploaded!")
 
             multiple_testsets = {}
+            language_pair = language + "-" + language
             for ref_filename, ref in references.items():
                 filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
-                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames, language_pair)
 
             return cls(
                 source_file.name,
@@ -259,10 +266,8 @@ class MTTestsets(NLPTestsets):
         systems_indexes: Dict[str, str],
         filenames: List[str],
         multiple_testsets: List[MultipleTestset],
-        language_pair: str
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets)
-        self.language_pair = language_pair
 
     @classmethod
     def read_data(cls):
@@ -347,19 +352,25 @@ class SummTestsets(NLPTestsets):
                 systems_index[output_file.name] = "Sys " + str(i)
                 outputs["Sys " + str(i)] = read_lines(output_file)
                 i += 1
+        
+        language = st.text_input(
+            "Please input the language of the files to analyse (e.g. 'en'):",
+            "",
+        )
 
         if (
             (ref_files != [])
             and (source_file is not None)
             and (outputs_files != [])
-            and (language_pair != "")
+            and (language != "")
         ):
-            st.success("Source, References and Summaries were successfully uploaded!")
+            st.success("Source, References, Summaries and Language were successfully uploaded!")
 
             multiple_testsets = {}
+            language_pair = language + "-" + language
             for ref_filename, ref in references.items():
                 filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
-                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames, language_pair)
 
             return cls(
                 source_file.name,
@@ -404,18 +415,24 @@ class DialogueTestsets(NLPTestsets):
                 outputs["Sys " + str(i)] = read_lines(output_file)
                 i += 1
 
+        language = st.text_input(
+            "Please input the language of the files to analyse (e.g. 'en'):",
+            "",
+        )
+
         if (
             (ref_files != [])
             and (source_file is not None)
             and (outputs_files != [])
-            and (language_pair != "")
+            and (language != "")
         ):
-            st.success("Source, References and Dialogues were successfully uploaded!")
+            st.success("Source, References, Dialogues and Language were successfully uploaded!")
 
             multiple_testsets = {}
+            language_pair = language + "-" + language
             for ref_filename, ref in references.items():
                 filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
-                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames, language_pair)
 
             return cls(
                 source_file.name,
@@ -464,7 +481,6 @@ class ClassTestsets(NLPTestsets):
             (ref_files != [])
             and (source_file is not None)
             and (outputs_files != [])
-            and (language_pair != "")
         ):
             st.success("Source, References and Classifications were successfully uploaded!")
 

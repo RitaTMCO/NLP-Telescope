@@ -1,10 +1,12 @@
 from telescope.tasks.task import Task
 from telescope.testset import NLPTestsets, ClassTestsets
 from telescope.metrics import AVAILABLE_CLASSIFICATION_METRICS
+from telescope.filters import AVAILABLE_CLASSIFICATION_FILTERS
 
 class Classification(Task):
     name = "classification"
     metrics = AVAILABLE_CLASSIFICATION_METRICS
+    filters = AVAILABLE_CLASSIFICATION_FILTERS + Task.filters
 
     @staticmethod
     def input_interface() -> NLPTestsets:

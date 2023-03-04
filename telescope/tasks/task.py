@@ -1,11 +1,12 @@
 import abc
 from telescope.testset import NLPTestsets
+from telescope.filters import AVAILABLE_NLP_FILTERS
 
 class Task(metaclass=abc.ABCMeta):
 
     name = None
     metris = list()
-    filters = list()
+    filters = AVAILABLE_NLP_FILTERS
     plots = list()
 
     @staticmethod

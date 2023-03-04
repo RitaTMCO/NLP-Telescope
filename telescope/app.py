@@ -17,7 +17,6 @@ import requests
 
 from PIL import Image
 
-from telescope.filters import AVAILABLE_FILTERS
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleResult
 from telescope.plotting import (
@@ -28,7 +27,6 @@ from telescope.plotting import (
 )
 from telescope.testset import NLPTestsets
 
-available_filters = {f.name: f for f in AVAILABLE_FILTERS}
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
 
@@ -48,6 +46,7 @@ task = st.sidebar.selectbox(
 )
 
 available_metrics = {m.name: m for m in available_tasks[task].metrics}
+available_filters = {f.name: f for f in available_tasks[task].filters}
 
 metrics = st.sidebar.multiselect(
     "Select the system-level metric you wish to run:",
@@ -64,30 +63,32 @@ metric = st.sidebar.selectbox(
 filters = st.sidebar.multiselect(
     "Select testset filters:", list(available_filters.keys()), default=["duplicates"]
 )
-st.sidebar.subheader("Segment length constraints:")
-length_interval = st.sidebar.slider(
-    "Specify the confidence interval for the length distribution:",
-    0,
-    100,
-    step=5,
-    value=(0, 100),
-    help=(
-        "In order to isolate segments according to caracter length "
-        "we will create a sequence length distribution that you can constraint "
-        "through it's density funcion. This slider is used to specify the confidence interval P(a < X < b)"
-    ),
-)
-if length_interval != (0, 100):
-    filters = (
-        filters
-        + [
-            "length",
-        ]
-        if filters is not None
-        else [
-            "length",
-        ]
+
+if "length" in available_filters:
+    st.sidebar.subheader("Segment length constraints:")
+    length_interval = st.sidebar.slider(
+        "Specify the confidence interval for the length distribution:",
+        0,
+        100,
+        step=5,
+        value=(0, 100),
+        help=(
+            "In order to isolate segments according to caracter length "
+            "we will create a sequence length distribution that you can constraint "
+            "through it's density funcion. This slider is used to specify the confidence interval P(a < X < b)"
+        ),
     )
+    if length_interval != (0, 100):
+        filters = (
+            filters
+            + [
+                "length",
+            ]
+            if filters is not None
+            else [
+                "length",
+            ]
+        )      
 
 st.sidebar.subheader("Bootstrap resampling settings:")
 num_samples = st.sidebar.number_input(
