@@ -18,7 +18,6 @@ import requests
 from PIL import Image
 
 from telescope.filters import AVAILABLE_FILTERS
-from telescope.metrics import AVAILABLE_METRICS
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleResult
 from telescope.plotting import (
@@ -29,7 +28,6 @@ from telescope.plotting import (
 )
 from telescope.testset import NLPTestsets
 
-available_metrics = {m.name: m for m in AVAILABLE_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
@@ -49,10 +47,12 @@ task = st.sidebar.selectbox(
     index=0,
 )
 
+available_metrics = {m.name: m for m in available_tasks[task].metrics}
+
 metrics = st.sidebar.multiselect(
     "Select the system-level metric you wish to run:",
     list(available_metrics.keys()),
-    default=["COMET", "chrF", "BLEU"],
+    default=list(available_metrics.keys())[0],
 )
 
 metric = st.sidebar.selectbox(

@@ -22,3 +22,26 @@ AVAILABLE_METRICS = [
     # Prism,
     GLEU,
 ]
+
+AVAILABLE_NLG_METRICS = [
+    BERTScore,
+    ZeroEdit,
+    #BLEURT,
+]
+
+AVAILABLE_MT_METRICS = [
+    COMET,
+    sacreBLEU,
+    chrF,
+    TER,
+    # Prism,
+    GLEU,
+]
+
+AVAILABLE_SUMMARIZATION_METRICS = []
+
+AVAILABLE_DIALOGUE_METRICS = []
+
+AVAILABLE_CLASSIFICATION_METRICS = [
+    ZeroEdit,
+]

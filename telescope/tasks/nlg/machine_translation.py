@@ -1,9 +1,12 @@
 from telescope.tasks.nlg.nlg import NLG
 from telescope.testset import NLPTestsets, MTTestsets
+from telescope.metrics import AVAILABLE_MT_METRICS
 
 class MachineTranslation(NLG):
     name = "machine translation"
+    metrics = AVAILABLE_MT_METRICS + NLG.metrics
 
+    @staticmethod
     def input_interface() -> NLPTestsets:
         """Interface to collect the necessary inputs to realization of the task evaluation."""
         mt_testset = MTTestsets.read_data()
