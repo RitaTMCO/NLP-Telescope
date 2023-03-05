@@ -15,7 +15,8 @@ class Task(metaclass=abc.ABCMeta):
         nlp_testset = NLPTestsets.read_data()
         return nlp_testset
     
-    #@abc.abstractmethod
-    #def plots_interface(self):
-    #    """ Interfave to display the plots"""
-    #    pass
+    @staticmethod
+    @abc.abstractmethod
+    def plots_interface(metric:str, results:dict, testsets: NLPTestsets, ref_file: str, num_samples: int, sample_ratio: float) -> None:
+        """ Interfave to display the plots"""
+        pass

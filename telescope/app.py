@@ -20,10 +20,7 @@ from PIL import Image
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleResult
 from telescope.plotting import (
-    plot_bootstraping_result,
-    plot_bucket_multiple_comparison,
-    plot_multiple_distributions,
-    plot_multiple_segment_comparison,
+    plot_bootstraping_result
 )
 from telescope.testset import NLPTestsets
 
@@ -123,11 +120,17 @@ def hash_metrics(metrics):
 def apply_filters(testset, filters, ref_name):
     for filter in filters:
         with st.spinner(f"Applying {filter} filter for reference {ref_name}..." ):
-            testset.apply_filter(available_filters[filter](testset, *length_interval))
+            if filter == "length":
+                testset.apply_filter(available_filters[filter](testset, *length_interval))
+            else:
+                testset.apply_filter(available_filters[filter](testset))
 
     # HACK
     # I'll add a new prefix to all testset filenames to "fool" streamlit cache
-    filter_prefix = " ".join([f for f in filters]) + str(length_interval)
+    if "length" in filters:
+        filter_prefix = " ".join([f for f in filters]) + str(length_interval)
+    else:
+        filter_prefix = " ".join([f for f in filters])
     testset.filenames = [filter_prefix + f for f in testset.filenames]
     return testset
 
@@ -161,78 +164,34 @@ def run_all_metrics(testset, metrics, filters):
 # --------------------  APP  --------------------
 
 st.title("Welcome to NLP-Telescope!")
-testset = available_tasks[task].input_interface()
+testsets = available_tasks[task].input_interface()
 
-if testset:
+if testsets:
     if metric not in metrics:
         metrics = [
             metric,
         ] + metrics
-    results_per_ref = run_all_metrics(testset, metrics, filters)
+    results_per_ref = run_all_metrics(testsets, metrics, filters)
 
     text = "Systems:\n"
-    for system, index in testset.systems_indexes.items():
+    for system, index in testsets.systems_indexes.items():
         text += index + ": " + system + " \n"
     
     st.text(text)
 
     ref_filename = st.selectbox(
     "Select the reference:",
-    testset.refs_names,
+    testsets.refs_names,
     index=0,
     )
 
     results = results_per_ref[ref_filename]
 
     if len(results) > 0:
-        st.dataframe(MultipleResult.results_to_dataframe(list(results.values()), testset.systems_names()))
+        st.dataframe(MultipleResult.results_to_dataframe(list(results.values()), 
+                                                        testsets.systems_names()))
     
     if metric in results:
-        if metric == "COMET":
-            st.header("Error-type analysis:")
-            plot_bucket_multiple_comparison(results[metric])
-
-        st.header("Segment-level scores histogram:")
-        plot_multiple_distributions(results[metric])
-
-        if len(results[metric].systems_metric_results) > 1:
-
-            st.header("Segment-level comparison:")
-
-            left_1, right_1 = st.columns(2)
-    
-            system_x = left_1.selectbox(
-            "Select the system x:",
-            list(results[metric].systems_metric_results.keys()),
-            index=0,
-            key = ref_filename
-            )
-
-            system_y = right_1.selectbox(
-            "Select the system y:",
-            list(results[metric].systems_metric_results.keys()),
-            index=1,
-            key = ref_filename
-            )
-            if system_x == system_y:
-                st.warning("The system x cannot be the same as system y")
-            
-            else:
-                plot_multiple_segment_comparison(results[metric],system_x,system_y)
-
-
-                #Bootstrap Resampling
-                _, middle, _ = st.columns(3)
-                if middle.button("Perform Bootstrap Resampling",key = ref_filename):
-                    st.warning(
-                        "Running metrics for {} partitions of size {}".format(
-                            num_samples, sample_ratio * len(testset.multiple_testsets[ref_filename])
-                        )
-                    )
-                    st.header("Bootstrap resampling results:")
-                    with st.spinner("Running bootstrap resampling..."):
-                        for metric in metrics:
-                            bootstrap_result = available_metrics[metric].multiple_bootstrap_resampling(testset.multiple_testsets[ref_filename], 
-                            int(num_samples), sample_ratio, system_x, system_y, results[metric])
-
-                            plot_bootstraping_result(bootstrap_result)
+        available_tasks[task].plots_interface(metric, metrics, available_metrics,
+                                                results, testsets, ref_filename, 
+                                                num_samples, sample_ratio)

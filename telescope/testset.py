@@ -315,8 +315,7 @@ class MTTestsets(NLPTestsets):
                 references.keys(),
                 systems_index,
                 [source_file.name] +  list(references.keys()) + list(systems_index.keys()),
-                multiple_testsets,
-                language_pair
+                multiple_testsets
             )
 
 class SummTestsets(NLPTestsets):
@@ -476,18 +475,25 @@ class ClassTestsets(NLPTestsets):
                 systems_index[output_file.name] = "Sys " + str(i)
                 outputs["Sys " + str(i)] = read_lines(output_file)
                 i += 1
+        
+        language = st.text_input(
+            "Please input the language of the files to analyse (e.g. 'en'):",
+            "",
+        )
 
         if (
             (ref_files != [])
             and (source_file is not None)
             and (outputs_files != [])
+            and (language != "")
         ):
-            st.success("Source, References and Classifications were successfully uploaded!")
+            st.success("Source, References, Classifications and Language were successfully uploaded!")
 
             multiple_testsets = {}
+            language_pair = language + "-" + language
             for ref_filename, ref in references.items():
                 filenames = list(source_file.name) + list(ref_filename) + list(systems_index.keys())
-                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
+                multiple_testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames, language_pair)
 
             return cls(
                 source_file.name,
