@@ -8,6 +8,16 @@ from .comet import COMET
 from .ter import TER
 # from .prism import Prism
 from .gleu import GLEU
+
+from .rouge_one import ROUGEOne
+from .rouge_two import ROUGETwo
+from .rouge_l import ROUGEL
+
+from .accuracy import Accuracy
+from .precision import Precision
+from .recall import Recall
+from .f1_score import F1Score
+
 from .result import MetricResult, PairwiseResult, BootstrapResult
 
 
@@ -21,6 +31,13 @@ AVAILABLE_METRICS = [
     TER,
     # Prism,
     GLEU,
+    ROUGEOne, 
+    ROUGETwo, 
+    ROUGEL,
+    Accuracy,
+    Precision,
+    Recall,
+    F1Score
 ]
 
 AVAILABLE_NLG_METRICS = [
@@ -29,19 +46,10 @@ AVAILABLE_NLG_METRICS = [
     #BLEURT,
 ]
 
-AVAILABLE_MT_METRICS = [
-    COMET,
-    sacreBLEU,
-    chrF,
-    TER,
-    # Prism,
-    GLEU,
-]
+AVAILABLE_MT_METRICS = [COMET,sacreBLEU,chrF,TER,GLEU] + AVAILABLE_NLG_METRICS
 
-AVAILABLE_SUMMARIZATION_METRICS = []
+AVAILABLE_SUMMARIZATION_METRICS = [ROUGEOne, ROUGETwo, ROUGEL] + AVAILABLE_NLG_METRICS
 
-AVAILABLE_DIALOGUE_METRICS = []
+AVAILABLE_DIALOGUE_METRICS = [sacreBLEU, ROUGEOne, ROUGETwo, ROUGEL] + AVAILABLE_NLG_METRICS
 
-AVAILABLE_CLASSIFICATION_METRICS = [
-    ZeroEdit,
-]
+AVAILABLE_CLASSIFICATION_METRICS = [Accuracy,Precision,Recall,F1Score,ZeroEdit]

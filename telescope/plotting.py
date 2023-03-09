@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import abc
 import os
 from typing import List, Dict
 
@@ -23,7 +22,6 @@ import pandas as pd
 import plotly.figure_factory as ff
 import streamlit as st
 
-from telescope.testset import NLPTestsets
 from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleResult
 
 T1_COLOR = "#2E8B57"
@@ -608,113 +606,3 @@ def plot_multiple_segment_comparison(
 
     if st._is_running_with_streamlit:
         st.altair_chart(c, use_container_width=True)
-
-
-class Plot(metaclass=abc.ABCMeta):
-    def __init__(
-        self,
-        metric: str, 
-        metrics: List[str],
-        available_metrics: dict,
-        results: dict,
-        testsets: NLPTestsets,
-        ref_filename: str
-    ) -> None:
-
-        self.metric = metric
-        self.metrics = metrics
-        self.available_metrics = available_metrics
-        self.results = results
-        self.testsets = testsets
-        self.ref_filename = ref_filename
-
-    @abc.abstractmethod
-    def display_plots(self) -> None:
-        pass
-
-
-class NLGPlot(Plot):
-    def __init__(
-        self,
-        metric:str, 
-        metrics: List[str],
-        available_metrics: dict,
-        results:dict, 
-        testsets: NLPTestsets,
-        ref_filename: str,
-        num_samples: float,
-        sample_ratio: float,
-    ) -> None:
-
-        super().__init__(metric, metrics, available_metrics, results, testsets, ref_filename)
-        self.num_samples = num_samples
-        self.sample_ratio = sample_ratio
-
-
-    def display_plots(self) -> None:
-        if self.metric == "COMET":
-            st.header("Error-type analysis:")
-            plot_bucket_multiple_comparison(self.results[self.metric])
-
-        st.header("Segment-level scores histogram:")
-        plot_multiple_distributions(self.results[self.metric])
-
-        if len(self.results[self.metric].systems_metric_results) > 1:
-
-            st.header("Segment-level comparison:")
-
-            left_1, right_1 = st.columns(2)
-    
-            system_x = left_1.selectbox(
-            "Select the system x:",
-            list(self.results[self.metric].systems_metric_results.keys()),
-            index=0,
-            key = self.ref_filename
-            )
-
-            system_y = right_1.selectbox(
-            "Select the system y:",
-            list(self.results[self.metric].systems_metric_results.keys()),
-            index=1,
-            key = self.ref_filename
-            )
-            if system_x == system_y:
-                st.warning("The system x cannot be the same as system y")
-            
-            else:
-                plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y)
-
-
-
-                #Bootstrap Resampling
-                _, middle, _ = st.columns(3)
-                if middle.button("Perform Bootstrap Resampling",key = self.ref_filename):
-                    st.warning(
-                        "Running metrics for {} partitions of size {}".format(
-                            self.num_samples, self.sample_ratio * len(self.testsets.multiple_testsets[self.ref_filename])
-                        )
-                    )
-                    st.header("Bootstrap resampling results:")
-                    with st.spinner("Running bootstrap resampling..."):
-                        for self.metric in self.metrics:
-                            bootstrap_result = self.available_metrics[self.metric].multiple_bootstrap_resampling(
-                                self.testsets.multiple_testsets[self.ref_filename], int(self.num_samples), 
-                                self.sample_ratio, system_x, system_y, self.results[self.metric])
-
-                            plot_bootstraping_result(bootstrap_result)
-
-
-class ClassificationPlot(Plot):
-    def __init__(
-        self,
-        metric:str, 
-        metrics: List[str],
-        available_metrics: dict,
-        results:dict, 
-        testsets: NLPTestsets,
-        ref_file: str
-    ) -> None:
-        super().__init__(metric, metrics, available_metrics, results, testsets, ref_file)
-    
-    def display_plots(self) -> None:
-        pass

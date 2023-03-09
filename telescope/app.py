@@ -19,13 +19,9 @@ from PIL import Image
 
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleResult
-from telescope.plotting import (
-    plot_bootstraping_result
-)
-from telescope.testset import NLPTestsets
+from telescope.collection_testsets import CollectionTestsets
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
-
 
 @st.cache
 def load_image(image_url):
@@ -110,7 +106,7 @@ def hash_metrics(metrics):
 
 
 @st.cache(
-    hash_funcs={NLPTestsets: NLPTestsets.hash_func},
+    hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
     suppress_st_warning=True,
     show_spinner=False,
     allow_output_mutation=True,
@@ -136,7 +132,7 @@ def apply_filters(testset, filters, ref_name):
 
 
 @st.cache(
-    hash_funcs={NLPTestsets: NLPTestsets.hash_func},
+    hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
     show_spinner=False,
     allow_output_mutation=True,
     ttl=cache_time,
@@ -148,50 +144,53 @@ def run_metric(testset, metric, ref_filename):
         return metric.multiple_comparison(testset)
 
 
-def run_all_metrics(testset, metrics, filters):
+def run_all_metrics(collection_testsets, metrics, filters):
+    refs_names = collection_testsets.refs_names
     if filters:
-        for ref_name in testset.refs_names:
-            corpus_size = len(testset.multiple_testsets[ref_name])
-            testset.multiple_testsets[ref_name] = apply_filters(testset.multiple_testsets[ref_name], filters, ref_name)
-            st.success("Corpus reduced in {:.2f}%".format((1 - (len(testset.multiple_testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name)
+        for ref_name in refs_names:
+            corpus_size = len(collection_testsets.multiple_testsets[ref_name])
+            collection_testsets.multiple_testsets[ref_name] = apply_filters(
+                collection_testsets.multiple_testsets[ref_name], filters, ref_name)
+            st.success("Corpus reduced in {:.2f}%".format(
+                (1 - (len(collection_testsets.multiple_testsets[ref_name]) / corpus_size)) 
+                    * 100) + " for reference " + ref_name)
 
     return {
-        ref_name: {metric: run_metric(testset.multiple_testsets[ref_name], metric, ref_name) for metric in metrics}
-        for ref_name in testset.refs_names
+        ref_name: {metric: run_metric(collection_testsets.multiple_testsets[ref_name], metric, 
+                            ref_name) 
+        for metric in metrics}
+        for ref_name in refs_names
         }
 
 
 # --------------------  APP  --------------------
 
 st.title("Welcome to NLP-Telescope!")
-testsets = available_tasks[task].input_interface()
+collection_testsets = available_tasks[task].input_interface()
 
-if testsets:
+if collection_testsets:
     if metric not in metrics:
         metrics = [
             metric,
         ] + metrics
-    results_per_ref = run_all_metrics(testsets, metrics, filters)
 
-    text = "Systems:\n"
-    for system, index in testsets.systems_indexes.items():
-        text += index + ": " + system + " \n"
-    
-    st.text(text)
+    results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
+
+    collection_testsets.display_systems()
 
     ref_filename = st.selectbox(
-    "Select the reference:",
-    testsets.refs_names,
-    index=0,
-    )
+        "Select the reference:",
+        collection_testsets.refs_names,
+        index=0,
+        )
 
     results = results_per_ref[ref_filename]
 
     if len(results) > 0:
         st.dataframe(MultipleResult.results_to_dataframe(list(results.values()), 
-                                                        testsets.systems_names()))
+                    collection_testsets.indexes_of_systems()))
     
     if metric in results:
         available_tasks[task].plots_interface(metric, metrics, available_metrics,
-                                                results, testsets, ref_filename, 
+                                                results, collection_testsets, ref_filename, 
                                                 num_samples, sample_ratio)

@@ -1,5 +1,5 @@
 import abc
-from telescope.testset import NLPTestsets
+from telescope.collection_testsets import CollectionTestsets
 from telescope.filters import AVAILABLE_NLP_FILTERS
 
 class Task(metaclass=abc.ABCMeta):
@@ -10,13 +10,15 @@ class Task(metaclass=abc.ABCMeta):
     plots = list()
 
     @staticmethod
-    def input_interface() -> NLPTestsets:
+    def input_interface() -> CollectionTestsets:
         """Interface to collect the necessary inputs to realization of the task evaluation."""
-        nlp_testset = NLPTestsets.read_data()
+        nlp_testset = CollectionTestset.read_data()
         return nlp_testset
     
     @staticmethod
     @abc.abstractmethod
-    def plots_interface(metric:str, results:dict, testsets: NLPTestsets, ref_file: str, num_samples: int, sample_ratio: float) -> None:
+    def plots_interface(metric:str, metrics:list, available_metrics:dict, results:dict, 
+                        collection_testsets: CollectionTestsets, ref_file: str, 
+                        num_samples: int, sample_ratio: float) -> None:
         """ Interfave to display the plots"""
         pass
