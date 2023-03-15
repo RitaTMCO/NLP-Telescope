@@ -28,11 +28,12 @@ class Metric(metaclass=abc.ABCMeta):
     name = None
     segment_level = True
 
-    def __init__(self, language: str):
+    def __init__(self, language: str, labels: List[str]):
         if not self.language_support(language):
             raise Exception(f"{language} is not supported by {self.name}.")
         else:
             self.language = language
+        self.labels = labels
 
     @abc.abstractmethod
     def score(self, src: List[str], cand: List[str], ref: List[str]) -> MetricResult:

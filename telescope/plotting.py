@@ -21,11 +21,13 @@ import numpy as np
 import pandas as pd
 import plotly.figure_factory as ff
 import streamlit as st
+import random
 
+from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix
 from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleResult
 
-T1_COLOR = "#2E8B57"
-T2_COLOR = "#9ACD32"
+T1_COLOR = "#9ACD32"
+T2_COLOR = "#00A4FF"
 T3_COLOR = "#F6C575"
 T4_COLOR = "#DB6646"
 
@@ -473,7 +475,7 @@ def update_multiple_buckets(
     return plt
 
 
-def plot_bucket_multiple_comparison(
+def plot_bucket_multiple_comparison_comet(
     multiple_result: MultipleResult, saving_dir: str = None
 ) -> None:
 
@@ -539,6 +541,58 @@ def plot_bucket_multiple_comparison(
         """
         )
 
+
+def plot_bucket_multiple_comparison_bertscore(
+    multiple_result: MultipleResult, saving_dir: str = None
+) -> None:
+
+
+    systems_results_seg_scores = {
+        system: metric_system.seg_scores
+        for system, metric_system in multiple_result.systems_metric_results.items()
+    }
+
+
+    plot = update_multiple_buckets(
+        systems_results_seg_scores,
+        -0.5,
+        0.25,
+        0.75,
+    )
+
+    if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        plot.savefig(saving_dir + "/multiple-bucket-analysis.png")
+
+    if st._is_running_with_streamlit:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            red_bucket = st.slider(
+                "Red bucket max treshold", -1.0, 0.0, value=-0.5, step=0.05, key=f"{multiple_result.ref}"
+            )
+
+        with col2:
+            yellow_bucket = st.slider(
+                "Yellow bucket max treshold", red_bucket, 0.5, value=0.0, step=0.05, key=f"{multiple_result.ref}"
+            )
+
+        with col3:
+            blue_bucket = st.slider(
+                "Blue bucket max treshold", yellow_bucket, 1.0, value=0.75, step=0.05, key=f"{multiple_result.ref}"
+            )
+
+        st.pyplot(
+            update_multiple_buckets(
+                systems_results_seg_scores,
+                red_bucket,
+                yellow_bucket,
+                blue_bucket,
+            )
+        )
+        plt.clf()
+
+
 def plot_multiple_distributions(
     multiple_result: MultipleResult, saving_dir: str = None
 ) -> None:
@@ -563,7 +617,7 @@ def plot_multiple_distributions(
 
 
 def plot_multiple_segment_comparison(
-    multiple_result: MultipleResult, system_x:str, system_y:str, saving_dir: str = None
+    multiple_result: MultipleResult, system_x:str, system_y:str, saving_dir: str = None, source: bool = False
 ) -> None:
 
     scores = np.array(
@@ -573,30 +627,53 @@ def plot_multiple_segment_comparison(
     chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
 
     chart_data["difference"] = np.absolute(scores[:, 0] - scores[:, 1])
-    chart_data["source"] = multiple_result.src
+    if source:
+        chart_data["source"] = multiple_result.src
     chart_data["reference"] = multiple_result.ref
     chart_data["x"] = multiple_result.systems_metric_results[system_x].seg_scores
     chart_data["y"] = multiple_result.systems_metric_results[system_y].seg_scores
 
-    c = (
-        alt.Chart(chart_data, width="container")
-        .mark_circle()
-        .encode(
-            x="x_score",
-            y="y_score",
-            size="difference",
-            color=alt.Color("difference"),
-            tooltip=[
-                "x",
-                "y",
-                "reference",
-                "difference",
-                "source",
-                "x_score",
-                "y_score",
-            ],
+    if source:
+        c = (
+            alt.Chart(chart_data, width="container")
+            .mark_circle()
+            .encode(
+                x="x_score",
+                y="y_score",
+                size="difference",
+                color=alt.Color("difference"),
+                tooltip=[
+                    "x",
+                    "y",
+                    "reference",
+                    "difference",
+                    "source",
+                    "x_score",
+                    "y_score",
+                ],
+            )
         )
-    )
+    
+    else:
+        c = (
+            alt.Chart(chart_data, width="container")
+            .mark_circle()
+            .encode(
+                x="x_score",
+                y="y_score",
+                size="difference",
+                color=alt.Color("difference"),
+                tooltip=[
+                    "x",
+                    "y",
+                    "reference",
+                    "difference",
+                    "x_score",
+                    "y_score",
+                ],
+            )
+        )
+
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
@@ -606,3 +683,94 @@ def plot_multiple_segment_comparison(
 
     if st._is_running_with_streamlit:
         st.altair_chart(c, use_container_width=True)
+
+def overall_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str]):    
+    matrix = confusion_matrix(true, pred, labels=labels)
+    df = pd.DataFrame(matrix, index=labels, columns= labels)
+    st.dataframe(df)
+
+def singular_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str], label: List[str]):    
+    matrix = multilabel_confusion_matrix(true, pred, labels=labels)
+    index = labels.index(label)
+    name = ["other labels"] + [label] 
+    df = pd.DataFrame(matrix[index], index=name, columns=name)
+    st.dataframe(df)
+
+def incorrect_examples(src: List[str], true: List[str], pred: List[str]):
+    n = len(true)
+    num = int(n/4) + 1
+    incorrect_ids = list()
+    table = list()
+
+    ids = random.sample(range(n),n)
+    
+    for i in ids:
+        if true[i] != pred[i]:
+            incorrect_ids.append("line " + str(i))
+            table.append([src[i], true[i], pred[i]])
+        if len(incorrect_ids) == num:
+            break
+    
+    if len(incorrect_ids) == 0:
+        st.warning("There are no examples that are incorrectly labelled")
+    else:
+        df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"])
+        st.dataframe(df)
+
+def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: List[str], labels:List[str]):
+    number_of_systems = len(systems_indexes)
+    number_of_labels = len(labels)
+    seg_scores_label = list(seg_scores_dict.values())
+    names = tuple(systems_indexes)
+
+    ratio = int((number_of_systems)/2)
+    r = [i* (number_of_systems) for i in range(number_of_systems)]
+
+    barWidth = 0.85 + ratio
+    font=20
+    color = "black"
+
+    plt.figure(figsize=(12+ratio,10+ratio))
+    plt.clf()
+
+    axs = [plt.bar(r, seg_scores_label[0], edgecolor="white", width=barWidth)]
+
+    for i in range(1, number_of_labels):
+        bottom = sum(seg_scores_label[:i])
+        axs.append(plt.bar(r, seg_scores_label[i], bottom=bottom, edgecolor="white", 
+                        width=barWidth))
+
+
+    for i in range(number_of_systems):
+        for ax in axs:
+            h = ax[i].get_height()
+            plt.text(
+            ax[i].get_x() + ax[i].get_width() / 2.0,
+            h / 2.0 + ax[i].get_y(),
+            "{:.2f}".format(h),
+            ha="center",
+            va="center",
+            color=color,
+            fontsize=font,
+            )
+    
+    plt.xticks(r, names,fontsize=18)
+    plt.yticks(fontsize=22)
+    plt.xlabel("Model",fontsize=22)
+    plt.ylabel("Score",fontsize=22)
+    plt.legend(labels)
+
+    return plt
+
+
+
+def analysis_labels(result: MultipleResult, labels:List[str]):
+    systems_indexes = list(result.systems_metric_results.keys())
+    seg_scores_list = [result_sys.seg_scores 
+                for result_sys in list(result.systems_metric_results.values())]
+    seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
+                for i, label in enumerate(labels)}
+
+    plt = analysis_labels_bucket(seg_scores_dict, systems_indexes, labels)
+    st.pyplot(plt)
+    plt.clf()

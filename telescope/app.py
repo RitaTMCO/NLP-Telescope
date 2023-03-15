@@ -138,9 +138,9 @@ def apply_filters(testset, filters, ref_name):
     ttl=cache_time,
     max_entries=cache_max_entries,
 )
-def run_metric(testset, metric, ref_filename):
+def run_metric(testset, metric, ref_filename, labels):
     with st.spinner(f"Running {metric} for reference {ref_filename}..."):
-        metric = available_metrics[metric](language=testset.target_language)
+        metric = available_metrics[metric](language=testset.target_language, labels=labels)
         return metric.multiple_comparison(testset)
 
 
@@ -157,7 +157,7 @@ def run_all_metrics(collection_testsets, metrics, filters):
 
     return {
         ref_name: {metric: run_metric(collection_testsets.multiple_testsets[ref_name], metric, 
-                            ref_name) 
+                            ref_name, collection_testsets.labels) 
         for metric in metrics}
         for ref_name in refs_names
         }
@@ -192,5 +192,5 @@ if collection_testsets:
     
     if metric in results:
         available_tasks[task].plots_interface(metric, metrics, available_metrics,
-                                                results, collection_testsets, ref_filename, 
+                                                results, collection_testsets, ref_filename,
                                                 num_samples, sample_ratio)

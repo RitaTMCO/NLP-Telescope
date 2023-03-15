@@ -5,9 +5,14 @@ from typing import List, Dict
 from telescope.collection_testsets import CollectionTestsets
 from telescope.plotting import (
     plot_bootstraping_result,
-    plot_bucket_multiple_comparison,
+    plot_bucket_multiple_comparison_comet,
+    plot_bucket_multiple_comparison_bertscore,
     plot_multiple_distributions,
     plot_multiple_segment_comparison,
+    overall_confusion_matrix_table,
+    singular_confusion_matrix_table,
+    analysis_labels,
+    incorrect_examples
 )
 
 class Plot(metaclass=abc.ABCMeta):
@@ -18,7 +23,8 @@ class Plot(metaclass=abc.ABCMeta):
         available_metrics: dict,
         results: dict,
         collection_testsets: CollectionTestsets,
-        ref_filename: str
+        ref_filename: str,
+        task: str
     ) -> None:
 
         self.metric = metric
@@ -27,6 +33,7 @@ class Plot(metaclass=abc.ABCMeta):
         self.results = results
         self.collection_testsets = collection_testsets
         self.ref_filename = ref_filename
+        self.task = task
 
     @abc.abstractmethod
     def display_plots(self) -> None:
@@ -42,11 +49,12 @@ class NLGPlot(Plot):
         results:dict, 
         collection_testsets: CollectionTestsets,
         ref_filename: str,
+        task: str,
         num_samples: float,
         sample_ratio: float,
     ) -> None:
 
-        super().__init__(metric, metrics, available_metrics, results, collection_testsets, ref_filename)
+        super().__init__(metric, metrics, available_metrics, results, collection_testsets, ref_filename, task)
         self.num_samples = num_samples
         self.sample_ratio = sample_ratio
 
@@ -54,7 +62,11 @@ class NLGPlot(Plot):
     def display_plots(self) -> None:
         if self.metric == "COMET":
             st.header("Error-type analysis:")
-            plot_bucket_multiple_comparison(self.results[self.metric])
+            plot_bucket_multiple_comparison_comet(self.results[self.metric])
+        
+        if self.metric == "BERTScore":
+            st.header("Bucket analysis:")
+            plot_bucket_multiple_comparison_bertscore(self.results[self.metric])
 
         if len(self.collection_testsets.multiple_testsets[self.ref_filename]) > 1:
             st.header("Segment-level scores histogram:")
@@ -82,9 +94,11 @@ class NLGPlot(Plot):
             if system_x == system_y:
                 st.warning("The system x cannot be the same as system y")
             
+            elif self.task == "machine translation":
+                plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y,True)
+            
             else:
                 plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y)
-
 
                 #Bootstrap Resampling
                 _, middle, _ = st.columns(3)
@@ -112,9 +126,47 @@ class ClassificationPlot(Plot):
         available_metrics: dict,
         results:dict, 
         collection_testsets: CollectionTestsets,
-        ref_file: str
+        ref_filename: str,
+        task: str
     ) -> None:
-        super().__init__(metric, metrics, available_metrics, results, collection_testsets, ref_file)
+        super().__init__(metric, metrics, available_metrics, results, collection_testsets, ref_filename, task)
     
     def display_plots(self) -> None:
-        pass
+
+        testset = self.collection_testsets.multiple_testsets[self.ref_filename]
+        labels = self.collection_testsets.labels
+
+        st.header("Confusion Matrix")
+        system_1 = st.selectbox(
+            "Select the system:",
+            list(self.collection_testsets.indexes_of_systems()),
+            index=0
+        )
+
+        st.subheader("Overall Confusion Matrix")
+        pred = testset.systems_output[system_1]
+        overall_confusion_matrix_table(testset.ref,pred,labels)
+
+        st.subheader("Confusion Matrix For Each Label")
+        label = st.selectbox(
+            "Select the label:",
+            list(labels),
+            index=0,
+            key = "confusion_matrix"
+        )
+        singular_confusion_matrix_table(testset.ref,pred,labels,label)
+
+
+        st.header("Analysis Of Each Label")
+        analysis_labels(self.results[self.metric], labels)
+
+
+        st.header("Examples That Are Incorrectly Labelled")
+        system_1 = st.selectbox(
+            "Select the system:",
+            list(self.collection_testsets.indexes_of_systems()),
+            index=0,
+            key = "examples"
+        )
+        pred = testset.systems_output[system_1]
+        incorrect_examples(testset.src, testset.ref,pred)

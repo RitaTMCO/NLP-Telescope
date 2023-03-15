@@ -16,9 +16,9 @@ class Classification(Task):
         return class_testset
     
     @staticmethod
-    def plots_interface(metric:str, metrics:list, available_metrics:dict, results:dict, 
-                        collection_testsets: CollectionTestsets, ref_file: str, 
+    def plots_interface(cls, metric:str, metrics:list, available_metrics:dict, results:dict, 
+                        collection_testsets: CollectionTestsets, ref_file: str,
                         num_samples: int, sample_ratio: float) -> None:
         """ Interfave to display the plots"""
         return ClassificationPlot(metric,metrics,available_metrics,
-                                    results,collection_testsets,ref_file).display_plots()
+                                    results,collection_testsets,ref_file,cls.name).display_plots()

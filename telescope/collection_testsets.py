@@ -12,7 +12,8 @@ class CollectionTestsets:
         systems_indexes: Dict[str, str],
         filenames: List[str],
         multiple_testsets: List[MultipleTestset],
-        language_pair: str
+        language_pair: str,
+        labels: List[str]
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
@@ -20,7 +21,7 @@ class CollectionTestsets:
         self.filenames = filenames
         self.multiple_testsets = multiple_testsets
         self.language_pair = language_pair
-
+        self.labels = labels
 
     def indexes_of_systems(self) -> List[str]:
         return list(self.systems_indexes.keys())
@@ -59,14 +60,14 @@ class CollectionTestsets:
             len(system_x), len(ref))
     
     @staticmethod
-    def upload_files(task:str, type_of_output:str) -> list:
+    def upload_files(task:str, source:str, reference:str, type_of_output:str) -> list:
         st.subheader("Upload Files for " + task + " analysis:")
         
-        source_file = st.file_uploader("Upload Sources", type=["txt"])
+        source_file = st.file_uploader("Upload " + source, type=["txt"])
         sources = read_lines(source_file)
 
 
-        ref_files = st.file_uploader("Upload References", type=["txt"], 
+        ref_files = st.file_uploader("Upload " + reference, type=["txt"], 
                     accept_multiple_files=True)
         references = {}
         for ref_file in ref_files:
@@ -74,8 +75,8 @@ class CollectionTestsets:
                 references[ref_file.name] = read_lines(ref_file)
 
 
-        outputs_files = st.file_uploader("Upload Systems " + type_of_output, 
-                        type=["txt"], accept_multiple_files=True)
+        outputs_files = st.file_uploader("Upload " + type_of_output,  type=["txt"], 
+                                    accept_multiple_files=True)
         systems_indexes, outputs = {}, {}
         i = 1
         for output_file in outputs_files:
@@ -89,19 +90,25 @@ class CollectionTestsets:
                 outputs]
     
     @staticmethod
-    def upload_language(files:list) -> str:
-
+    def upload_language() -> str:
         language_pair = ""
-        source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
-        
         language = st.text_input(
             "Please input the language of the files to analyse (e.g. 'en'):",
             "",
         )
-
         if (language != ""):
             language_pair = language + "-" + language
         return language_pair
+    
+    def upload_labels() -> List[str]:
+        labels_list = list()
+        labels = st.text_input(
+            "Please input the existing labels separated by commas (e.g. 'positive,negative,neutral'):",
+            "",
+        )
+        if (labels != ""):
+            labels_list = list(set(labels.split(",")))
+        return labels_list
     
     @staticmethod
     def create_multiple_testsets(files:list, language_pair:str) -> Dict[str, MultipleTestset]:
@@ -115,33 +122,23 @@ class CollectionTestsets:
 
     @classmethod
     def read_data(cls):
-        files = CollectionTestsets.upload_files("NLP", "Outputs")
-
-        language_pair = CollectionTestsets.upload_language(files)
+        files = cls.upload_files("NLP", "Source", "References", "Systems Outputs")
         
         source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
 
-        if ((ref_files != []) 
-            and (source_file is not None) 
-            and (outputs_files != []) 
-            and (language_pair != "")):
+        if ((ref_files != []) and (source_file is not None) and (outputs_files != [])):
 
-            CollectionTestsets.validate_files(sources,references,systems_indexes,output)
+            cls.validate_files(sources,references,systems_indexes,output)
+            st.success("Source, References and Outputs were successfully uploaded!")
 
-            st.success("Source, References, Outputs and Language were successfully uploaded!")
-
-            multiple_testsets = CollectionTestsets.create_multiple_testsets(files, 
-                                                language_pair)
+            multiple_testsets = cls.create_multiple_testsets(files,"X-X")
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                multiple_testsets, language_pair)
+                multiple_testsets, "X-X", [""])
 
 
 class MTTestsets(CollectionTestsets):
-    task = "Machine Translation"
-    type_of_output = "Translations"
-
     def __init__(
         self,
         src_name: str,
@@ -152,12 +149,10 @@ class MTTestsets(CollectionTestsets):
         language_pair: str,
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets, 
-                        language_pair)
+                        language_pair, [""])
     
     @staticmethod
-    def upload_language(files:list):
-        source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
-        
+    def upload_language():
         language_pair = st.text_input(
             "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
             "",
@@ -167,9 +162,10 @@ class MTTestsets(CollectionTestsets):
     @classmethod
     def read_data(cls):
 
-        files = MTTestsets.upload_files("Machine Translation", "Translations")
+        files = cls.upload_files("Machine Translation", "Source", "References", 
+                            "Systems Translations")
         
-        language_pair = MTTestsets.upload_language(files)
+        language_pair = cls.upload_language()
 
         source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
 
@@ -178,11 +174,11 @@ class MTTestsets(CollectionTestsets):
             and (outputs_files != []) 
             and (language_pair != "")):
 
-            MTTestsets.validate_files(sources,references,systems_indexes,outputs)
+            cls.validate_files(sources,references,systems_indexes,outputs)
 
             st.success("Source, References, Translations and LP were successfully uploaded!")
             
-            multiple_testsets = MTTestsets.create_multiple_testsets(files, language_pair)
+            multiple_testsets = cls.create_multiple_testsets(files, language_pair)
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
@@ -202,7 +198,7 @@ class SummTestsets(CollectionTestsets):
         language_pair: str
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets,
-                        language_pair)
+                        language_pair, [""])
         
     @staticmethod
     def validate_files(src,refs,systems_indexes,outputs):
@@ -227,9 +223,9 @@ class SummTestsets(CollectionTestsets):
     
     @classmethod
     def read_data(cls):
-        files = SummTestsets.upload_files("Summarization", "Summaries")
+        files = cls.upload_files("Summarization", "Source", "References", "Systems Summaries")
 
-        language_pair = SummTestsets.upload_language(files)
+        language_pair = cls.upload_language()
         
         source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
 
@@ -238,11 +234,11 @@ class SummTestsets(CollectionTestsets):
             and (outputs_files != []) 
             and (language_pair != "")):
 
-            SummTestsets.validate_files(sources,references,systems_indexes,outputs)
+            cls.validate_files(sources,references,systems_indexes,outputs)
 
             st.success("Source, References, Summaries and Language were successfully uploaded!")
 
-            multiple_testsets = SummTestsets.create_multiple_testsets(files, language_pair)
+            multiple_testsets = cls.create_multiple_testsets(files, language_pair)
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
@@ -252,9 +248,6 @@ class SummTestsets(CollectionTestsets):
 
 
 class DialogueTestsets(CollectionTestsets):
-    task = "Dialogue System"
-    type_of_output = "Dialogues"
-
     def __init__(
         self,
         src_name: str,
@@ -265,13 +258,35 @@ class DialogueTestsets(CollectionTestsets):
         language_pair: str
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets,
-                        language_pair)
-    
+                        language_pair, [" "])
+   
+    @staticmethod
+    def validate_files(src,refs,systems_indexes,outputs):
+        refs_name = list(refs.keys())
+        refs_list = list(refs.values())
+        systems_index = list(outputs.keys())
+        output_list = list(outputs.values())
+
+        ref_name = refs_name[0]
+        ref = refs_list[0]
+        x_name = systems_indexes[systems_index[0]]
+        system_x = output_list[0]
+
+        for name, text in zip(refs_name[1:], refs_list[1:]):
+           assert len(ref) == len(text), "mismatch between reference {} and reference {} ({} > {})".format(
+                ref_name, name, len(ref), len(text))
+        for y_index, system_y in zip(systems_index[1:], output_list[1:]):
+           assert len(system_x) == len(system_y), "mismatch between system {} and system {} ({} > {})".format(
+                x_name, systems_indexes[y_index], len(system_x), len(system_y))
+        assert len(system_x) == len(ref), "mismatch between systems and references ({} > {})".format(
+            len(system_x), len(ref))
+
     @classmethod
     def read_data(cls):
-        files = DialogueTestsets.upload_files("Dialogue System", "Dialogues")
+        files = cls.upload_files("Dialogue System", "Context", "References",
+                            "Systems Answers")
 
-        language_pair = DialogueTestsets.upload_language(files)
+        language_pair = cls.upload_language()
         
         source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
 
@@ -280,11 +295,11 @@ class DialogueTestsets(CollectionTestsets):
             and (outputs_files != []) 
             and (language_pair != "")):
 
-            DialogueTestsets.validate_files(sources,references,systems_indexes,output)
+            cls.validate_files(sources,references,systems_indexes,outputs)
 
             st.success("Source, References, Dialogues and Language were successfully uploaded!")
 
-            multiple_testsets = DialogueTestsets.create_multiple_testsets(files, language_pair)
+            multiple_testsets = cls.create_multiple_testsets(files, language_pair)
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
@@ -299,30 +314,30 @@ class ClassTestsets(CollectionTestsets):
         systems_indexes: Dict[str, str],
         filenames: List[str],
         multiple_testsets: List[MultipleTestset],
-        language_pair: str
+        labels: List[str]
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets,
-                        language_pair)
+                        "X-X", labels)
     
     @classmethod
     def read_data(cls):
-        files = ClassTestsets.upload_files("Classification", "Classifications")
-
-        language_pair = ClassTestsets.upload_language(files)
+        files = cls.upload_files("Classification", "Samples", "True Labels", 
+                        "Systems Predicated Labels")
         
         source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
 
+        labels = cls.upload_labels()
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (language_pair != "")):
+            and (labels != [])):
 
-            ClassTestsets.validate_files(sources,references,systems_indexes,outputs)
+            cls.validate_files(sources,references,systems_indexes,outputs)
 
-            st.success("Source, References, Classifications and Language were successfully uploaded!")
+            st.success("Source and Labels were successfully uploaded!")
 
-            multiple_testsets = ClassTestsets.create_multiple_testsets(files, language_pair)
+            multiple_testsets = cls.create_multiple_testsets(files, "X-X")
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                multiple_testsets, language_pair)
+                multiple_testsets, labels)
