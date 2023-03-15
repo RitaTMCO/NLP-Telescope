@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-from typing import List
+from typing import List, Dict
 
 import altair as alt
 import matplotlib.pyplot as plt
@@ -22,7 +22,7 @@ import pandas as pd
 import plotly.figure_factory as ff
 import streamlit as st
 
-from telescope.metrics.result import BootstrapResult, PairwiseResult
+from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleResult
 
 T1_COLOR = "#2E8B57"
 T2_COLOR = "#9ACD32"
@@ -324,3 +324,285 @@ def plot_bootstraping_result(bootstrap_result: BootstrapResult):
     )
     df = pd.DataFrame(data)
     st.dataframe(df)
+
+
+
+###################################################
+############| Plots for N systems |################
+###################################################
+
+def update_multiple_buckets(
+    systems_results_seg_scores: Dict[str, List[float]],
+    crit_err_thr: float = 0.0,
+    major_err_thr: float = 0.3,
+    minor_err_thr: float = 0.6,
+):
+
+    systems_indexes = list(systems_results_seg_scores.keys())
+    number_of_systems = len(systems_results_seg_scores)
+    total = len(list(systems_results_seg_scores.values())[0])
+
+    no_err, minor_err, major_err, crit_err = {}, {}, {}, {}
+
+    for system, seg_scores in systems_results_seg_scores.items():
+        n_no_err = 0
+        n_minor_err = 0
+        n_major_err = 0
+        n_crit_err = 0
+
+        for score in seg_scores:
+            if score >= minor_err_thr:
+                n_no_err += 1
+            elif score >= major_err_thr:
+                n_minor_err += 1
+            elif score >= crit_err_thr:
+                n_major_err += 1
+            else:
+                n_crit_err += 1
+
+        assert (
+        total
+        == (n_no_err + n_minor_err + n_major_err + n_crit_err)
+        )
+
+        n_no_err = (n_no_err / total) * 100
+        n_minor_err = (n_minor_err / total) * 100
+        n_major_err = (n_major_err / total) * 100
+        n_crit_err = (n_crit_err / total) * 100
+
+        no_err.update({system:n_no_err})
+        minor_err.update({system:n_minor_err})
+        major_err.update({system:n_major_err})
+        crit_err.update({system:n_crit_err})
+
+    ratio = int((number_of_systems)/2)
+
+    r = [i* (number_of_systems) for i in range(number_of_systems)]
+
+    plt.figure(figsize=(12+ratio,10+ratio))
+    
+    raw_data = {
+        "T4Bars": list(crit_err.values()),
+        "T3Bars": list(major_err.values()),
+        "T2Bars": list(minor_err.values()),
+        "T1Bars": list(no_err.values()),
+    }
+    df = pd.DataFrame(raw_data)
+
+    T4Bars = raw_data["T4Bars"]
+    T3Bars = raw_data["T3Bars"]
+    T2Bars = raw_data["T2Bars"]
+    T1Bars = raw_data["T1Bars"]
+
+    # plot
+    barWidth = 0.85 + ratio
+    font=20
+    color = "black"
+    names = tuple(systems_indexes)
+    plt.clf()
+    
+    ax1 = plt.bar(r, T4Bars, color=T4_COLOR, edgecolor="white", width=barWidth)
+    ax2 = plt.bar(
+        r, T3Bars, bottom=T4Bars, color=T3_COLOR, edgecolor="white", width=barWidth
+    )
+    ax3 = plt.bar(
+        r,
+        T2Bars,
+        bottom=[i + j for i, j in zip(T4Bars, T3Bars)],
+        color=T2_COLOR,
+        edgecolor="white",
+        width=barWidth,
+    )
+    ax4 = plt.bar(
+        r,
+        T1Bars,
+        bottom=[i + j + k for i, j, k in zip(T4Bars, T3Bars, T2Bars)],
+        color=T1_COLOR,
+        edgecolor="white",
+        width=barWidth,
+    )
+
+    for r1, r2, r3, r4 in zip(ax1, ax2, ax3, ax4):
+        h1 = r1.get_height()
+        h2 = r2.get_height()
+        h3 = r3.get_height()
+        h4 = r4.get_height()
+
+        plt.text(
+            r1.get_x() + r1.get_width() / 2.0,
+            h1 / 2.0,
+            "{:.2f}".format(h1),
+            ha="center",
+            va="center",
+            color=color,
+            fontsize=font,
+        )
+        plt.text(
+            r2.get_x() + r2.get_width() / 2.0,
+            h1 + h2 / 2.0,
+            "{:.2f}".format(h2),
+            ha="center",
+            va="center",
+            color=color,
+            fontsize=font,
+        )
+        plt.text(
+            r3.get_x() + r3.get_width() / 2.0,
+            h1 + h2 + h3 / 2.0,
+            "{:.2f}".format(h3),
+            ha="center",
+            va="center",
+            color=color,
+            fontsize=font,
+        )
+        plt.text(
+            r4.get_x() + r4.get_width() / 2.0,
+            h1 + h2 + h3 + h4 / 2.0,
+            "{:.2f}".format(h4),
+            ha="center",
+            va="center",
+            color=color,
+            fontsize=font,
+        )
+
+    # Custom x axis
+    plt.xticks(r, names,fontsize=18)
+    plt.yticks(fontsize=22)
+    plt.xlabel("Model",fontsize=22)
+
+    return plt
+
+
+def plot_bucket_multiple_comparison(
+    multiple_result: MultipleResult, saving_dir: str = None
+) -> None:
+
+
+    systems_results_seg_scores = {
+        system: metric_system.seg_scores
+        for system, metric_system in multiple_result.systems_metric_results.items()
+    }
+
+    min_score = min(
+        [ min(seg_scores) 
+        for seg_scores in list(systems_results_seg_scores.values())
+        ]
+    )
+
+    plot = update_multiple_buckets(
+        systems_results_seg_scores,
+        0.1,
+        0.3,
+        0.7,
+    )
+
+    if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        plot.savefig(saving_dir + "/multiple-bucket-analysis.png")
+
+    if st._is_running_with_streamlit:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            red_bucket = st.slider(
+                "Red bucket max treshold", min_score, 0.3, value=0.1, step=0.1, key=f"{multiple_result.ref}"
+            )
+
+        with col2:
+            yellow_bucket = st.slider(
+                "Yellow bucket max treshold", red_bucket, 0.5, value=0.3, step=0.1, key=f"{multiple_result.ref}"
+            )
+
+        with col3:
+            blue_bucket = st.slider(
+                "Blue bucket max treshold", yellow_bucket, 0.8, value=0.7, step=0.1, key=f"{multiple_result.ref}"
+            )
+
+        right, left = st.columns(2)
+        left.pyplot(
+            update_multiple_buckets(
+                systems_results_seg_scores,
+                red_bucket,
+                yellow_bucket,
+                blue_bucket,
+            )
+        )
+        plt.clf()
+        right.markdown(
+            """
+        The bucket analysis separates translations according to 4 different categories:
+            
+        - **Green bucket:** Translations without errors.
+        - **Blue bucket:** Translations with minor errors.
+        - **Yellow bucket:** Translations with major errors.
+        - **Red bucket:** Translations with critical errors.
+        """
+        )
+
+def plot_multiple_distributions(
+    multiple_result: MultipleResult, saving_dir: str = None
+) -> None:
+    scores_list = [
+        metric_system.seg_scores 
+        for metric_system in list(multiple_result.systems_metric_results.values())]
+
+    scores = np.array(scores_list).T
+    hist_data = [scores[:, i] for i in range(scores.shape[1])]
+    fig = ff.create_distplot(
+        hist_data,
+        list(multiple_result.systems_metric_results.keys()),
+        bin_size=[0.1 for _ in range(scores.shape[1])],
+    )
+    if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        fig.write_html(saving_dir + "/multiple-scores-distribution.html")
+
+    if st._is_running_with_streamlit:
+        st.plotly_chart(fig)
+
+
+def plot_multiple_segment_comparison(
+    multiple_result: MultipleResult, system_x:str, system_y:str, saving_dir: str = None
+) -> None:
+
+    scores = np.array(
+        [multiple_result.systems_metric_results[system_x].seg_scores, 
+        multiple_result.systems_metric_results[system_y].seg_scores]
+    ).T
+    chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
+
+    chart_data["difference"] = np.absolute(scores[:, 0] - scores[:, 1])
+    chart_data["source"] = multiple_result.src
+    chart_data["reference"] = multiple_result.ref
+    chart_data["x"] = multiple_result.systems_metric_results[system_x].seg_scores
+    chart_data["y"] = multiple_result.systems_metric_results[system_y].seg_scores
+
+    c = (
+        alt.Chart(chart_data, width="container")
+        .mark_circle()
+        .encode(
+            x="x_score",
+            y="y_score",
+            size="difference",
+            color=alt.Color("difference"),
+            tooltip=[
+                "x",
+                "y",
+                "reference",
+                "difference",
+                "source",
+                "x_score",
+                "y_score",
+            ],
+        )
+    )
+    if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        c.properties(width=1300, height=600).save(
+            saving_dir + "/multiple-segment-comparison.html", format="html"
+        )
+
+    if st._is_running_with_streamlit:
+        st.altair_chart(c, use_container_width=True)
