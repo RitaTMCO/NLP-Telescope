@@ -15,7 +15,7 @@ class Classification(Task):
         class_testset = ClassTestsets.read_data()
         return class_testset
     
-    @staticmethod
+    @classmethod
     def plots_interface(cls, metric:str, metrics:list, available_metrics:dict, results:dict, 
                         collection_testsets: CollectionTestsets, ref_file: str,
                         num_samples: int, sample_ratio: float) -> None:

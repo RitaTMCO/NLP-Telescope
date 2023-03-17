@@ -14,7 +14,7 @@ class Task(metaclass=abc.ABCMeta):
         """Interface to collect the necessary inputs to realization of the task evaluation."""
         nlp_testset = CollectionTestset.read_data()
         return nlp_testset
-    
+        
     @classmethod
     @abc.abstractmethod
     def plots_interface(cls,metric:str, metrics:list, available_metrics:dict, results:dict, 

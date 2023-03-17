@@ -184,7 +184,7 @@ class Metric(metaclass=abc.ABCMeta):
                     sum(reduces_y_scr) / len(reduces_y_scr),
                 )
             else:
-                result = cls(testset.target_language).multiple_comparison(
+                result = cls(testset.target_language, [" "]).multiple_comparison(
                     MultipleTestset(
                         reduced_src,
                         reduced_ref,

@@ -16,8 +16,6 @@ class ROUGEL(Metric):
         scores = rouge.get_scores(cand, ref, avg=True)
         segs = rouge.get_scores(cand, ref)
         scores_segs = [score["rouge-l"]["f"] for score in segs]
-        print("--------------------")
-        print(scores_segs)
         
         return ROUGELResult(
             scores["rouge-l"]["f"], scores_segs, src, cand, ref, self.name, 

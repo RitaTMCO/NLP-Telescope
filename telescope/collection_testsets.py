@@ -3,6 +3,7 @@ from telescope.testset import MultipleTestset
 from telescope.utils import read_lines
 
 import streamlit as st
+import click
 
 class CollectionTestsets:
     def __init__(
@@ -136,6 +137,37 @@ class CollectionTestsets:
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
                 multiple_testsets, "X-X", [""])
+    
+    @classmethod
+    def read_cli(cls, source:click.File, system_output:click.File, reference:click.File, 
+            language:str, labels: List[str]):
+        
+        systems_indexes = {}
+        outputs = {}
+        i = 1
+        for sys in system_output:
+            if sys.name not in list(systems_indexes.values()):
+                index = "Sys " + str(i)
+                i += 1
+                systems_indexes[index] = sys.name
+                outputs[index] = [l.strip() for l in sys.readlines()]
+        
+        references = {}
+        for ref in reference:
+            if ref.name not in references:
+                references[ref.name] = [l.strip() for l in ref.readlines()]
+
+        src = [l.strip() for l in source.readlines()]
+        files = [source,src,reference,references,system_output,systems_indexes,outputs]
+
+        multiple_testsets = cls.create_multiple_testsets(files, "X-" + language)
+
+        return cls(source.name, references.keys(), systems_indexes,
+                [source.name] +  list(references.keys()) + list(systems_indexes.values()),
+                multiple_testsets, "X-" + language, labels)
+
+
+
 
 
 class MTTestsets(CollectionTestsets):
@@ -147,6 +179,7 @@ class MTTestsets(CollectionTestsets):
         filenames: List[str],
         multiple_testsets: List[MultipleTestset],
         language_pair: str,
+        labels: List[str]
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets, 
                         language_pair, [""])
@@ -182,7 +215,7 @@ class MTTestsets(CollectionTestsets):
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                multiple_testsets, language_pair)
+                multiple_testsets, language_pair, [""])
     
     
 
@@ -195,10 +228,11 @@ class SummTestsets(CollectionTestsets):
         systems_indexes: Dict[str, str],
         filenames: List[str],
         multiple_testsets: List[MultipleTestset],
-        language_pair: str
+        language_pair: str,
+        labels: List[str]
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets,
-                        language_pair, [""])
+                        language_pair, labels)
         
     @staticmethod
     def validate_files(src,refs,systems_indexes,outputs):
@@ -242,7 +276,7 @@ class SummTestsets(CollectionTestsets):
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                multiple_testsets, language_pair)
+                multiple_testsets, language_pair, [""])
 
     
 
@@ -255,10 +289,11 @@ class DialogueTestsets(CollectionTestsets):
         systems_indexes: Dict[str, str],
         filenames: List[str],
         multiple_testsets: List[MultipleTestset],
-        language_pair: str
+        language_pair: str,
+        labels: List[str]
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets,
-                        language_pair, [" "])
+                        language_pair, labels)
    
     @staticmethod
     def validate_files(src,refs,systems_indexes,outputs):
@@ -303,7 +338,7 @@ class DialogueTestsets(CollectionTestsets):
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                multiple_testsets, language_pair)
+                multiple_testsets, language_pair, [""])
 
 
 class ClassTestsets(CollectionTestsets):
@@ -314,10 +349,11 @@ class ClassTestsets(CollectionTestsets):
         systems_indexes: Dict[str, str],
         filenames: List[str],
         multiple_testsets: List[MultipleTestset],
+        language_pair: str,
         labels: List[str]
     ) -> None:
         super().__init__(src_name, refs_names, systems_indexes, filenames, multiple_testsets,
-                        "X-X", labels)
+                        language_pair, labels)
     
     @classmethod
     def read_data(cls):
@@ -340,4 +376,4 @@ class ClassTestsets(CollectionTestsets):
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                multiple_testsets, labels)
+                multiple_testsets, "X-X", labels)
