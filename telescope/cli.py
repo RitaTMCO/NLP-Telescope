@@ -25,7 +25,7 @@ import json
 import pandas as pd
 
 from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, PairwiseResult
-from telescope.filters import AVAILABLE_FILTERS
+from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.tasks import AVAILABLE_NLG
 from telescope.metrics.result import MultipleResult
 from telescope.testset import PairwiseTestset, MultipleTestset
@@ -42,6 +42,7 @@ from telescope.plotting import (
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
 available_class_metrics = {m.name: m for m in AVAILABLE_CLASSIFICATION_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
+available_class_filters = {f.name: f for f in AVAILABLE_CLASSIFICATION_FILTERS}
 available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG}
 
 
@@ -341,6 +342,27 @@ def seg_metric_in_metrics(seg_metric, metrics):
         )
     return metrics
 
+def apply_filter(ref_name,collection,filter):
+    for ref_name in collection.refs_names:
+        corpus_size = len(collection.multiple_testsets[ref_name])
+        
+        for f in filter:
+            if f != "length":
+                fil = available_filters[f](collection.multiple_testsets[ref_name])
+            else:
+                fil = available_filters["length"](collection.multiple_testsets[ref_name], 
+                        int(length_min_val*100), int(length_max_val*100))
+            collection.multiple_testsets[ref_name].apply_filter(fil)
+
+        if (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100 == 100:
+            click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="green")
+            return
+    
+        click.secho( "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
+            (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name,
+                fg="green" )
+
+
 ###################################################
 ############|Command for N systems|################
 ###################################################
@@ -482,27 +504,7 @@ def n_compare_nlg(
     collection = CollectionTestsets.read_cli(source,system_output,reference,language,
                                                 [" "])
     if filter:
-        for ref_name in collection.refs_names:
-            corpus_size = len(collection.multiple_testsets[ref_name])
-        
-            for f in filter:
-                if f != "length":
-                    fil = available_filters[f](collection.multiple_testsets[ref_name])
-                else:
-                    fil = available_filters["length"](collection.multiple_testsets[ref_name], 
-                            int(length_min_val*100), int(length_max_val*100))
-                collection.multiple_testsets[ref_name].apply_filter(fil)
-
-            if (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100 == 100:
-                click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="green")
-                return
-    
-            click.secho(
-                "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
-                    (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100
-                ) + " for reference " + ref_name,
-                fg="green",
-            )   
+        apply_filter(ref_name,collection,filter)   
 
     metric = seg_metric_in_metrics(seg_metric,metric)
 
@@ -623,7 +625,7 @@ def n_compare_nlg(
 @click.option(
     "--filter",
     "-f",
-    type=click.Choice(list(available_filters.keys())),
+    type=click.Choice(list(available_class_filters.keys())),
     required=False,
     default=[],
     multiple=True,
@@ -656,30 +658,9 @@ def n_compare_classification(
     collection = CollectionTestsets.read_cli(source,system_output,reference,"X-X",
                                                 list(label))
     if filter:
-        for ref_name in collection.refs_names:
-            corpus_size = len(collection.multiple_testsets[ref_name])
-        
-            for f in filter:
-                if f != "length":
-                    fil = available_filters[f](collection.multiple_testsets[ref_name])
-                else:
-                    fil = available_filters["length"](collection.multiple_testsets[ref_name], 
-                            int(length_min_val*100), int(length_max_val*100))
-                collection.multiple_testsets[ref_name].apply_filter(fil)
-
-            if (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100 == 100:
-                click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="green")
-                return
-    
-            click.secho(
-                "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
-                    (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100
-                ) + " for reference " + ref_name,
-                fg="green",
-            )   
+        apply_filter(ref_name,collection,filter)   
 
     metric = seg_metric_in_metrics(seg_metric,metric)
-
 
     text = "\nSystems: \n"
     for index, system in collection.systems_indexes.items():
