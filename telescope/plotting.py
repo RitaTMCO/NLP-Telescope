@@ -774,3 +774,22 @@ def analysis_labels(result: MultipleResult, labels:List[str]):
     plt = analysis_labels_bucket(seg_scores_dict, systems_indexes, labels)
     st.pyplot(plt)
     plt.clf()
+
+
+def analysis_extractive_summarization(src: List[str], system_output: List[str]):
+    output = []
+    left, right = st.columns(2)
+    left.subheader("Source")
+    right.subheader("Output")
+    for seg in src:
+        if seg in system_output:
+            output.append(seg)
+            left.markdown(f'<p style="color:#3d85c6"><b>{seg}<b/></p>', unsafe_allow_html=True)
+        else:
+            left.markdown(seg)
+    
+    for seg in system_output:
+        if seg in output:
+            right.markdown(f'<p style="color:#3d85c6"><b>{seg}<b/></p>', unsafe_allow_html=True)
+        else:
+            right.markdown(seg)

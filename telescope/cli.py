@@ -24,9 +24,9 @@ import click
 import json
 import pandas as pd
 
-from telescope.metrics import AVAILABLE_METRICS, PairwiseResult
+from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, PairwiseResult
 from telescope.filters import AVAILABLE_FILTERS
-from telescope.tasks import AVAILABLE_TASKS
+from telescope.tasks import AVAILABLE_NLG
 from telescope.metrics.result import MultipleResult
 from telescope.testset import PairwiseTestset, MultipleTestset
 from telescope.collection_testsets import CollectionTestsets
@@ -40,8 +40,9 @@ from telescope.plotting import (
 )
 
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
+available_class_metrics = {m.name: m for m in AVAILABLE_CLASSIFICATION_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
-available_tasks = {t.name: t for t in AVAILABLE_TASKS}
+available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG}
 
 
 def readlines(ctx, param, file: click.File) -> List[str]:
@@ -321,6 +322,25 @@ def streamlit(ctx):
     os.system("streamlit run " + script_path)
 
 
+def seg_metric_in_metrics(seg_metric, metrics):
+    if seg_metric not in metrics:
+        metrics = tuple(
+            [
+                seg_metric,
+            ]
+            + list(metrics)
+        )
+    else:
+        metrics = list(metrics)
+        metrics.remove(seg_metric)
+        metrics = tuple(
+            [
+                seg_metric,
+            ]
+            + metrics
+        )
+    return metrics
+
 ###################################################
 ############|Command for N systems|################
 ###################################################
@@ -352,10 +372,9 @@ def streamlit(ctx):
 @click.option(
     "--task",
     "-t",
-    type=click.Choice(list(available_tasks.keys())),
+    type=click.Choice(list(available_nlg_tasks.keys())),
     required=True,
-    multiple=True,
-    help="MT metric to run.",
+    help="NLG to evaluate.",
 )
 @click.option(
     "--language",
@@ -363,14 +382,6 @@ def streamlit(ctx):
     required=False,
     default="X",
     help="Language of the evaluated text.",
-)
-@click.option(
-    "--label",
-    "-l",
-    required=False,
-    default=[" "],
-    multiple=True,
-    help="Existing labels. For the classification task",
 )
 @click.option(
     "--metric",
@@ -407,7 +418,7 @@ def streamlit(ctx):
     "--seg_metric",
     type=click.Choice([m.name for m in available_metrics.values() if m.segment_level]),
     required=False,
-    default="COMET",
+    default="BERTScore",
     help="Segment-level metric to use for segment-level analysis.",
 )
 @click.option(
@@ -425,14 +436,14 @@ def streamlit(ctx):
     "--system_x",
     "-x",
     required=False,
-    help="System X MT outputs for segment-level comparison and bootstrap resampling.",
+    help="System X NLG outputs for segment-level comparison and bootstrap resampling.",
     type=click.File(),
 )
 @click.option(
     "--system_y",
     "-y",
     required=False,
-    help="System Y MT outputs for segment-level comparison and bootstrap resampling.",
+    help="System Y NLG outputs for segment-level comparison and bootstrap resampling.",
     type=click.File(),
 )
 @click.option(
@@ -449,13 +460,12 @@ def streamlit(ctx):
     type=float,
     help="Proportion (P) of the initial sample.",
 )
-def n_compare(
+def n_compare_nlg(
     source: click.File,
     system_output: Tuple[click.File],
     reference: Tuple[click.File],
     task: str,
     language: str,
-    label: Union[Tuple[str], str],
     metric: Union[Tuple[str], str],
     filter: Union[Tuple[str], str],
     length_min_val: float,
@@ -470,7 +480,7 @@ def n_compare(
     system_y: click.File,
 ):  
     collection = CollectionTestsets.read_cli(source,system_output,reference,language,
-                                                list(label))
+                                                [" "])
     if filter:
         for ref_name in collection.refs_names:
             corpus_size = len(collection.multiple_testsets[ref_name])
@@ -494,23 +504,7 @@ def n_compare(
                 fg="green",
             )   
 
-    if seg_metric not in metric:
-        metric = tuple(
-            [
-                seg_metric,
-            ]
-            + list(metric)
-        )
-    else:
-        # Put COMET in first place
-        metric = list(metric)
-        metric.remove(seg_metric)
-        metric = tuple(
-            [
-                seg_metric,
-            ]
-            + metric
-        )
+    metric = seg_metric_in_metrics(seg_metric,metric)
 
 
     text = "\nSystems: \n"
@@ -584,3 +578,128 @@ def n_compare(
             if (seg_level_comparison and (system_x is not None) and (system_y is not None) and system_x.name in list(systems_index.values())
             and system_y.name in list(systems_index.values())):
                 plot_multiple_segment_comparison(results[seg_metric], indexes[0], indexes[1],saving_dir)
+
+
+@telescope.command()
+@click.option(
+    "--source",
+    "-s",
+    required=True,
+    help="Source segments.",
+    type=click.File(),
+)
+@click.option(
+    "--system_output",
+    "-c",
+    required=True,
+    help="System candidate.",
+    type=click.File(),
+    multiple=True,
+)
+@click.option(
+    "--reference",
+    "-r",
+    required=True,
+    help="Reference segments.",
+    type=click.File(),
+    multiple=True,
+)
+@click.option(
+    "--label",
+    "-l",
+    required=False,
+    default=[" "],
+    multiple=True,
+    help="Existing labels"
+)
+@click.option(
+    "--metric",
+    "-m",
+    type=click.Choice(list(available_class_metrics.keys())),
+    required=True,
+    multiple=True,
+    help="Metric to run.",
+)
+@click.option(
+    "--filter",
+    "-f",
+    type=click.Choice(list(available_filters.keys())),
+    required=False,
+    default=[],
+    multiple=True,
+    help="Filter to run.",
+)
+@click.option(
+    "--seg_metric",
+    type=click.Choice([m.name for m in available_class_metrics.values() if m.segment_level]),
+    required=False,
+    default="Accuracy",
+    help="Segment-level metric to use for segment-level analysis.",
+)
+@click.option(
+    "--output_folder",
+    "-o",
+    required=False,
+    default="",
+    callback=output_folder_exists,
+    type=str,
+    help="Folder you wish to use to save plots.",
+)
+def n_compare_classification(
+    source: click.File,
+    system_output: Tuple[click.File],
+    reference: Tuple[click.File],
+    label: Union[Tuple[str], str],
+    metric: Union[Tuple[str], str],
+    filter: Union[Tuple[str], str]
+):  
+    collection = CollectionTestsets.read_cli(source,system_output,reference,"X-X",
+                                                list(label))
+    if filter:
+        for ref_name in collection.refs_names:
+            corpus_size = len(collection.multiple_testsets[ref_name])
+        
+            for f in filter:
+                if f != "length":
+                    fil = available_filters[f](collection.multiple_testsets[ref_name])
+                else:
+                    fil = available_filters["length"](collection.multiple_testsets[ref_name], 
+                            int(length_min_val*100), int(length_max_val*100))
+                collection.multiple_testsets[ref_name].apply_filter(fil)
+
+            if (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100 == 100:
+                click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="green")
+                return
+    
+            click.secho(
+                "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
+                    (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100
+                ) + " for reference " + ref_name,
+                fg="green",
+            )   
+
+    metric = seg_metric_in_metrics(seg_metric,metric)
+
+
+    text = "\nSystems: \n"
+    for index, system in collection.systems_indexes.items():
+        text += index + ": " + system + " \n"
+    
+    click.secho(text, fg="bright_blue")
+
+    systems_index = collection.systems_indexes
+    
+    for ref_filename in list(collection.refs_names):
+        results = {
+            m: available_metrics[m](language=collection.multiple_testsets[ref_filename].target_language).multiple_comparison(
+            collection.multiple_testsets[ref_filename]) for m in metric }
+
+        results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_index)
+
+        click.secho('Reference: ' + ref_filename, fg="yellow")
+
+        for met, systems in results_dicts.items():
+            click.secho("metric: " + str(met), fg="yellow")
+            click.secho("\t" + "systems:", fg="yellow")
+            for sys_name, sys_score in systems.items():
+                click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")

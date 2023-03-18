@@ -12,7 +12,8 @@ from telescope.plotting import (
     overall_confusion_matrix_table,
     singular_confusion_matrix_table,
     analysis_labels,
-    incorrect_examples
+    incorrect_examples,
+    analysis_extractive_summarization
 )
 
 class Plot(metaclass=abc.ABCMeta):
@@ -71,10 +72,23 @@ class NLGPlot(Plot):
         if len(self.collection_testsets.multiple_testsets[self.ref_filename]) > 1:
             st.header("Segment-level scores histogram:")
             plot_multiple_distributions(self.results[self.metric])
+        
+        if self.task == "summarization":
+            testset = self.collection_testsets.multiple_testsets[self.ref_filename]
+            st.header("Extractive Summarization analysis")
+            system_1 = st.selectbox(
+            "Select the system:",
+            list(self.results[self.metric].systems_metric_results.keys()),
+            index=0,
+            key = "extractive_summarization"
+            )
+
+            analysis_extractive_summarization(testset.src, testset.systems_output[system_1])
+
 
         if len(self.results[self.metric].systems_metric_results) > 1:
 
-            st.header("Segment-level comparison:")
+            st.header("Pairwise comparison:")
 
             left_1, right_1 = st.columns(2)
     
@@ -94,11 +108,12 @@ class NLGPlot(Plot):
             if system_x == system_y:
                 st.warning("The system x cannot be the same as system y")
             
-            elif self.task == "machine translation":
-                plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y,True)
-            
             else:
-                plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y)
+                st.subheader("Segment-level comparison:")
+                if self.task == "machine translation":
+                    plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y,True)
+                else:
+                    plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y)
 
                 #Bootstrap Resampling
                 _, middle, _ = st.columns(3)
@@ -108,7 +123,7 @@ class NLGPlot(Plot):
                             self.num_samples, self.sample_ratio * len(self.collection_testsets.multiple_testsets[self.ref_filename])
                         )
                     )
-                    st.header("Bootstrap resampling results:")
+                    st.subheader("Bootstrap resampling results:")
                     with st.spinner("Running bootstrap resampling..."):
                         for self.metric in self.metrics:
                             bootstrap_result = self.available_metrics[self.metric].multiple_bootstrap_resampling(

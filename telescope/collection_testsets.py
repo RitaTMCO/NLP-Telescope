@@ -12,7 +12,7 @@ class CollectionTestsets:
         refs_names: List[str],
         systems_indexes: Dict[str, str],
         filenames: List[str],
-        multiple_testsets: List[MultipleTestset],
+        multiple_testsets: Dict[str, List[MultipleTestset]],
         language_pair: str,
         labels: List[str]
     ) -> None:
@@ -177,7 +177,7 @@ class MTTestsets(CollectionTestsets):
         refs_names: List[str],
         systems_indexes: Dict[str, str],
         filenames: List[str],
-        multiple_testsets: List[MultipleTestset],
+        multiple_testsets: Dict[str, List[MultipleTestset]],
         language_pair: str,
         labels: List[str]
     ) -> None:
@@ -227,7 +227,7 @@ class SummTestsets(CollectionTestsets):
         refs_names: List[str],
         systems_indexes: Dict[str, str],
         filenames: List[str],
-        multiple_testsets: List[MultipleTestset],
+        multiple_testsets: Dict[str, List[MultipleTestset]],
         language_pair: str,
         labels: List[str]
     ) -> None:
@@ -288,7 +288,7 @@ class DialogueTestsets(CollectionTestsets):
         refs_names: List[str],
         systems_indexes: Dict[str, str],
         filenames: List[str],
-        multiple_testsets: List[MultipleTestset],
+        multiple_testsets: Dict[str, List[MultipleTestset]],
         language_pair: str,
         labels: List[str]
     ) -> None:
@@ -348,7 +348,7 @@ class ClassTestsets(CollectionTestsets):
         refs_names: List[str],
         systems_indexes: Dict[str, str],
         filenames: List[str],
-        multiple_testsets: List[MultipleTestset],
+        multiple_testsets: Dict[str, List[MultipleTestset]],
         language_pair: str,
         labels: List[str]
     ) -> None:
