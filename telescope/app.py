@@ -176,7 +176,7 @@ if collection_testsets:
 
     results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
 
-    collection_testsets.display_systems()
+    st.text(collection_testsets.display_systems())
 
     ref_filename = st.selectbox(
         "Select the reference:",

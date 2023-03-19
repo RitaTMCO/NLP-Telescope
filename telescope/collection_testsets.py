@@ -27,11 +27,11 @@ class CollectionTestsets:
     def indexes_of_systems(self) -> List[str]:
         return list(self.systems_indexes.keys())
     
-    def display_systems(self) -> None:
-        text = "Systems:\n"
+    def display_systems(self) -> str:
+        text = "\nSystems:\n"
         for index, system in self.systems_indexes.items():
             text += index + ": " + system + " \n"
-        st.text(text)
+        return text
 
     @staticmethod
     def hash_func(testset):

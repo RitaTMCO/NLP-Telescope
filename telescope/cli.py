@@ -30,13 +30,11 @@ from telescope.tasks import AVAILABLE_NLG
 from telescope.metrics.result import MultipleResult
 from telescope.testset import PairwiseTestset, MultipleTestset
 from telescope.collection_testsets import CollectionTestsets
+from telescope.plot import ClassificationPlot, NLGPlot
 from telescope.plotting import (
     plot_segment_comparison,
-    plot_multiple_segment_comparison,
     plot_pairwise_distributions,
-    plot_multiple_distributions,
     plot_bucket_comparison,
-    plot_bucket_multiple_comparison_comet,
 )
 
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
@@ -323,6 +321,10 @@ def streamlit(ctx):
     os.system("streamlit run " + script_path)
 
 
+###################################################
+############|Commands for N systems|################
+###################################################
+
 def seg_metric_in_metrics(seg_metric, metrics):
     if seg_metric not in metrics:
         metrics = tuple(
@@ -342,7 +344,7 @@ def seg_metric_in_metrics(seg_metric, metrics):
         )
     return metrics
 
-def apply_filter(ref_name,collection,filter):
+def apply_filter(collection,filter,length_min_val,length_max_val):
     for ref_name in collection.refs_names:
         corpus_size = len(collection.multiple_testsets[ref_name])
         
@@ -362,10 +364,44 @@ def apply_filter(ref_name,collection,filter):
             (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name,
                 fg="green" )
 
+def display_table(collection, ref_filename, systems_index, results):
+    
+    language = collection.language_pair.split("-")[1]
+    labels = collection.labels
 
-###################################################
-############|Command for N systems|################
-###################################################
+    results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_index)
+
+    click.secho('Reference: ' + ref_filename, fg="yellow")
+
+    for met, systems in results_dicts.items():
+        click.secho("metric: " + str(met), fg="yellow")
+        click.secho("\t" + "systems:", fg="yellow")
+        for sys_name, sys_score in systems.items():
+            click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
+
+    return results_dicts
+
+def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,num_splits,sample_ratio):
+
+    testset = collection.multiple_testsets[ref_filename]
+    bootstrap_results = []
+
+    for m in metric:
+        bootstrap_results.append(
+            available_metrics[m]
+            .multiple_bootstrap_resampling(testset, num_splits, sample_ratio, system_x,
+                                    system_y, results[m])
+            .stats)
+            
+    bootstrap_results = {k: [dic[k] for dic in bootstrap_results] for k in bootstrap_results[0]}      
+    bootstrap_df = pd.DataFrame.from_dict(bootstrap_results)
+    bootstrap_df.index = metric
+        
+    click.secho("\nBootstrap resampling results:", fg="yellow")
+    click.secho(str(bootstrap_df), fg="yellow")
+
+    return bootstrap_df
+
 
 @telescope.command()
 @click.option(
@@ -401,8 +437,7 @@ def apply_filter(ref_name,collection,filter):
 @click.option(
     "--language",
     "-p",
-    required=False,
-    default="X",
+    required=True,
     help="Language of the evaluated text.",
 )
 @click.option(
@@ -452,7 +487,6 @@ def apply_filter(ref_name,collection,filter):
     type=str,
     help="Folder you wish to use to save plots.",
 )
-@click.option("--seg_level_comparison", is_flag=True)
 @click.option("--bootstrap", is_flag=True)
 @click.option(
     "--system_x",
@@ -497,89 +531,60 @@ def n_compare_nlg(
     bootstrap: bool,
     num_splits: int,
     sample_ratio: float,
-    seg_level_comparison: bool,
     system_x: click.File,
     system_y: click.File,
 ):  
     collection = CollectionTestsets.read_cli(source,system_output,reference,language,
                                                 [" "])
+
+    click.secho(collection.display_systems(), fg="bright_blue")
+
     if filter:
-        apply_filter(ref_name,collection,filter)   
+        apply_filter(collection,filter,length_min_val,length_max_val)   
 
     metric = seg_metric_in_metrics(seg_metric,metric)
-
-
-    text = "\nSystems: \n"
-    for index, system in collection.systems_indexes.items():
-        text += index + ": " + system + " \n"
-    
-    click.secho(text, fg="bright_blue")
-
     systems_index = collection.systems_indexes
-    
-    for ref_filename in list(collection.refs_names):
+    language = collection.language_pair.split("-")[1]
+    labels = collection.labels
+
+    for ref_filename in collection.refs_names:
+        testset = collection.multiple_testsets[ref_filename]
         results = {
-            m: available_metrics[m](language=collection.multiple_testsets[ref_filename].target_language).multiple_comparison(
-            collection.multiple_testsets[ref_filename]) for m in metric }
+            m: available_metrics[m](language=language, labels=labels).multiple_comparison(testset) 
+            for m in metric }
 
-        results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_index)
+        results_dicts = display_table(collection,ref_filename,systems_index,results)
 
-        click.secho('Reference: ' + ref_filename, fg="yellow")
-
-        for met, systems in results_dicts.items():
-            click.secho("metric: " + str(met), fg="yellow")
-            click.secho("\t" + "systems:", fg="yellow")
-            for sys_name, sys_score in systems.items():
-                click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
-
-        bootstrap_df = pd.DataFrame.from_dict({})
-        if (bootstrap and (system_x is not None) and (system_y is not None) 
-        and system_x.name in list(systems_index.values())
-        and system_y.name in list(systems_index.values())):
-
-            indexes = list()
-
-            for index,name in systems_index.items():
-                if system_x.name == name or system_y.name == name:
-                    indexes.append(index)
-
-            bootstrap_results = []
-            for m in metric:
-                bootstrap_results.append(
-                    available_metrics[m]
-                    .multiple_bootstrap_resampling(collection.multiple_testsets[ref_filename], num_splits, sample_ratio, 
-                    indexes[0], indexes[1], results[m])
-                    .stats
-                )
-            bootstrap_results = {
-                k: [dic[k] for dic in bootstrap_results] for k in bootstrap_results[0]
-            }
-            
-            bootstrap_df = pd.DataFrame.from_dict(bootstrap_results)
-            bootstrap_df.index = metric
+        if bootstrap and len(systems_index.values()) > 1: 
+            if (system_x is None) and (system_y is None):
+                x = list(systems_index.keys())[0]
+                y = list(systems_index.keys())[1]
+                bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x,y,num_splits,sample_ratio)
         
-            click.secho("\nBootstrap resampling results:", fg="yellow")
-            click.secho(str(bootstrap_df), fg="yellow")
+            elif system_x.name in list(systems_index.values()) and system_y.name in list(systems_index.values()):
+                indexes = list()
+                for index,name in systems_index.items():
+                    if system_x.name == name or system_y.name == name:
+                        indexes.append(index)
+                    if len(indexes) == 2:
+                        break
+                bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,indexes[0],indexes[1],num_splits,sample_ratio)
         
         if output_folder != "":
             if not output_folder.endswith("/"):
                 output_folder += "/"    
-
             saving_dir = output_folder + ref_filename.replace("/","_") + "/"
-
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
 
             with open(saving_dir + "results.json", "w") as result_file:
                 json.dump(results_dicts, result_file, indent=4)
 
-            bootstrap_df.to_json(saving_dir + "bootstrap_results.json", orient="index", indent=4)
-            plot_bucket_multiple_comparison_comet(results[seg_metric], saving_dir)
-            plot_multiple_distributions(results[seg_metric], saving_dir)
+            if bootstrap and len(systems_index.values()) > 1:
+                bootstrap_df.to_json(saving_dir + "bootstrap_results.json", orient="index", indent=4)
 
-            if (seg_level_comparison and (system_x is not None) and (system_y is not None) and system_x.name in list(systems_index.values())
-            and system_y.name in list(systems_index.values())):
-                plot_multiple_segment_comparison(results[seg_metric], indexes[0], indexes[1],saving_dir)
+            plot = NLGPlot(seg_metric,metric,available_metrics,results,collection,ref_filename,task,num_splits,sample_ratio)
+            plot.display_plots_cli(saving_dir,system_x,system_y)
 
 
 @telescope.command()
@@ -609,8 +614,7 @@ def n_compare_nlg(
 @click.option(
     "--label",
     "-l",
-    required=False,
-    default=[" "],
+    required=True,
     multiple=True,
     help="Existing labels"
 )
@@ -653,34 +657,44 @@ def n_compare_classification(
     reference: Tuple[click.File],
     label: Union[Tuple[str], str],
     metric: Union[Tuple[str], str],
-    filter: Union[Tuple[str], str]
+    filter: Union[Tuple[str], str],
+    seg_metric: str,
+    output_folder: str
 ):  
     collection = CollectionTestsets.read_cli(source,system_output,reference,"X-X",
                                                 list(label))
+
+    click.secho(collection.display_systems(), fg="bright_blue")
+
     if filter:
-        apply_filter(ref_name,collection,filter)   
+        apply_filter(collection,filter,0,0)   
 
     metric = seg_metric_in_metrics(seg_metric,metric)
 
-    text = "\nSystems: \n"
-    for index, system in collection.systems_indexes.items():
-        text += index + ": " + system + " \n"
-    
-    click.secho(text, fg="bright_blue")
-
     systems_index = collection.systems_indexes
-    
-    for ref_filename in list(collection.refs_names):
+
+    language = collection.language_pair.split("-")[1]
+    labels = collection.labels
+    for ref_filename in collection.refs_names:
+        testset = collection.multiple_testsets[ref_filename]
         results = {
-            m: available_metrics[m](language=collection.multiple_testsets[ref_filename].target_language).multiple_comparison(
-            collection.multiple_testsets[ref_filename]) for m in metric }
+            m: available_metrics[m](language=language, labels=labels).multiple_comparison(testset) 
+            for m in metric 
+        }
 
-        results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_index)
+        results_dicts = display_table(collection,ref_filename,systems_index,results)
 
-        click.secho('Reference: ' + ref_filename, fg="yellow")
+        if output_folder != "":
+            if not output_folder.endswith("/"):
+                output_folder += "/"    
+            saving_dir = output_folder + ref_filename.replace("/","_") + "/"
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
 
-        for met, systems in results_dicts.items():
-            click.secho("metric: " + str(met), fg="yellow")
-            click.secho("\t" + "systems:", fg="yellow")
-            for sys_name, sys_score in systems.items():
-                click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
+            with open(saving_dir + "results.json", "w") as result_file:
+                json.dump(results_dicts, result_file, indent=4)
+            
+            plot = ClassificationPlot(seg_metric,metric,available_class_metrics,results,
+                collection, ref_filename, "classification")
+            
+            plot.display_plots_cli(saving_dir)

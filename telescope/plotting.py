@@ -501,7 +501,7 @@ def plot_bucket_multiple_comparison_comet(
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/multiple-bucket-analysis.png")
+        plot.savefig(saving_dir + "/multiple-bucket-analysis-comet.png")
 
     if st._is_running_with_streamlit:
         col1, col2, col3 = st.columns(3)
@@ -563,7 +563,7 @@ def plot_bucket_multiple_comparison_bertscore(
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/multiple-bucket-analysis.png")
+        plot.savefig(saving_dir + "/multiple-bucket-analysis-bertscore.png")
 
     if st._is_running_with_streamlit:
         col1, col2, col3 = st.columns(3)
@@ -684,19 +684,27 @@ def plot_multiple_segment_comparison(
     if st._is_running_with_streamlit:
         st.altair_chart(c, use_container_width=True)
 
-def overall_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str]):    
+def overall_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str], 
+                            saving_dir: str = None):    
+
     matrix = confusion_matrix(true, pred, labels=labels)
     df = pd.DataFrame(matrix, index=labels, columns= labels)
-    st.dataframe(df)
+    if saving_dir is not None:
+        df.to_json(saving_dir + "overall_confusion_matrix.json", orient="index", indent=4)
+    return df
 
-def singular_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str], label: List[str]):    
+def singular_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str], 
+                                label: List[str], saving_dir: str = None):  
+
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
     index = labels.index(label)
     name = ["other labels"] + [label] 
     df = pd.DataFrame(matrix[index], index=name, columns=name)
-    st.dataframe(df)
+    if saving_dir is not None:
+        df.to_json(saving_dir + label + ".json", orient="index", indent=4)
+    return df
 
-def incorrect_examples(src: List[str], true: List[str], pred: List[str]):
+def incorrect_examples(src: List[str], true: List[str], pred: List[str], saving_dir:str = None):
     n = len(true)
     num = int(n/4) + 1
     incorrect_ids = list()
@@ -711,11 +719,13 @@ def incorrect_examples(src: List[str], true: List[str], pred: List[str]):
         if len(incorrect_ids) == num:
             break
     
-    if len(incorrect_ids) == 0:
-        st.warning("There are no examples that are incorrectly labelled")
-    else:
+    if len(incorrect_ids) != 0:
         df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"])
-        st.dataframe(df)
+    
+    if saving_dir is not None:
+        if len(incorrect_ids) != 0:
+            df.to_json(saving_dir + "incorrect_examples.json", orient="index", indent=4)
+            return df
 
 def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: List[str], labels:List[str]):
     number_of_systems = len(systems_indexes)
@@ -764,7 +774,7 @@ def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: Li
 
 
 
-def analysis_labels(result: MultipleResult, labels:List[str]):
+def analysis_labels(result: MultipleResult, labels:List[str], saving_dir: str = None):
     systems_indexes = list(result.systems_metric_results.keys())
     seg_scores_list = [result_sys.seg_scores 
                 for result_sys in list(result.systems_metric_results.values())]
@@ -773,6 +783,8 @@ def analysis_labels(result: MultipleResult, labels:List[str]):
 
     plt = analysis_labels_bucket(seg_scores_dict, systems_indexes, labels)
     st.pyplot(plt)
+    if saving_dir is not None:
+        plt.savefig(saving_dir + "/analysis-labels-bucket.png")
     plt.clf()
 
 
