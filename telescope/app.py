@@ -113,11 +113,14 @@ def hash_metrics(metrics):
     ttl=cache_time,
     max_entries=cache_max_entries,
 )
-def apply_filters(testset, filters, ref_name):
+def apply_filters(testset, filters, ref_name, source_language, target_language, labels):
+
     for filter in filters:
         with st.spinner(f"Applying {filter} filter for reference {ref_name}..." ):
             if filter == "length":
                 testset.apply_filter(available_filters[filter](testset, *length_interval))
+            elif filter == "named-entities":
+                testset.apply_filter(available_filters[filter](testset, source_language,target_language))
             else:
                 testset.apply_filter(available_filters[filter](testset))
 
@@ -138,26 +141,46 @@ def apply_filters(testset, filters, ref_name):
     ttl=cache_time,
     max_entries=cache_max_entries,
 )
-def run_metric(testset, metric, ref_filename, labels):
+def run_metric(testset, metric, ref_filename, language, labels):
     with st.spinner(f"Running {metric} for reference {ref_filename}..."):
-        metric = available_metrics[metric](language=testset.target_language, labels=labels)
+        if labels == [" "]:
+            metric = available_metrics[metric](language=language)
+        else:
+            metric = available_metrics[metric](labels=labels)
         return metric.multiple_comparison(testset)
 
 
-def run_all_metrics(collection_testsets, metrics, filters):
-    refs_names = collection_testsets.refs_names
+def run_all_metrics(collection, metrics, filters):
+    refs_names = collection.refs_names
+    labels = [" "]
+    target_language = "X"
+    source_language = "X"
+
+    if collection.task == "Classification":
+        labels = collection.labels
+    else:
+        source_language = collection.source_language
+        target_language = collection.target_language
+
     if filters:
         for ref_name in refs_names:
-            corpus_size = len(collection_testsets.multiple_testsets[ref_name])
-            collection_testsets.multiple_testsets[ref_name] = apply_filters(
-                collection_testsets.multiple_testsets[ref_name], filters, ref_name)
+            testset = collection_testsets.testsets[ref_name]
+            corpus_size = len(testset)
+            collection_testsets.testsets[ref_name] = apply_filters(testset,filters,ref_name,
+                                                                source_language,
+                                                                target_language,
+                                                                labels)
             st.success("Corpus reduced in {:.2f}%".format(
-                (1 - (len(collection_testsets.multiple_testsets[ref_name]) / corpus_size)) 
+                (1 - (len(collection_testsets.testsets[ref_name]) / corpus_size)) 
                     * 100) + " for reference " + ref_name)
 
     return {
-        ref_name: {metric: run_metric(collection_testsets.multiple_testsets[ref_name], metric, 
-                            ref_name, collection_testsets.labels) 
+        ref_name: {metric: run_metric(
+                            collection_testsets.testsets[ref_name], 
+                            metric, 
+                            ref_name,
+                            target_language,
+                            labels) 
         for metric in metrics}
         for ref_name in refs_names
         }

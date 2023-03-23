@@ -28,7 +28,7 @@ class Metric(metaclass=abc.ABCMeta):
     name = None
     segment_level = True
 
-    def __init__(self, language: str, labels: List[str]):
+    def __init__(self, language: str = "X", labels: List[str] = [" "]):
         if not self.language_support(language):
             raise Exception(f"{language} is not supported by {self.name}.")
         else:
@@ -143,6 +143,7 @@ class Metric(metaclass=abc.ABCMeta):
         sample_ratio: float,
         system_x: str,
         system_y: str,
+        language: str,
         multiple_result: MultipleResult = None,
     ):
 
@@ -184,12 +185,11 @@ class Metric(metaclass=abc.ABCMeta):
                     sum(reduces_y_scr) / len(reduces_y_scr),
                 )
             else:
-                result = cls(testset.target_language, [" "]).multiple_comparison(
+                result = cls(language, [" "]).multiple_comparison(
                     MultipleTestset(
                         reduced_src,
                         reduced_ref,
                         reducted_n_systems_output,
-                        language_pair=testset.language_pair,
                         filenames=testset.filenames,
                     )
                 )

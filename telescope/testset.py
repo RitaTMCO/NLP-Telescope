@@ -23,13 +23,11 @@ class Testset:
         self,
         src: List[str],
         mt: List[str],
-        ref: List[str],
-        language_pair: str,
+        ref: List[str]
     ) -> None:
         self.src = src
         self.ref = ref
         self.mt = mt
-        self.language_pair = language_pair
 
         assert len(ref) == len(
             src
@@ -39,14 +37,6 @@ class Testset:
         assert len(mt) == len(
             ref
         ), "mismatch between MT and references ({} > {})".format(len(mt), len(ref))
-
-    @property
-    def source_language(self):
-        return self.language_pair.split("-")[0]
-
-    @property
-    def target_language(self):
-        return self.language_pair.split("-")[1]
 
     def __len__(self) -> int:
         return len(self.ref)
@@ -59,6 +49,14 @@ class Testset:
         self.src = [self.src[idx] for idx in to_keep]
         self.mt = [self.mt[idx] for idx in to_keep]
         self.ref = [self.ref[idx] for idx in to_keep]
+    
+    @property
+    def source_language(self):
+        return self.language_pair.split("-")[0]
+
+    @property
+    def target_language(self):
+        return self.language_pair.split("-")[1]
 
 
 class PairwiseTestset(Testset):
@@ -157,13 +155,11 @@ class MultipleTestset(Testset):
         ref: List[str],
         systems_output: Dict[str, List[str]],
         filenames: List[str],
-        language_pair: str
     ) -> None:
         self.src = src
         self.ref = ref
         self.systems_output = systems_output
         self.filenames = filenames
-        self.language_pair = language_pair
 
     def __getitem__(self, i) -> Tuple[str]:
         return tuple([self.src[i]] + [self.ref[i]]+ [output[i] 

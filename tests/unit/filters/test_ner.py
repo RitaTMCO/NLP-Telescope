@@ -26,12 +26,13 @@ class TestNERFilter(unittest.TestCase):
     alt = [s.strip() for s in open(os.path.join(DATA_PATH, "alt.hyp.en")).readlines()]
     src = [s.strip() for s in open(os.path.join(DATA_PATH, "src.de")).readlines()]
     ref = [s.strip() for s in open(os.path.join(DATA_PATH, "ref.en")).readlines()]
+
     testset = PairwiseTestset(
         src, hyp, alt, ref, "de-en", ["src.de", "hyp.en", "alt.hyp.en", "ref.en"]
     )
 
     def test_sucess_filter(self):
-        filter = NERFilter(self.testset)
+        filter = NERFilter(self.testset, self.testset.source_language, self.testset.target_language)
         orig_size = len(self.testset)
         self.testset.apply_filter(filter)
         self.assertEqual(len(self.testset), 1)
@@ -42,6 +43,6 @@ class TestNERFilter(unittest.TestCase):
     def test_unsuported_language(self):
         self.testset.language_pair = "pt-ja"
         with self.assertRaises(Exception) as cm:
-            NERFilter(self.testset)
+            NERFilter(self.testset, self.testset.source_language, self.testset.target_language)
         the_exception = cm.exception
         self.assertEqual(str(the_exception), "pt-ja is not supperted by Stanza NER.")

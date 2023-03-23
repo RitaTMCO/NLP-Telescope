@@ -26,8 +26,8 @@ class GLEU(Metric):
     name = "GLEU"
     segment_level = True
 
-    def __init__(self, language: str, labels: List[str], lowercase: bool = False, tokenize: bool = True):
-        super().__init__(language, labels)
+    def __init__(self, language: str, lowercase: bool = False, tokenize: bool = True):
+        super().__init__(language)
         if language == "zh":
             self.tokenizer = _get_tokenizer("zh")()
         elif language == "ja":

@@ -24,6 +24,7 @@ import streamlit as st
 import random
 
 from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix
+from telescope.testset import MultipleTestset
 from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleResult
 
 T1_COLOR = "#9ACD32"
@@ -684,32 +685,36 @@ def plot_multiple_segment_comparison(
     if st._is_running_with_streamlit:
         st.altair_chart(c, use_container_width=True)
 
-def overall_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str], 
-                            saving_dir: str = None):    
-
+def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], 
+                                saving_dir: str = None):    
+    true = testset.ref
+    pred = testset.systems_output[system]
     matrix = confusion_matrix(true, pred, labels=labels)
     df = pd.DataFrame(matrix, index=labels, columns= labels)
     if saving_dir is not None:
-        df.to_json(saving_dir + "overall_confusion_matrix.json", orient="index", indent=4)
+        df.to_json(saving_dir + "/overall-confusion-matrix.json", orient="index", indent=4)
     return df
 
-def singular_confusion_matrix_table(true: List[str], pred: List[str], labels: List[str], 
-                                label: List[str], saving_dir: str = None):  
-
+def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], 
+                                label: List[str], saving_dir: str = None): 
+    true = testset.ref
+    pred = testset.systems_output[system] 
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
     index = labels.index(label)
     name = ["other labels"] + [label] 
     df = pd.DataFrame(matrix[index], index=name, columns=name)
     if saving_dir is not None:
-        df.to_json(saving_dir + label + ".json", orient="index", indent=4)
+        df.to_json(saving_dir + "/label-" + label + ".json", orient="index", indent=4)
     return df
 
-def incorrect_examples(src: List[str], true: List[str], pred: List[str], saving_dir:str = None):
+def incorrect_examples(testset:MultipleTestset, system:str, saving_dir:str = None):
+    src = testset.src
+    true = testset.ref
+    pred = testset.systems_output[system]
     n = len(true)
     num = int(n/4) + 1
     incorrect_ids = list()
     table = list()
-
     ids = random.sample(range(n),n)
     
     for i in ids:
@@ -721,11 +726,11 @@ def incorrect_examples(src: List[str], true: List[str], pred: List[str], saving_
     
     if len(incorrect_ids) != 0:
         df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"])
-    
-    if saving_dir is not None:
-        if len(incorrect_ids) != 0:
-            df.to_json(saving_dir + "incorrect_examples.json", orient="index", indent=4)
-            return df
+        if saving_dir is not None:
+            df.to_json(saving_dir + "/incorrect-examples.json", orient="index", indent=4)
+        return df
+    else:
+        return None
 
 def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: List[str], labels:List[str]):
     number_of_systems = len(systems_indexes)
@@ -782,9 +787,12 @@ def analysis_labels(result: MultipleResult, labels:List[str], saving_dir: str = 
                 for i, label in enumerate(labels)}
 
     plt = analysis_labels_bucket(seg_scores_dict, systems_indexes, labels)
-    st.pyplot(plt)
+
     if saving_dir is not None:
         plt.savefig(saving_dir + "/analysis-labels-bucket.png")
+    if st._is_running_with_streamlit:
+        st.pyplot(plt)
+
     plt.clf()
 
 

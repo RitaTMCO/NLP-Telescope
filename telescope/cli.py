@@ -29,7 +29,7 @@ from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTER
 from telescope.tasks import AVAILABLE_NLG
 from telescope.metrics.result import MultipleResult
 from telescope.testset import PairwiseTestset, MultipleTestset
-from telescope.collection_testsets import CollectionTestsets
+from telescope.collection_testsets import NLGTestsets, ClassTestsets
 from telescope.plot import ClassificationPlot, NLGPlot
 from telescope.plotting import (
     plot_segment_comparison,
@@ -182,10 +182,14 @@ def compare(
     )
     corpus_size = len(testset)
     if filter:
-        filters = [available_filters[f](testset) for f in filter if f != "length"]
+        filters = [available_filters[f](testset) for f in filter if (f != "length" and f!= "named-entities")]
         if "length" in filter:
             filters.append(available_filters["length"](testset, int(length_min_val*100), int(length_max_val*100)))
-        
+        elif "named-entities":
+            filters.append(available_filters["named-entities"](testset, testset.source_language,
+                                                            testset.target_language)) 
+
+
         for filter in filters:
             testset.apply_filter(filter)
 
@@ -346,29 +350,28 @@ def seg_metric_in_metrics(seg_metric, metrics):
 
 def apply_filter(collection,filter,length_min_val,length_max_val):
     for ref_name in collection.refs_names:
-        corpus_size = len(collection.multiple_testsets[ref_name])
+        corpus_size = len(collection.testsets[ref_name])
         
         for f in filter:
-            if f != "length":
-                fil = available_filters[f](collection.multiple_testsets[ref_name])
+            if f == "length":
+                fil = available_filters[f](collection.testsets[ref_name], int(length_min_val*100), 
+                                    int(length_max_val*100))
+            elif f == "named-entities":
+                available_filters[f](collection.testsets[ref_name], collection.source_language, 
+                                                                            collection.target_language)
             else:
-                fil = available_filters["length"](collection.multiple_testsets[ref_name], 
-                        int(length_min_val*100), int(length_max_val*100))
-            collection.multiple_testsets[ref_name].apply_filter(fil)
+                fil = available_filters[f](collection.testsets[ref_name])
+            collection.testsets[ref_name].apply_filter(fil)
 
-        if (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100 == 100:
+        if (1 - (len(collection.testsets[ref_name]) / corpus_size)) * 100 == 100:
             click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="green")
             return
     
         click.secho( "Filters Successfully applied. Corpus reduced in {:.2f}%.".format(
-            (1 - (len(collection.multiple_testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name,
+            (1 - (len(collection.testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name,
                 fg="green" )
 
 def display_table(collection, ref_filename, systems_index, results):
-    
-    language = collection.language_pair.split("-")[1]
-    labels = collection.labels
-
     results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_index)
 
     click.secho('Reference: ' + ref_filename, fg="yellow")
@@ -383,14 +386,14 @@ def display_table(collection, ref_filename, systems_index, results):
 
 def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,num_splits,sample_ratio):
 
-    testset = collection.multiple_testsets[ref_filename]
+    testset = collection.testsets[ref_filename]
     bootstrap_results = []
 
     for m in metric:
         bootstrap_results.append(
             available_metrics[m]
             .multiple_bootstrap_resampling(testset, num_splits, sample_ratio, system_x,
-                                    system_y, results[m])
+                                    system_y, collection.target_language, results[m])
             .stats)
             
     bootstrap_results = {k: [dic[k] for dic in bootstrap_results] for k in bootstrap_results[0]}      
@@ -436,7 +439,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
 )
 @click.option(
     "--language",
-    "-p",
+    "-l",
     required=True,
     help="Language of the evaluated text.",
 )
@@ -534,8 +537,7 @@ def n_compare_nlg(
     system_x: click.File,
     system_y: click.File,
 ):  
-    collection = CollectionTestsets.read_cli(source,system_output,reference,language,
-                                                [" "])
+    collection = NLGTestsets.read_cli(source,system_output,reference,language)
 
     click.secho(collection.display_systems(), fg="bright_blue")
 
@@ -545,12 +547,11 @@ def n_compare_nlg(
     metric = seg_metric_in_metrics(seg_metric,metric)
     systems_index = collection.systems_indexes
     language = collection.language_pair.split("-")[1]
-    labels = collection.labels
 
     for ref_filename in collection.refs_names:
-        testset = collection.multiple_testsets[ref_filename]
+        testset = collection.testsets[ref_filename]
         results = {
-            m: available_metrics[m](language=language, labels=labels).multiple_comparison(testset) 
+            m: available_metrics[m](language=language).multiple_comparison(testset) 
             for m in metric }
 
         results_dicts = display_table(collection,ref_filename,systems_index,results)
@@ -661,8 +662,7 @@ def n_compare_classification(
     seg_metric: str,
     output_folder: str
 ):  
-    collection = CollectionTestsets.read_cli(source,system_output,reference,"X-X",
-                                                list(label))
+    collection = ClassTestsets.read_cli(source,system_output,reference,list(label))
 
     click.secho(collection.display_systems(), fg="bright_blue")
 
@@ -673,12 +673,11 @@ def n_compare_classification(
 
     systems_index = collection.systems_indexes
 
-    language = collection.language_pair.split("-")[1]
     labels = collection.labels
     for ref_filename in collection.refs_names:
-        testset = collection.multiple_testsets[ref_filename]
+        testset = collection.testsets[ref_filename]
         results = {
-            m: available_metrics[m](language=language, labels=labels).multiple_comparison(testset) 
+            m: available_metrics[m](labels=labels).multiple_comparison(testset) 
             for m in metric 
         }
 

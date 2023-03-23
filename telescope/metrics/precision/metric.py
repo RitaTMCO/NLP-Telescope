@@ -8,7 +8,7 @@ from sklearn.metrics import precision_score
 
 class Precision(Metric):
 
-    name = "Precison"
+    name = "Precision"
     segment_level = False
 
     def score(self, src: List[str], cand: List[str], ref: List[str]) -> MetricResult:
