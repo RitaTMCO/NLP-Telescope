@@ -1,47 +1,205 @@
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/17256847/124762084-66212200-df2a-11eb-92ce-edbebfe9d4e2.jpg">
-  <br />
-  <br />
-  <a href="https://github.com/Unbabel/MT-Telescope/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/Unbabel/MT-Telescope" /></a>
-  <a href="https://github.com/Unbabel/MT-Telescope/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/Unbabel/MT-Telescope" /></a>
-  <a href=""><img alt="PyPI" src="https://img.shields.io/pypi/v/mt-telescope" /></a>
-  <a href="https://github.com/psf/black"><img alt="Code Style" src="https://img.shields.io/badge/code%20style-black-black" /></a>
-</p>
+# NLP-Telescope
 
-# MT-Telescope
-
-MT-Telescope is a toolkit for comparative analysis of MT systems that provides a number of tools that add rigor and depth to MT evaluation. With this package we endeavour to make it easier for researchers and industry practitioners to compare MT systems by giving you easy access to:
+NLP-Telescope is a comparative analysis tool which is an updated and extended version of MT-Telescope [(rei, et al 2021)](https://aclanthology.org/2021.acl-demo.9/). Like MT-Telescope, it aims to facilitate researchers and developers to analyze their systems by offering features such as:
 
 1) SOTA MT evaluation metrics such as COMET  [(rei, et al 2020)](https://aclanthology.org/2020.emnlp-main.213/).
 2) Statistical tests such as bootstrap resampling [(Koehn, et al 2004)](https://aclanthology.org/W04-3250/).
 3) Dynamic Filters to select parts of your testset with specific phenomena
 4) Visual interface/plots to compare systems side-by-side segment-by-segment.
 
-We highly recommend reading the following papers to learn more about how to perform better MT-Evaluation:
-- [Scientific Credibility of Machine Translation Research: A Meta-Evaluation of 769 Papers](https://arxiv.org/pdf/2106.15195.pdf)
-- [To Ship or Not to Ship: An Extensive Evaluation of Automatic Metrics for Machine Translation](https://arxiv.org/pdf/2107.10821.pdf)
+NLP-Telescope also offers new features compared to MT-Telescope such as:
+
+1) Analyze and compare the results of N systems from M references. **N and M are numbers greater than or equal to 1.** This functionality is updated from MT-Telescope which analyzes two systems from one reference;
+
+2) Being able to analyze four Natural Language Processing (NLP) tasks such as: **machine translation**, **text summarization**, **dialogue system** and **text classification**. Provides visual analysis interface appropriate for each task. This functionality is updated from MT-Telescope which analyzes machine translation systems;
+
+3) Having metrics that **calculate and indicate the model’s
+sensitivity to biases**. An extended functionality of MT-Telescope; (coming soon)
+
+4) Having a metric that ranks the compared systems based on the **aggregation of the scores of the metrics selected by the user**. (coming soon)
+
+For all tasks and for each reference, the tool offers a table with system metrics scores. For Natural Language Generation (NLG) tasks such as machine translation, text summarization and dialogue system, we have three types of visual interface:
+
+1) **Error-type analysis:** To evaluate system utility, the tool divides the errors into four parts through the stacked bar plot. Only available if COMET or BERTScore are selected for segment-level metrics;
+
+2) **Segment-level scores histogram:** With a histogram plot, one may observe general evaluation of the distribution of scores between models.
+
+3) **Segment-level comparison:** With bubble plot, the user may check the comparison of the sentence scores of the two models through the differences;
+
+For the classification task, we have following visual interfaces:
+
+1) Confusion matrix of each system;
+2) Confusion matrix of each label;
+3) Scores of each category for each system through the stacked bar plot.
+
+In this document, we will explain how to install and run NLP-Telescope. To run the NLP-Telescope tool you can use:
+
+1. A web browser
+2. The command line interface
 
 
 ## Install:
 
-### Via pip:
+Make sure you have [poetry](https://python-poetry.org/docs/#installation) installed.
+
+Create a virtual environment. Run:
 
 ```bash
-pip install mt-telescope==0.0.2
+git clone https://github.com/RitaTMCO/NLP-Telescope
+cd NLP-Telescope
+poetry install --without dev
 ```
 
-### Locally:
-Create a virtual environment and make sure you have [poetry](https://python-poetry.org/docs/#installation) installed.
+## Before running the tool
 
-Finally run:
+Activate virtual environment. Run:
 
 ```bash
-git clone https://github.com/Unbabel/MT-Telescope
-cd MT-Telescope
-poetry install --no-dev
+cd NLP-Telescope
+poetry shell
 ```
 
-## Scoring:
+Some metrics like COMET can take some time. You can switch the COMET model to a more lightweight model with the following env variable:
+```bash
+export COMET_MODEL=wmt21-cometinho-da
+```
+## Web Interface
+
+To run a web interface simply run:
+```bash
+telescope streamlit
+```
+
+## Command Line Interface (CLI):
+### Comparing NLG systems:
+
+For running system comparisons with CLI you should use the `telescope n-compare-nlg` command.
+
+```
+Usage: telescope n-compare-nlg [OPTIONS]
+
+Options:
+  -s, --source FILENAME           Source segments.  [required]
+  -c, --system_output FILENAME    System candidate.  [required]
+  -r, --reference FILENAME        Reference segments.  [required]
+  -t, --task [machine-translation|dialogue-system|summarization]
+                                  NLG to evaluate.  [required]
+  -l, --language TEXT             Language of the evaluated text.  [required]
+  -m, --metric [COMET|BLEU|chrF|ZeroEdit|BERTScore|TER|GLEU|ROUGE-1|ROUGE-2|ROUGE-L|Accuracy|Precision|Recall|F1-score]
+                                  Metric to run.  [required]
+  -f, --filter [named-entities|length|duplicates]
+                                  Filter to run.
+  --length_min_val FLOAT          Min interval value for length filtering.
+  --length_max_val FLOAT          Max interval value for length filtering.
+  --seg_metric [COMET|ZeroEdit|BERTScore|GLEU|ROUGE-L|Accuracy]
+                                  Segment-level metric to use for segment-
+                                  level analysis.
+  -o, --output_folder TEXT        Folder you wish to use to save plots.
+  --bootstrap
+  -x, --system_x FILENAME         System X NLG outputs for segment-level
+                                  comparison and bootstrap resampling.
+  -y, --system_y FILENAME         System Y NLG outputs for segment-level
+                                  comparison and bootstrap resampling.
+  --num_splits INTEGER            Number of random partitions used in
+                                  Bootstrap resampling.
+  --sample_ratio FLOAT            Proportion (P) of the initial sample.
+  --help                          Show this message and exit.
+```
+
+#### Example 1: Running several metrics
+
+Running BLEU, chrF BERTScore and COMET to compare three MT systems with two references:
+
+```bash
+telescope n-compare-nlg \
+  -s path/to/src/file.txt \
+  -c path/to/system-x/file.txt \
+  -c path/to/system-y/file.txt \
+  -c path/to/system-z/file.txt \
+  -r path/to/ref-1/file.txt \
+  -r path/to/ref-2/file.txt \
+  -t machine-translation\
+  -l en \
+  -m BLEU -m chrF -m BERTScore -m COMET
+```
+
+#### Example 2: Saving a comparison report
+
+```bash
+telescope n-compare-nlg \
+  -s path/to/src/file.txt \
+  -c path/to/system-x/file.txt \
+  -c path/to/system-y/file.txt \
+  -c path/to/system-z/file.txt \
+  -r path/to/ref-1/file.txt \
+  -r path/to/ref-2/file.txt \
+  -t machine-translation\
+  -l en \
+  -m BLEU -m chrF -m BERTScore -m COMET \
+  --output_folder FOLDER-PATH
+```
+
+For FOLDER-PATH location, a folder is created for each reference that contains the report.
+
+### Comparing Classification systems:
+
+or running system comparisons with CLI you should use the `telescope n-compare-classification` command.
+
+```
+Usage: telescope n-compare-classification [OPTIONS]
+
+Options:
+  -s, --source FILENAME           Source segments.  [required]
+  -c, --system_output FILENAME    System candidate.  [required]
+  -r, --reference FILENAME        Reference segments.  [required]
+  -l, --label TEXT                Existing labels  [required]
+  -m, --metric [Accuracy|Precision|Recall|F1-score]
+                                  Metric to run.  [required]
+  -f, --filter [duplicates]       Filter to run.
+  --seg_metric [Accuracy]         Segment-level metric to use for segment-
+                                  level analysis.
+  -o, --output_folder TEXT        Folder you wish to use to save plots.
+  --help                          Show this message and exit.
+```
+
+#### Example 1: Running two metrics
+
+Running Accuracy and F1-score to compare three systems with two references:
+
+```bash
+telescope telescope n-compare-classification \
+  -s path/to/src/file.txt \
+  -c path/to/system-x/file.txt \
+  -c path/to/system-y/file.txt \
+  -c path/to/system-z/file.txt \
+  -r path/to/ref-1/file.txt \
+  -r path/to/ref-2/file.txt \
+  -l label-1 \
+  -l label-2 \
+  -l label-3 \
+  -m Accuracy -m F1-score
+```
+
+#### Example 2: Saving a comparison report
+
+```bash
+telescope telescope n-compare-classification \
+  -s path/to/src/file.txt \
+  -c path/to/system-x/file.txt \
+  -c path/to/system-y/file.txt \
+  -c path/to/system-z/file.txt \
+  -r path/to/ref-1/file.txt \
+  -r path/to/ref-2/file.txt \
+  -l label-1 \
+  -l label-2 \
+  -l label-3 \
+  -m Accuracy -m F1-score
+  --output_folder FOLDER-PATH
+```
+
+For FOLDER-PATH location, a folder is created for each reference that contains the report
+
+### Scoring:
 
 To get the system level scores for a particular MT simply run `telescope score`.
 
@@ -49,14 +207,9 @@ To get the system level scores for a particular MT simply run `telescope score`.
 telescope score -s {path/to/sources} -t {path/to/translations} -r {path/to/references} -l {target_language} -m COMET -m chrF
 ```
 
-## Comparing two systems:
-For comparison between two systems you can run telescope using:
-1. The command line interface
-2. A web browser
+### Comparing two MT systems:
 
-### Command Line Interface (CLI):
-
-For running system comparisons with CLI you should use the `telescope compare` command.
+For running MT system comparisons with CLI you should use the `telescope compare` command.
 
 ```
 Usage: telescope compare [OPTIONS]
@@ -67,75 +220,21 @@ Options:
   -y, --system_y FILENAME         System Y MT outputs.  [required]
   -r, --reference FILENAME        Reference segments.  [required]
   -l, --language TEXT             Language of the evaluated text.  [required]
-  -m, --metric [COMET|sacreBLEU|chrF|ZeroEdit|BERTScore|TER|Prism|GLEU]
+  -m, --metric [COMET|BLEU|chrF|TER|GLEU|ZeroEdit|BERTScore]
                                   MT metric to run.  [required]
-  -f, --filter [named-entities|duplicates]
+  -f, --filter [named-entities|length|duplicates]
                                   MT metric to run.
-  --seg_metric [COMET|ZeroEdit|BLEURT|BERTScore|Prism|GLEU]
+  --length_min_val FLOAT          Min interval value for length filtering.
+  --length_max_val FLOAT          Max interval value for length filtering.
+  --seg_metric [COMET|GLEU|ZeroEdit|BERTScore]
                                   Segment-level metric to use for segment-
                                   level analysis.
-
   -o, --output_folder TEXT        Folder you wish to use to save plots.
   --bootstrap
   --num_splits INTEGER            Number of random partitions used in
                                   Bootstrap resampling.
-
   --sample_ratio FLOAT            Folder you wish to use to save plots.
   --help                          Show this message and exit.
-```
-
-#### Example 1: Running several metrics
-
-Running BLEU, chrF BERTScore and COMET to compare two systems:
-
-```bash
-telescope compare \
-  -s path/to/src/file.txt \
-  -x path/to/system-x/file.txt \
-  -y path/to/system-y \
-  -r path/to/ref/file.txt \
-  -l en \
-  -m BLEU -m chrF -m BERTScore -m COMET
-```
-
-#### Example 2: Saving a comparison report
-
-```bash
-telescope compare \
-  -s path/to/src/file.txt \
-  -x path/to/system-x/file.txt \
-  -y path/to/system-y \
-  -r path/to/ref/file.txt \
-  -l en \
-  -m COMET \
-  --output_folder FOLDER-PATH
-```
-
-### Web Interface
-
-To run a web interface simply run:
-```bash
-telescope streamlit
-```
-
-Some metrics like COMET can take some time to run inside streamlit. You can switch the COMET model to a more lightweight model with the following env variable:
-```bash
-export COMET_MODEL=wmt21-cometinho-da
-```
-
-# Cite:
 
 ```
-@inproceedings{rei-etal-2021-mt,
-    title = "{MT}-{T}elescope: {A}n interactive platform for contrastive evaluation of {MT} systems",
-    author = {Rei, Ricardo  and  Stewart, Craig  and  Farinha, Ana C  and  Lavie, Alon},
-    booktitle = "Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing: System Demonstrations",
-    month = aug,
-    year = "2021",
-    address = "Online",
-    publisher = "Association for Computational Linguistics",
-    url = "https://aclanthology.org/2021.acl-demo.9",
-    doi = "10.18653/v1/2021.acl-demo.9",
-    pages = "73--80",
-}
-```
+

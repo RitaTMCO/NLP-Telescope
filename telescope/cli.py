@@ -24,7 +24,7 @@ import click
 import json
 import pandas as pd
 
-from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, PairwiseResult
+from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, AVAILABLE_MT_METRICS, PairwiseResult
 from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.tasks import AVAILABLE_NLG
 from telescope.metrics.result import MultipleResult
@@ -38,6 +38,7 @@ from telescope.plotting import (
 )
 
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
+available_mt_metrics = {m.name: m for m in AVAILABLE_MT_METRICS}
 available_class_metrics = {m.name: m for m in AVAILABLE_CLASSIFICATION_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
 available_class_filters = {f.name: f for f in AVAILABLE_CLASSIFICATION_FILTERS}
@@ -97,7 +98,7 @@ def telescope():
 @click.option(
     "--metric",
     "-m",
-    type=click.Choice(list(available_metrics.keys())),
+    type=click.Choice(list(available_mt_metrics.keys())),
     required=True,
     multiple=True,
     help="MT metric to run.",
@@ -127,7 +128,7 @@ def telescope():
 )
 @click.option(
     "--seg_metric",
-    type=click.Choice([m.name for m in available_metrics.values() if m.segment_level]),
+    type=click.Choice([m.name for m in available_mt_metrics.values() if m.segment_level]),
     required=False,
     default="COMET",
     help="Segment-level metric to use for segment-level analysis.",
@@ -292,7 +293,7 @@ def compare(
 @click.option(
     "--metric",
     "-m",
-    type=click.Choice(list(available_metrics.keys())),
+    type=click.Choice(list(available_mt_metrics.keys())),
     required=True,
     multiple=True,
     help="MT metric to run.",
