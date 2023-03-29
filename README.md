@@ -11,7 +11,7 @@ NLP-Telescope also offers new features compared to MT-Telescope such as:
 
 1) Analyze and compare the results of N systems from M references. **N and M are numbers greater than or equal to 1.** This functionality is updated from MT-Telescope which analyzes two systems from one reference;
 
-2) Being able to analyze four Natural Language Processing (NLP) tasks such as: **machine translation**, **text summarization**, **dialogue system** and **text classification**. Provides visual analysis interface appropriate for each task. This functionality is updated from MT-Telescope which analyzes machine translation systems;
+2) Being able to analyze four Natural Language Processing (NLP) tasks such as: **machine translation**, **text summarization**, **dialogue system** and **text classification**. Provide visual analysis interface appropriate for each task. This functionality is updated from MT-Telescope which analyzes machine translation systems;
 
 3) Having metrics that **calculate and indicate the model’s
 sensitivity to biases**. An extended functionality of MT-Telescope; (coming soon)
@@ -46,11 +46,12 @@ Create a virtual environment. Run:
 
 ```bash
 git clone https://github.com/RitaTMCO/NLP-Telescope
+git checkout development_v_2
 cd NLP-Telescope
 poetry install --without dev
 ```
 
-## Before running the tool
+## Before running the tool:
 
 Activate virtual environment. Run:
 
@@ -63,7 +64,7 @@ Some metrics like COMET can take some time. You can switch the COMET model to a 
 ```bash
 export COMET_MODEL=wmt21-cometinho-da
 ```
-## Web Interface
+## Web Interface:
 
 To run a web interface simply run:
 ```bash
@@ -143,7 +144,7 @@ For FOLDER-PATH location, a folder is created for each reference that contains t
 
 ### Comparing Classification systems:
 
-or running system comparisons with CLI you should use the `telescope n-compare-classification` command.
+For running system comparisons with CLI you should use the `telescope n-compare-classification` command.
 
 ```
 Usage: telescope n-compare-classification [OPTIONS]
