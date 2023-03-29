@@ -4,7 +4,7 @@ from telescope.metrics import AVAILABLE_MT_METRICS
 from telescope.filters import AVAILABLE_MT_FILTERS
 
 class MachineTranslation(NLG):
-    name = "machine translation"
+    name = "machine-translation"
     metrics = AVAILABLE_MT_METRICS
     filters = AVAILABLE_MT_FILTERS
 

@@ -28,7 +28,7 @@ class TestCompareCli(unittest.TestCase):
     src = os.path.join(DATA_PATH, "cs_en/cs-en.txt")
     ref_b = os.path.join(DATA_PATH, "cs_en/cs-en.refB.txt")
     ref_c = os.path.join(DATA_PATH, "cs_en/cs-en.refC.txt")
-    task = "machine translation"
+    task = "machine-translation"
 
     def setUp(self):
         self.runner = CliRunner()
@@ -201,12 +201,12 @@ class TestCompareCli(unittest.TestCase):
         result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
 
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-bucket-analysis-comet.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-bucket-analysis.png")))
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-scores-distribution.html"))
         )
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
         )
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/results.json"))
@@ -216,12 +216,12 @@ class TestCompareCli(unittest.TestCase):
         )
 
 
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-bucket-analysis-comet.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-bucket-analysis.png")))
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-scores-distribution.html"))
         )
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
         )
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/results.json"))
@@ -230,16 +230,16 @@ class TestCompareCli(unittest.TestCase):
             os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/bootstrap_results.json"))
         )
 
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") + "/multiple-segment-comparison.html")
+        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
         os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-bucket-analysis-comet.png")
+        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-bucket-analysis.png")
         os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/results.json")
         os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/bootstrap_results.json")
         os.rmdir(DATA_PATH + "/" + self.ref_b.replace("/","_"))
 
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") + "/multiple-segment-comparison.html")
+        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
         os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-bucket-analysis-comet.png")
+        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-bucket-analysis.png")
         os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/results.json")
         os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/bootstrap_results.json")
         os.rmdir(DATA_PATH + "/" + self.ref_c.replace("/","_"))
@@ -285,12 +285,12 @@ class TestCompareCli(unittest.TestCase):
         result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
 
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-bucket-analysis-bertscore.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-bucket-analysis.png")))
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-scores-distribution.html"))
         )
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
         )
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/results.json"))
@@ -298,12 +298,12 @@ class TestCompareCli(unittest.TestCase):
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/bootstrap_results.json"))
         )
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-bucket-analysis-bertscore.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-bucket-analysis.png")))
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-scores-distribution.html"))
         )
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
         )
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/results.json"))
@@ -312,16 +312,16 @@ class TestCompareCli(unittest.TestCase):
             os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/bootstrap_results.json"))
         )
 
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") + "/multiple-segment-comparison.html")
+        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
         os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-bucket-analysis-bertscore.png")
+        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-bucket-analysis.png")
         os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/results.json")
         os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/bootstrap_results.json")
         os.rmdir(DATA_PATH + "/" + self.ref_b.replace("/","_"))
 
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") + "/multiple-segment-comparison.html")
+        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
         os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-bucket-analysis-bertscore.png")
+        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-bucket-analysis.png")
         os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/results.json")
         os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/bootstrap_results.json")
         os.rmdir(DATA_PATH + "/" + self.ref_c.replace("/","_"))

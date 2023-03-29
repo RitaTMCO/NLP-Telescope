@@ -19,8 +19,7 @@ import unittest
 from telescope.testset import MultipleTestset
 from telescope.metrics.result import MetricResult, PairwiseResult, MultipleResult
 from telescope.plotting import (plot_bucket_comparison,
-                                plot_bucket_multiple_comparison_comet,
-                                plot_bucket_multiple_comparison_bertscore,
+                                plot_bucket_multiple_comparison,
                                 plot_pairwise_distributions,
                                 plot_multiple_distributions,
                                 plot_segment_comparison,
@@ -95,6 +94,64 @@ class TestPlots(unittest.TestCase):
         }
     )
 
+    multiple_result_comet = MultipleResult(
+        systems_metric_results = {
+            "Sys 1": MetricResult(
+                sys_score=0.833,
+                seg_scores=[1, 0.5, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 1"],
+                ref=testset.ref,
+                metric="COMET",
+            ),
+            "Sys 2": MetricResult(
+                sys_score=0.750,
+                seg_scores=[1, 0.25, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 2"],
+                ref=testset.ref,
+                metric="COMET",
+            ),
+            "Sys 3": MetricResult(
+                sys_score=0.916,
+                seg_scores=[1, 0.75, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 3"],
+                ref=testset.ref,
+                metric="COMET",
+            )
+        }
+    )
+
+    multiple_result_bertscore = MultipleResult(
+        systems_metric_results = {
+            "Sys 1": MetricResult(
+                sys_score=0.833,
+                seg_scores=[1, 0.5, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 1"],
+                ref=testset.ref,
+                metric="BERTScore",
+            ),
+            "Sys 2": MetricResult(
+                sys_score=0.750,
+                seg_scores=[1, 0.25, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 2"],
+                ref=testset.ref,
+                metric="BERTScore",
+            ),
+            "Sys 3": MetricResult(
+                sys_score=0.916,
+                seg_scores=[1, 0.75, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 3"],
+                ref=testset.ref,
+                metric="BERTScore",
+            )
+        }
+    )
+
 
     labels = ['a', 'b', 'c']
 
@@ -144,14 +201,13 @@ class TestPlots(unittest.TestCase):
         os.remove(DATA_PATH + "/segment-comparison.html")
         os.remove(DATA_PATH + "/scores-distribution.html")
         os.remove(DATA_PATH + "/bucket-analysis.png")
-        os.remove(DATA_PATH + "/multiple-segment-comparison.html")
+        os.remove(DATA_PATH + "/Sys3-Sys1_multiple-segment-comparison.html")
         os.remove(DATA_PATH + "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/multiple-bucket-analysis-comet.png")
-        os.remove(DATA_PATH + "/multiple-bucket-analysis-bertscore.png")
-        os.remove(DATA_PATH + "/overall-confusion-matrix.json")
-        os.remove(DATA_PATH + "/label-a.json")
-        os.remove(DATA_PATH + "/label-b.json")
-        os.remove(DATA_PATH + "/label-c.json")
+        os.remove(DATA_PATH + "/multiple-bucket-analysis.png")
+        os.remove(DATA_PATH + "/overall-confusion-matrix.png")
+        os.remove(DATA_PATH + "/label-a.png")
+        os.remove(DATA_PATH + "/label-b.png")
+        os.remove(DATA_PATH + "/label-c.png")
         os.remove(DATA_PATH + "/analysis-labels-bucket.png")
         os.remove(DATA_PATH + "/incorrect-examples.json")
 
@@ -164,17 +220,17 @@ class TestPlots(unittest.TestCase):
     def test_multiple_segment_comparison(self):
         plot_multiple_segment_comparison(self.multiple_result,"Sys 1", "Sys 2", DATA_PATH)
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, "Sys1-Sys2_multiple-segment-comparison.html"))
         )
-        os.remove(DATA_PATH + "/multiple-segment-comparison.html")
+        os.remove(DATA_PATH + "/Sys1-Sys2_multiple-segment-comparison.html")
         plot_multiple_segment_comparison(self.multiple_result,"Sys 2", "Sys 3", DATA_PATH)
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, "Sys2-Sys3_multiple-segment-comparison.html"))
         )
-        os.remove(DATA_PATH + "/multiple-segment-comparison.html")
+        os.remove(DATA_PATH + "/Sys2-Sys3_multiple-segment-comparison.html")
         plot_multiple_segment_comparison(self.multiple_result,"Sys 3", "Sys 1", DATA_PATH)
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, "Sys3-Sys1_multiple-segment-comparison.html"))
         )
 
     def test_pairwise_distributions(self):
@@ -194,65 +250,65 @@ class TestPlots(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "bucket-analysis.png")))
 
     def test_bucket_multiple_comparison_comet(self):        
-        plot_bucket_multiple_comparison_comet(self.multiple_result, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "multiple-bucket-analysis-comet.png")))
+        plot_bucket_multiple_comparison(self.multiple_result_comet, DATA_PATH)
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "multiple-bucket-analysis.png")))
 
     def test_bucket_multiple_comparison_bertscore(self):        
-        plot_bucket_multiple_comparison_bertscore(self.multiple_result, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "multiple-bucket-analysis-bertscore.png")))
+        plot_bucket_multiple_comparison(self.multiple_result_bertscore, DATA_PATH)
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "multiple-bucket-analysis.png")))
     
     def test_overall_confusion_matrix_table(self):
         overall_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "overall-confusion-matrix.json")))
-        os.remove(DATA_PATH + "/overall-confusion-matrix.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "overall-confusion-matrix.png")))
+        os.remove(DATA_PATH + "/overall-confusion-matrix.png")
 
         overall_confusion_matrix_table(self.testset_class, "Sys 2", self.labels, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "overall-confusion-matrix.json")))
-        os.remove(DATA_PATH + "/overall-confusion-matrix.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "overall-confusion-matrix.png")))
+        os.remove(DATA_PATH + "/overall-confusion-matrix.png")
 
         overall_confusion_matrix_table(self.testset_class, "Sys 3", self.labels, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "overall-confusion-matrix.json")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "overall-confusion-matrix.png")))
     
     def test_singular_confusion_matrix_table_label_a(self):
         label = "a"
         singular_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-a.json")))
-        os.remove(DATA_PATH + "/label-a.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-a.png")))
+        os.remove(DATA_PATH + "/label-a.png")
 
         singular_confusion_matrix_table(self.testset_class, "Sys 2", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-a.json")))
-        os.remove(DATA_PATH + "/label-a.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-a.png")))
+        os.remove(DATA_PATH + "/label-a.png")
 
         singular_confusion_matrix_table(self.testset_class, "Sys 3", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-a.json")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-a.png")))
 
     def test_singular_confusion_matrix_table_label_b(self):
         label = "b"
         
         singular_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-b.json")))
-        os.remove(DATA_PATH + "/label-b.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-b.png")))
+        os.remove(DATA_PATH + "/label-b.png")
 
         singular_confusion_matrix_table(self.testset_class, "Sys 2", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-b.json")))
-        os.remove(DATA_PATH + "/label-b.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-b.png")))
+        os.remove(DATA_PATH + "/label-b.png")
 
         singular_confusion_matrix_table(self.testset_class, "Sys 3", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-b.json")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-b.png")))
 
     def test_singular_confusion_matrix_table_label_c(self):
         label = "c"
         
         singular_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-c.json")))
-        os.remove(DATA_PATH + "/label-c.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-c.png")))
+        os.remove(DATA_PATH + "/label-c.png")
 
         singular_confusion_matrix_table(self.testset_class, "Sys 2", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-c.json")))
-        os.remove(DATA_PATH + "/label-c.json")
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-c.png")))
+        os.remove(DATA_PATH + "/label-c.png")
 
         singular_confusion_matrix_table(self.testset_class, "Sys 3", self.labels, label, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-c.json")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-c.png")))
     
     def test_analysis_labels(self):
         analysis_labels(self.multiple_result_class, self.labels, DATA_PATH)
@@ -261,18 +317,19 @@ class TestPlots(unittest.TestCase):
             )
     
     def test_incorrect_examples(self):
-        incorrect_examples(self.testset_class, "Sys 1", DATA_PATH)
+        num = int(len(self.testset_class.ref)/4) + 1
+        incorrect_examples(self.testset_class, "Sys 1", num, [], [], DATA_PATH)
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.json"))
             )
         os.remove(DATA_PATH + "/incorrect-examples.json")
     
-        incorrect_examples(self.testset_class, "Sys 2", DATA_PATH)
+        incorrect_examples(self.testset_class, "Sys 2", num, [], [], DATA_PATH)
         self.assertFalse(
             os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.json"))
             )
         
-        incorrect_examples(self.testset_class, "Sys 3", DATA_PATH)
+        incorrect_examples(self.testset_class, "Sys 3", num, [], [], DATA_PATH)
         self.assertTrue(
             os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.json"))
             )

@@ -1,13 +1,13 @@
 import abc
 import os
 import streamlit as st
+import numpy as np
 
 from typing import List, Dict
 from telescope.collection_testsets import CollectionTestsets, NLGTestsets, ClassTestsets
 from telescope.plotting import (
     plot_bootstraping_result,
-    plot_bucket_multiple_comparison_comet,
-    plot_bucket_multiple_comparison_bertscore,
+    plot_bucket_multiple_comparison,
     plot_multiple_distributions,
     plot_multiple_segment_comparison,
     overall_confusion_matrix_table,
@@ -66,46 +66,32 @@ class NLGPlot(Plot):
 
 
     def display_plots(self) -> None:
-        if self.metric == "COMET":
+        if self.metric == "COMET" or self.metric == "BERTScore":
             st.header("Error-type analysis:")
-            plot_bucket_multiple_comparison_comet(self.results[self.metric])
-        
-        elif self.metric == "BERTScore":
-            st.header("Bucket analysis:")
-            plot_bucket_multiple_comparison_bertscore(self.results[self.metric])
+            plot_bucket_multiple_comparison(self.results[self.metric])
 
         if len(self.collection_testsets.testsets[self.ref_filename]) > 1:
-            st.header("Segment-level scores histogram:")
-            plot_multiple_distributions(self.results[self.metric])
-        
-        if self.task == "summarization":
-            testset = self.collection_testsets.testsets[self.ref_filename]
-            st.header("Extractive Summarization analysis")
-            system_1 = st.selectbox(
-                "Select the system:",
-                list(self.results[self.metric].systems_metric_results.keys()),
-                index=0,
-                key = "extractive_summarization")
-            analysis_extractive_summarization(testset.src, testset.systems_output[system_1])
+            try:
+                st.header("Segment-level scores histogram:")
+                plot_multiple_distributions(self.results[self.metric])
+            except np.linalg.LinAlgError as err:    
+                st.write(err)
 
         if len(self.results[self.metric].systems_metric_results) > 1:
-
             st.header("Pairwise comparison:")
 
-            left_1, right_1 = st.columns(2)
-    
-            system_x = left_1.selectbox(
-            "Select the system x:",
-            list(self.results[self.metric].systems_metric_results.keys()),
-            index=0,
-            key = self.ref_filename
+            left, right = st.columns(2)
+            system_x = left.selectbox(
+                "Select the system x:",
+                list(self.results[self.metric].systems_metric_results.keys()),
+                index=0,
+                key = self.ref_filename + "_1"
             )
-
-            system_y = right_1.selectbox(
-            "Select the system y:",
-            list(self.results[self.metric].systems_metric_results.keys()),
-            index=1,
-            key = self.ref_filename
+            system_y = right.selectbox(
+                "Select the system y:",
+                list(self.results[self.metric].systems_metric_results.keys()),
+                index=1,
+                key = self.ref_filename + "_2"
             )
             if system_x == system_y:
                 st.warning("The system x cannot be the same as system y")
@@ -137,10 +123,8 @@ class NLGPlot(Plot):
 
     def display_plots_cli(self, saving_dir:str, system_x:str, system_y:str) -> None:
         
-        if self.metric == "COMET":
-            plot_bucket_multiple_comparison_comet(self.results[self.metric], saving_dir)
-        elif self.metric == "BERTScore":
-            plot_bucket_multiple_comparison_bertscore(self.results[self.metric], saving_dir)
+        if self.metric == "COMET" or self.metric == "BERTScore":
+            plot_bucket_multiple_comparison(self.results[self.metric], saving_dir)
         
         if len(self.collection_testsets.testsets[self.ref_filename]) > 1:
             plot_multiple_distributions(self.results[self.metric], saving_dir)
@@ -149,7 +133,7 @@ class NLGPlot(Plot):
             if (system_x is None) and (system_y is None):
                 x = list(self.collection_testsets.systems_indexes.keys())[0]
                 y = list(self.collection_testsets.systems_indexes.keys())[1]
-                if self.task == "machine translation":
+                if self.task == "machine-translation":
                     plot_multiple_segment_comparison(self.results[self.metric],x,y,saving_dir,True)
                 else:
                     plot_multiple_segment_comparison(self.results[self.metric],x,y,saving_dir)
@@ -191,7 +175,7 @@ class ClassificationPlot(Plot):
         )
 
         st.subheader("Overall Confusion Matrix")
-        st.dataframe(overall_confusion_matrix_table(testset,system,labels))
+        overall_confusion_matrix_table(testset,system,labels)
 
         st.subheader("Confusion Matrix For Each Label")
         label = st.selectbox(
@@ -200,7 +184,7 @@ class ClassificationPlot(Plot):
             index=0,
             key = "confusion_matrix"
         )
-        st.dataframe(singular_confusion_matrix_table(testset,system,labels,label))
+        singular_confusion_matrix_table(testset,system,labels,label)
 
         st.header("Analysis Of Each Label")
         analysis_labels(self.results[self.metric], labels)
@@ -212,13 +196,27 @@ class ClassificationPlot(Plot):
             index=0,
             key = "examples"
         )
-        df = incorrect_examples(testset, system)
+
+        sys_name = self.collection_testsets.systems_indexes[system]
+        
+        if 'num_' + sys_name + "_" + self.ref_filename not in st.session_state:
+            st.session_state['num_' + sys_name + "_" + self.ref_filename] = int(len(testset.ref)/4) + 1
+        if 'incorrect_ids_' + sys_name + "_" + self.ref_filename not in st.session_state:
+            st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename] = []
+        if 'tables_' + sys_name +  "_" + self.ref_filename not in st.session_state:
+            st.session_state['tables_' + sys_name + "_" + self.ref_filename] = []
+
+        df, st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename] , st.session_state['tables_' + sys_name + "_" + self.ref_filename] = incorrect_examples(testset, system, st.session_state['num_' + sys_name + "_" + self.ref_filename], st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename], st.session_state['tables_' + sys_name + "_" + self.ref_filename])
 
         if df is not None:
             st.dataframe(df)
+
+            if st.session_state['num_' + sys_name + "_" + self.ref_filename] < len(testset.ref):
+                _, middle, _ = st.columns(3)
+                if (middle.button("More examples")):
+                    st.session_state['num_' + sys_name + "_" + self.ref_filename] += st.session_state['num_' + sys_name + "_" + self.ref_filename]
         else:
             st.warning("There are no examples that are incorrectly labelled.")
-    
 
     def display_plots_cli(self, saving_dir:str) -> None:
         sys_indexes = self.collection_testsets.systems_indexes
@@ -233,7 +231,8 @@ class ClassificationPlot(Plot):
                 os.makedirs(output_file)            
             overall_confusion_matrix_table(testset,sys,labels,output_file)
 
-            incorrect_examples(testset,sys,output_file)
+            num = int(len(testset.ref)/4) + 1
+            incorrect_examples(testset,sys,num, [], [], output_file)
 
             label_file = output_file + "/" + "singular_confusion_matrix"
             if not os.path.exists(label_file):

@@ -17,8 +17,7 @@ class Classification(Task):
     
     @classmethod
     def plots_interface(cls, metric:str, metrics:list, available_metrics:dict, results:dict, 
-                        collection_testsets: CollectionTestsets, ref_file: str,
-                        num_samples: int, sample_ratio: float) -> None:
+                        collection_testsets: CollectionTestsets, ref_file: str) -> None:
         """ Interfave to display the plots"""
         return ClassificationPlot(metric,metrics,available_metrics,
                                     results,collection_testsets,ref_file,cls.name).display_plots()

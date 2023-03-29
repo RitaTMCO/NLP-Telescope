@@ -357,7 +357,7 @@ def apply_filter(collection,filter,length_min_val,length_max_val):
                 fil = available_filters[f](collection.testsets[ref_name], int(length_min_val*100), 
                                     int(length_max_val*100))
             elif f == "named-entities":
-                available_filters[f](collection.testsets[ref_name], collection.source_language, 
+                fil = available_filters[f](collection.testsets[ref_name], collection.source_language, 
                                                                             collection.target_language)
             else:
                 fil = available_filters[f](collection.testsets[ref_name])

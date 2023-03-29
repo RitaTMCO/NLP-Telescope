@@ -54,7 +54,7 @@ metric = st.sidebar.selectbox(
 )
 
 filters = st.sidebar.multiselect(
-    "Select testset filters:", list(available_filters.keys()), default=["duplicates"]
+    "Select testset filters:", list(available_filters.keys()), default=list(available_filters.keys())[0]
 )
 
 if "length" in available_filters:
@@ -82,18 +82,18 @@ if "length" in available_filters:
                 "length",
             ]
         )      
-
-st.sidebar.subheader("Bootstrap resampling settings:")
-num_samples = st.sidebar.number_input(
-    "Number of random partitions:",
-    min_value=1,
-    max_value=1000,
-    value=300,
-    step=50,
-)
-sample_ratio = st.sidebar.slider(
-    "Proportion (P) of the initial sample:", 0.0, 1.0, value=0.5, step=0.1
-)
+if task != "classification":
+    st.sidebar.subheader("Bootstrap resampling settings:")
+    num_samples = st.sidebar.number_input(
+        "Number of random partitions:",
+        min_value=1,
+        max_value=1000,
+        value=300,
+        step=50,
+    )
+    sample_ratio = st.sidebar.slider(
+        "Proportion (P) of the initial sample:", 0.0, 1.0, value=0.5, step=0.1
+    )
 
 # --------------------- Streamlit APP Caching functions! --------------------------
 
@@ -214,6 +214,10 @@ if collection_testsets:
                     collection_testsets.indexes_of_systems()))
     
     if metric in results:
-        available_tasks[task].plots_interface(metric, metrics, available_metrics,
+        if task != "classification":
+            available_tasks[task].plots_interface(metric, metrics, available_metrics,
                                                 results, collection_testsets, ref_filename,
                                                 num_samples, sample_ratio)
+        else:
+            available_tasks[task].plots_interface(metric, metrics, available_metrics,
+                                                results, collection_testsets, ref_filename)

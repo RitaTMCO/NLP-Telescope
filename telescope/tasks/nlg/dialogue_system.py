@@ -4,7 +4,7 @@ from telescope.metrics import AVAILABLE_DIALOGUE_METRICS
 from telescope.filters import AVAILABLE_DIALOGUE_FILTERS
 
 class DialogueSystem(NLG):
-    name = "dialogue system"
+    name = "dialogue-system"
     metrics = AVAILABLE_DIALOGUE_METRICS
     filters = AVAILABLE_DIALOGUE_FILTERS
 

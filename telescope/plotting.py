@@ -23,7 +23,8 @@ import plotly.figure_factory as ff
 import streamlit as st
 import random
 
-from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix
+from streamlit import runtime
+from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix, ConfusionMatrixDisplay
 from telescope.testset import MultipleTestset
 from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleResult
 
@@ -207,7 +208,7 @@ def plot_bucket_comparison(
             os.makedirs(saving_dir)
         plot.savefig(saving_dir + "/bucket-analysis.png")
 
-    if st._is_running_with_streamlit:
+    if runtime.exists():
         col1, col2, col3 = st.beta_columns(3)
         with col1:
             red_bucket = st.slider(
@@ -264,7 +265,7 @@ def plot_pairwise_distributions(
             os.makedirs(saving_dir)
         fig.write_html(saving_dir + "/scores-distribution.html")
 
-    if st._is_running_with_streamlit:
+    if runtime.exists():
         st.plotly_chart(fig)
 
 
@@ -308,7 +309,7 @@ def plot_segment_comparison(
             saving_dir + "/segment-comparison.html", format="html"
         )
 
-    if st._is_running_with_streamlit:
+    if runtime.exists():
         st.altair_chart(c, use_container_width=True)
 
 
@@ -476,7 +477,7 @@ def update_multiple_buckets(
     return plt
 
 
-def plot_bucket_multiple_comparison_comet(
+def plot_bucket_multiple_comparison(
     multiple_result: MultipleResult, saving_dir: str = None
 ) -> None:
 
@@ -492,107 +493,102 @@ def plot_bucket_multiple_comparison_comet(
         ]
     )
 
-    plot = update_multiple_buckets(
-        systems_results_seg_scores,
-        0.1,
-        0.3,
-        0.7,
+
+    max_score = max(
+        [ max(seg_scores) 
+        for seg_scores in list(systems_results_seg_scores.values())
+        ]
     )
+
+
+    if multiple_result.metric == "COMET":
+        plot = update_multiple_buckets(
+            systems_results_seg_scores,
+            0.1,
+            0.3,
+            0.7,
+        )   
+    elif multiple_result.metric == "BERTScore":
+        plot = update_multiple_buckets(
+            systems_results_seg_scores,
+            -0.75,
+            0.0,
+            0.75,
+        )  
+
 
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/multiple-bucket-analysis-comet.png")
+        plot.savefig(saving_dir + "/multiple-bucket-analysis.png")
 
-    if st._is_running_with_streamlit:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            red_bucket = st.slider(
-                "Red bucket max treshold", min_score, 0.3, value=0.1, step=0.1, key=f"{multiple_result.ref}"
-            )
+    if multiple_result.metric == "COMET":
+        if runtime.exists():
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                red_bucket = st.slider(
+                    "Red bucket max treshold", min_score, 0.3, value=0.1, step=0.1, key="bucket1"
+                )
 
-        with col2:
-            yellow_bucket = st.slider(
-                "Yellow bucket max treshold", red_bucket, 0.5, value=0.3, step=0.1, key=f"{multiple_result.ref}"
-            )
+            with col2:
+                yellow_bucket = st.slider(
+                    "Yellow bucket max treshold", red_bucket, 0.5, value=0.3, step=0.1, key="bucket2"
+                )   
 
-        with col3:
-            blue_bucket = st.slider(
-                "Blue bucket max treshold", yellow_bucket, 0.8, value=0.7, step=0.1, key=f"{multiple_result.ref}"
-            )
+            with col3:
+                blue_bucket = st.slider(
+                    "Blue bucket max treshold", yellow_bucket, 0.8, value=0.7, step=0.1, key="bucket3"
+             )
 
-        right, left = st.columns(2)
-        left.pyplot(
-            update_multiple_buckets(
-                systems_results_seg_scores,
-                red_bucket,
-                yellow_bucket,
-                blue_bucket,
+            right, left = st.columns(2)
+            left.pyplot(
+                update_multiple_buckets(
+                    systems_results_seg_scores,
+                    red_bucket,
+                    yellow_bucket,
+                    blue_bucket,
+                )
             )
-        )
-        plt.clf()
-        right.markdown(
-            """
-        The bucket analysis separates translations according to 4 different categories:
+            plt.clf()
+            right.markdown(
+                """
+            The bucket analysis separates translations according to 4 different categories:
             
-        - **Green bucket:** Translations without errors.
-        - **Blue bucket:** Translations with minor errors.
-        - **Yellow bucket:** Translations with major errors.
-        - **Red bucket:** Translations with critical errors.
-        """
-        )
-
-
-def plot_bucket_multiple_comparison_bertscore(
-    multiple_result: MultipleResult, saving_dir: str = None
-) -> None:
-
-
-    systems_results_seg_scores = {
-        system: metric_system.seg_scores
-        for system, metric_system in multiple_result.systems_metric_results.items()
-    }
-
-
-    plot = update_multiple_buckets(
-        systems_results_seg_scores,
-        -0.5,
-        0.25,
-        0.75,
-    )
-
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/multiple-bucket-analysis-bertscore.png")
-
-    if st._is_running_with_streamlit:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            red_bucket = st.slider(
-                "Red bucket max treshold", -1.0, 0.0, value=-0.5, step=0.05, key=f"{multiple_result.ref}"
+            - **Green bucket:** Translations without errors.
+            - **Blue bucket:** Translations with minor errors.
+            - **Yellow bucket:** Translations with major errors.
+            - **Red bucket:** Translations with critical errors.
+            """
             )
 
-        with col2:
-            yellow_bucket = st.slider(
-                "Yellow bucket max treshold", red_bucket, 0.5, value=0.0, step=0.05, key=f"{multiple_result.ref}"
-            )
+    elif multiple_result.metric == "BERTScore":
+        if runtime.exists():
 
-        with col3:
-            blue_bucket = st.slider(
-                "Blue bucket max treshold", yellow_bucket, 1.0, value=0.75, step=0.05, key=f"{multiple_result.ref}"
-            )
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                red_bucket = st.slider(
+                    "Red bucket max treshold", min_score, -0.5, value=-0.75, step=0.05, key="bucket1"
+                )
 
-        st.pyplot(
-            update_multiple_buckets(
-                systems_results_seg_scores,
-                red_bucket,
-                yellow_bucket,
-                blue_bucket,
-            )
-        )
-        plt.clf()
+            with col2:
+                yellow_bucket = st.slider(
+                    "Yellow bucket max treshold", red_bucket, 0.5, value=0.0, step=0.05, key="bucket2"
+                )
 
+            with col3:
+                blue_bucket = st.slider(
+                    "Blue bucket max treshold", yellow_bucket, max_score, value=0.75, step=0.05, key="bucket3"
+                )
+
+            st.pyplot(
+                update_multiple_buckets(
+                    systems_results_seg_scores,
+                    red_bucket,
+                    yellow_bucket,
+                    blue_bucket,
+                )
+            )
+            plt.clf()
 
 def plot_multiple_distributions(
     multiple_result: MultipleResult, saving_dir: str = None
@@ -613,7 +609,7 @@ def plot_multiple_distributions(
             os.makedirs(saving_dir)
         fig.write_html(saving_dir + "/multiple-scores-distribution.html")
 
-    if st._is_running_with_streamlit:
+    if runtime.exists():
         st.plotly_chart(fig)
 
 
@@ -679,10 +675,11 @@ def plot_multiple_segment_comparison(
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
         c.properties(width=1300, height=600).save(
-            saving_dir + "/multiple-segment-comparison.html", format="html"
+            saving_dir + "/" + system_x.replace(" ", "") + "-" + system_y.replace(" ", "") + "_multiple-segment-comparison.html", 
+            format="html"
         )
 
-    if st._is_running_with_streamlit:
+    if runtime.exists():
         st.altair_chart(c, use_container_width=True)
 
 def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], 
@@ -690,10 +687,16 @@ def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: 
     true = testset.ref
     pred = testset.systems_output[system]
     matrix = confusion_matrix(true, pred, labels=labels)
-    df = pd.DataFrame(matrix, index=labels, columns= labels)
+    conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix,display_labels=labels)
+    conf_mat.plot()
+
     if saving_dir is not None:
-        df.to_json(saving_dir + "/overall-confusion-matrix.json", orient="index", indent=4)
-    return df
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        plt.savefig(saving_dir + "/overall-confusion-matrix.png")
+
+    if runtime.exists():
+        st.pyplot(plt)
 
 def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], 
                                 label: List[str], saving_dir: str = None): 
@@ -702,35 +705,41 @@ def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels:
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
     index = labels.index(label)
     name = ["other labels"] + [label] 
-    df = pd.DataFrame(matrix[index], index=name, columns=name)
-    if saving_dir is not None:
-        df.to_json(saving_dir + "/label-" + label + ".json", orient="index", indent=4)
-    return df
+    
+    conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix[index],display_labels=name)
+    conf_mat.plot()
 
-def incorrect_examples(testset:MultipleTestset, system:str, saving_dir:str = None):
+    if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        plt.savefig(saving_dir + "/label-" + label + ".png")
+
+    if runtime.exists():
+        st.pyplot(plt)
+
+def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_ids: List[str] = [] ,
+    table: List[List[str]] = [], saving_dir:str = None):
     src = testset.src
     true = testset.ref
     pred = testset.systems_output[system]
+
     n = len(true)
-    num = int(n/4) + 1
-    incorrect_ids = list()
-    table = list()
     ids = random.sample(range(n),n)
     
     for i in ids:
-        if true[i] != pred[i]:
-            incorrect_ids.append("line " + str(i))
+        if (true[i] != pred[i]) and ("line " + str(i+1) not in incorrect_ids):
+            incorrect_ids.append("line " + str(i+1))
             table.append([src[i], true[i], pred[i]])
         if len(incorrect_ids) == num:
             break
     
     if len(incorrect_ids) != 0:
-        df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"])
+        df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"]).sort_index()
         if saving_dir is not None:
             df.to_json(saving_dir + "/incorrect-examples.json", orient="index", indent=4)
-        return df
+        return df, incorrect_ids, table
     else:
-        return None
+        return None, [], []
 
 def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: List[str], labels:List[str]):
     number_of_systems = len(systems_indexes)
@@ -790,7 +799,7 @@ def analysis_labels(result: MultipleResult, labels:List[str], saving_dir: str = 
 
     if saving_dir is not None:
         plt.savefig(saving_dir + "/analysis-labels-bucket.png")
-    if st._is_running_with_streamlit:
+    if runtime.exists():
         st.pyplot(plt)
 
     plt.clf()
