@@ -105,7 +105,7 @@ def hash_metrics(metrics):
     return " ".join([m.name for m in metrics])
 
 
-@st.cache(
+st.cache(
     hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
     suppress_st_warning=True,
     show_spinner=False,
@@ -188,7 +188,7 @@ def run_all_metrics(collection, metrics, filters):
 
 # --------------------  APP  --------------------
 
-st.title("Welcome to NLP-Telescope!")
+st.title("Welcome to NLP-Telescope! :telescope:")
 collection_testsets = available_tasks[task].input_interface()
 
 if collection_testsets:
@@ -199,10 +199,12 @@ if collection_testsets:
 
     results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
 
+    
+    st.markdown("**:blue[Systems:]**" )
     st.text(collection_testsets.display_systems())
 
     ref_filename = st.selectbox(
-        "Select the reference:",
+        "**:blue[Select the Reference:]**",
         collection_testsets.refs_names,
         index=0,
         )

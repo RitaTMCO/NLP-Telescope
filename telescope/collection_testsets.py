@@ -4,6 +4,7 @@ from telescope.utils import read_lines
 
 import streamlit as st
 import click
+import abc
 
 class CollectionTestsets:
     task = "NLP"
@@ -11,8 +12,6 @@ class CollectionTestsets:
     type_of_references = "References"
     type_of_output = "Systems Outputs"
     message_of_success = "Source, References and Outputs were successfully uploaded!"
-
-
     def __init__(
         self,
         src_name: str,
@@ -31,7 +30,7 @@ class CollectionTestsets:
         return list(self.systems_indexes.keys())
     
     def display_systems(self) -> str:
-        text = "\nSystems:\n"
+        text = ""
         for index, system in self.systems_indexes.items():
             text += index + ": " + system + " \n"
         return text
@@ -65,13 +64,13 @@ class CollectionTestsets:
     
     @staticmethod
     def upload_files(task:str, source:str, reference:str, type_of_output:str) -> list:
-        st.subheader("Upload Files for " + task + " analysis:")
+        st.subheader("Upload Files for :blue[" + task + "] analysis:")
         
-        source_file = st.file_uploader("Upload " + source, type=["txt"])
+        source_file = st.file_uploader("Upload **one** file with the " + source, type=["txt"])
         sources = read_lines(source_file)
 
 
-        ref_files = st.file_uploader("Upload " + reference, type=["txt"], 
+        ref_files = st.file_uploader("Upload **one** or **more** files with the " + reference, type=["txt"], 
                     accept_multiple_files=True)
         references = {}
         for ref_file in ref_files:
@@ -79,7 +78,7 @@ class CollectionTestsets:
                 references[ref_file.name] = read_lines(ref_file)
 
 
-        outputs_files = st.file_uploader("Upload " + type_of_output,  type=["txt"], 
+        outputs_files = st.file_uploader("Upload **one** or **more** files with the " + type_of_output,  type=["txt"], 
                                     accept_multiple_files=True)
         systems_indexes, outputs = {}, {}
         i = 1
@@ -90,8 +89,7 @@ class CollectionTestsets:
                 systems_indexes[index] = output_file.name
                 outputs[index] = read_lines(output_file)
 
-        return [source_file,sources,ref_files,references,outputs_files,systems_indexes,
-                outputs]
+        return [source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs]
     
     @staticmethod
     def create_testsets(files:list) -> Dict[str, Testset]:
@@ -101,31 +99,14 @@ class CollectionTestsets:
             filenames = list(source_file.name) + list(ref_filename) + list(systems_indexes.values())
             testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
         return testsets
-
-    @classmethod
-    def read_data(cls):
-        files = cls.upload_files(
-            cls.task, 
-            cls.type_of_source,
-            cls.type_of_references,
-            cls.type_of_output
-        )
-        
-        source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
-
-        if ((ref_files != []) and (source_file is not None) and (outputs_files != [])):
-
-            cls.validate_files(sources,references,systems_indexes,output)
-            st.success(cls.message_of_success)
-
-            testsets = cls.create_testsets(files)
-
-            return cls(source_file.name, references.keys(), systems_indexes,
-                [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                testsets)
     
     @classmethod
-    def read_data_cli(cls, source:click.File, system_output:click.File, reference:click.File):      
+    @abc.abstractmethod
+    def read_data(cls):
+        return NotImplementedError
+
+    @classmethod
+    def read_data_cli_aux(cls, source:click.File, system_output:click.File, reference:click.File):      
         systems_indexes = {}
         outputs = {}
         i = 1
@@ -145,20 +126,17 @@ class CollectionTestsets:
         files = [source,src,reference,references,system_output,systems_indexes,outputs]
 
         testsets = cls.create_testsets(files)
-
         return systems_indexes,outputs,references,src,testsets
 
     @classmethod
-    def read_cli(cls, source:click.File, system_output:click.File, reference:click.File):
-        systems_indexes,outputs,references,src,testsets = cls.read_data_cli(source,system_output,reference) 
-        return cls(source.name, references.keys(), systems_indexes,
-                [source.name] +  list(references.keys()) + list(systems_indexes.values()), testsets)
+    @abc.abstractmethod
+    def read_data_cli(cls, source:click.File, system_output:click.File, reference:click.File):
+        return NotImplementedError
 
 
 
 class NLGTestsets(CollectionTestsets):
     task = "NLG"
-
     def __init__(
         self,
         src_name: str,
@@ -198,27 +176,26 @@ class NLGTestsets(CollectionTestsets):
             cls.type_of_references,
             cls.type_of_output
         )
-        language_pair = cls.upload_language()
+        language = cls.upload_language()
         
         source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
 
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (language_pair != "")):
+            and (language != "")):
 
             cls.validate_files(sources,references,systems_indexes,outputs)
-
             st.success(cls.message_of_success)
 
             testsets = cls.create_testsets(files)
 
             return cls(source_file.name, references.keys(), systems_indexes,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                testsets, language_pair)
+                testsets, language)
     
     @classmethod
-    def read_cli(cls, source:click.File, system_output:click.File, reference:click.File, 
+    def read_data_cli(cls, source:click.File, system_output:click.File, reference:click.File, 
         language:str):
         systems_indexes,outputs,references,src,testsets = cls.read_data_cli(source,system_output,reference) 
         return cls(source.name, references.keys(), systems_indexes,
@@ -228,11 +205,8 @@ class NLGTestsets(CollectionTestsets):
 
 class MTTestsets(NLGTestsets):
     task = "Machine Translation"
-    type_of_output = "Source"
-    type_of_references = "References"
     type_of_output = "Systems Translations"
     message_of_success = "Source, References, Translations and LP were successfully uploaded!"
-
     def __init__(
         self,
         src_name: str,
@@ -251,44 +225,12 @@ class MTTestsets(NLGTestsets):
             "",
         )
         return language_pair
-    
-    @classmethod
-    def read_data(cls):
 
-        files = cls.upload_files(
-            cls.task, 
-            cls.type_of_source,
-            cls.type_of_references,
-            cls.type_of_output
-        )
-        
-        language_pair = cls.upload_language()
-
-        source_file,sources,ref_files,references,outputs_files,systems_indexes,outputs = files
-
-        if ((ref_files != []) 
-            and (source_file is not None) 
-            and (outputs_files != []) 
-            and (language_pair != "")):
-
-            cls.validate_files(sources,references,systems_indexes,outputs)
-
-            st.success(cls.message_of_success)
-            
-            testsets = cls.create_testsets(files)
-
-            return cls(source_file.name, references.keys(), systems_indexes,
-                [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
-                testsets, language_pair)
-    
 
 class SummTestsets(NLGTestsets):
     task = "Summarization"
-    type_of_source = "Source"
-    type_of_references = "References"
     type_of_output = "Systems Summaries"
     message_of_success = "Source, References, Summaries and Language were successfully uploaded!"
-
     def __init__(
         self,
         src_name: str,
@@ -326,10 +268,9 @@ class SummTestsets(NLGTestsets):
 class DialogueTestsets(NLGTestsets):
     task = "Dialogue System"
     type_of_source = "Context"
-    type_of_references = "References"
+    type_of_references = "Truth Answers"
     type_of_output = "Systems Answers"
     message_of_success = "Source, References, Dialogues and Language were successfully uploaded!"
-
     def __init__(
         self,
         src_name: str,
@@ -361,11 +302,12 @@ class DialogueTestsets(NLGTestsets):
             len(system_x), len(ref))
 
 
+
 class ClassTestsets(CollectionTestsets):
     task = "Classification"
     type_of_source = "Samples"
     type_of_references = "True Labels"
-    type_of_output = "Systems Predicated Labels"
+    type_of_output = "Predicated Labels"
     message_of_success = "Source and Labels were successfully uploaded!"
 
     def __init__(
@@ -417,7 +359,7 @@ class ClassTestsets(CollectionTestsets):
                 testsets, labels)
     
     @classmethod
-    def read_cli(cls, source:click.File, system_output:click.File, reference:click.File, 
+    def read_data_cli(cls, source:click.File, system_output:click.File, reference:click.File, 
         labels:str):
         systems_indexes,outputs,references,src, testsets = cls.read_data_cli(source,system_output,reference) 
         return cls(source.name, references.keys(), systems_indexes,

@@ -67,18 +67,18 @@ class NLGPlot(Plot):
 
     def display_plots(self) -> None:
         if self.metric == "COMET" or self.metric == "BERTScore":
-            st.header("Error-type analysis:")
+            st.header(":blue[Error-type analysis:]")
             plot_bucket_multiple_comparison(self.results[self.metric])
 
         if len(self.collection_testsets.testsets[self.ref_filename]) > 1:
             try:
-                st.header("Segment-level scores histogram:")
+                st.header(":blue[Segment-level scores histogram:]")
                 plot_multiple_distributions(self.results[self.metric])
             except np.linalg.LinAlgError as err:    
                 st.write(err)
 
         if len(self.results[self.metric].systems_metric_results) > 1:
-            st.header("Pairwise comparison:")
+            st.header(":blue[Pairwise comparison:]")
 
             left, right = st.columns(2)
             system_x = left.selectbox(
@@ -167,7 +167,7 @@ class ClassificationPlot(Plot):
         labels = self.collection_testsets.labels
         indexes_of_systems = self.collection_testsets.indexes_of_systems()
 
-        st.header("Confusion Matrix")
+        st.header(":blue[Confusion Matrix]")
         system = st.selectbox(
             "Select the system:",
             indexes_of_systems,
@@ -186,10 +186,10 @@ class ClassificationPlot(Plot):
         )
         singular_confusion_matrix_table(testset,system,labels,label)
 
-        st.header("Analysis Of Each Label")
+        st.header(":blue[Analysis Of Each Label]")
         analysis_labels(self.results[self.metric], labels)
 
-        st.header("Examples That Are Incorrectly Labelled")
+        st.header(":blue[Examples That Are Incorrectly Labelled]")
         system = st.selectbox(
             "Select the system:",
             indexes_of_systems,

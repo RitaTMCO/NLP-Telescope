@@ -538,9 +538,9 @@ def n_compare_nlg(
     system_x: click.File,
     system_y: click.File,
 ):  
-    collection = NLGTestsets.read_cli(source,system_output,reference,language)
+    collection = NLGTestsets.read_data_cli(source,system_output,reference,language)
 
-    click.secho(collection.display_systems(), fg="bright_blue")
+    click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
     if filter:
         apply_filter(collection,filter,length_min_val,length_max_val)   
@@ -663,9 +663,9 @@ def n_compare_classification(
     seg_metric: str,
     output_folder: str
 ):  
-    collection = ClassTestsets.read_cli(source,system_output,reference,list(label))
+    collection = ClassTestsets.read_data_cli(source,system_output,reference,list(label))
 
-    click.secho(collection.display_systems(), fg="bright_blue")
+    click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
     if filter:
         apply_filter(collection,filter,0,0)   

@@ -29,8 +29,8 @@ from telescope.testset import MultipleTestset
 from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleResult
 
 T1_COLOR = "#9ACD32"
-T2_COLOR = "#00A4FF"
-T3_COLOR = "#F6C575"
+T2_COLOR = "#56C3FF"
+T3_COLOR = "#FFD966"
 T4_COLOR = "#DB6646"
 
 
