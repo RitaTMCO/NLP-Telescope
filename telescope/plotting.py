@@ -734,12 +734,12 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
             break
     
     if len(incorrect_ids) != 0:
-        df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"]).sort_index()
+        df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"])
         if saving_dir is not None:
             df.to_json(saving_dir + "/incorrect-examples.json", orient="index", indent=4)
-        return df, incorrect_ids, table
+        return df
     else:
-        return None, [], []
+        return None
 
 def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: List[str], labels:List[str]):
     number_of_systems = len(systems_indexes)

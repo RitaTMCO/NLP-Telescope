@@ -203,18 +203,29 @@ class ClassificationPlot(Plot):
             st.session_state['num_' + sys_name + "_" + self.ref_filename] = int(len(testset.ref)/4) + 1
         if 'incorrect_ids_' + sys_name + "_" + self.ref_filename not in st.session_state:
             st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename] = []
-        if 'tables_' + sys_name +  "_" + self.ref_filename not in st.session_state:
+        if 'tables_' + sys_name + "_" + self.ref_filename not in st.session_state:
             st.session_state['tables_' + sys_name + "_" + self.ref_filename] = []
+        if 'num_incorrect_ids_' + sys_name + "_" + self.ref_filename not in st.session_state:
+            st.session_state['num_incorrect_ids_' + sys_name + "_" + self.ref_filename] = 0
 
-        df, st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename] , st.session_state['tables_' + sys_name + "_" + self.ref_filename] = incorrect_examples(testset, system, st.session_state['num_' + sys_name + "_" + self.ref_filename], st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename], st.session_state['tables_' + sys_name + "_" + self.ref_filename])
+        df = incorrect_examples(
+                    testset, 
+                    system, 
+                    st.session_state['num_' + sys_name + "_" + self.ref_filename],
+                    st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename],
+                    st.session_state['tables_' + sys_name + "_" + self.ref_filename]
+        )
 
         if df is not None:
             st.dataframe(df)
 
-            if st.session_state['num_' + sys_name + "_" + self.ref_filename] < len(testset.ref):
+            if st.session_state['num_incorrect_ids_' + sys_name + "_" + self.ref_filename] != len(st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename]):
+                st.session_state['num_' + sys_name + "_" + self.ref_filename] +=  st.session_state['num_' + sys_name + "_" + self.ref_filename] 
+                st.session_state['num_incorrect_ids_' + sys_name + "_" + self.ref_filename] = len(st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename])
                 _, middle, _ = st.columns(3)
-                if (middle.button("More examples")):
-                    st.session_state['num_' + sys_name + "_" + self.ref_filename] += st.session_state['num_' + sys_name + "_" + self.ref_filename]
+                middle.button("More examples")
+            else:
+                st.warning("There are no more examples that are incorrectly labeled.")
         else:
             st.warning("There are no examples that are incorrectly labelled.")
 
