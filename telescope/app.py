@@ -156,7 +156,7 @@ def run_all_metrics(collection, metrics, filters):
     target_language = "X"
     source_language = "X"
 
-    if collection.task == "Classification":
+    if collection.task == "classification":
         labels = collection.labels
     else:
         source_language = collection.source_language
@@ -184,6 +184,10 @@ def run_all_metrics(collection, metrics, filters):
         for metric in metrics}
         for ref_name in refs_names
         }
+@st.cache
+def rename_system(system_name,sys_id):
+    st.session_state[sys_id + "_name"] = system_name
+    collection_testsets.systems_names[sys_id] = st.session_state[sys_id + "_name"]
 
 
 # --------------------  APP  --------------------
@@ -199,21 +203,36 @@ if collection_testsets:
 
     results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
 
-    
-    st.markdown("**:blue[Systems:]**" )
+    st.write("---")
+    st.title("Informations About The Systems")
+
+    st.subheader(":blue[Rename Systems]")
+    system_filename = st.selectbox(
+        "**Select the System Filename**",
+        list(collection_testsets.systems_indexes.keys()),
+        index=0)
+    sys_id = collection_testsets.systems_indexes[system_filename]
+    system_name = st.text_input('Enter the system name', collection_testsets.systems_names[sys_id])
+    st.session_state[task + "_" + sys_id + "_rename"] = system_name
+    collection_testsets.systems_names[sys_id] = st.session_state[task + "_" + sys_id + "_rename"]
+
+    st.subheader(":blue[Systems Names]" )
     st.text(collection_testsets.display_systems())
 
+
+    st.write("---")
+    st.title("Analysis")
     ref_filename = st.selectbox(
         "**:blue[Select the Reference:]**",
         collection_testsets.refs_names,
         index=0,
-        )
+    )
 
     results = results_per_ref[ref_filename]
 
     if len(results) > 0:
         st.dataframe(MultipleResult.results_to_dataframe(list(results.values()), 
-                    collection_testsets.indexes_of_systems()))
+            collection_testsets.systems_names))
     
     if metric in results:
         if task != "classification":

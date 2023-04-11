@@ -337,13 +337,13 @@ def plot_bootstraping_result(bootstrap_result: BootstrapResult):
 
 def update_multiple_buckets(
     systems_results_seg_scores: Dict[str, List[float]],
+    systems_names: List[str],
     crit_err_thr: float = 0.0,
     major_err_thr: float = 0.3,
     minor_err_thr: float = 0.6,
 ):
 
-    systems_indexes = list(systems_results_seg_scores.keys())
-    number_of_systems = len(systems_results_seg_scores)
+    number_of_systems = len(systems_names)
     total = len(list(systems_results_seg_scores.values())[0])
 
     no_err, minor_err, major_err, crit_err = {}, {}, {}, {}
@@ -402,7 +402,7 @@ def update_multiple_buckets(
     barWidth = 0.85 + ratio
     font=20
     color = "black"
-    names = tuple(systems_indexes)
+    names = tuple(systems_names)
     plt.clf()
     
     ax1 = plt.bar(r, T4Bars, color=T4_COLOR, edgecolor="white", width=barWidth)
@@ -478,7 +478,7 @@ def update_multiple_buckets(
 
 
 def plot_bucket_multiple_comparison(
-    multiple_result: MultipleResult, saving_dir: str = None
+    multiple_result: MultipleResult, systems_names: List[str], saving_dir: str = None
 ) -> None:
 
 
@@ -504,6 +504,7 @@ def plot_bucket_multiple_comparison(
     if multiple_result.metric == "COMET":
         plot = update_multiple_buckets(
             systems_results_seg_scores,
+            systems_names,
             0.1,
             0.3,
             0.7,
@@ -511,6 +512,7 @@ def plot_bucket_multiple_comparison(
     elif multiple_result.metric == "BERTScore":
         plot = update_multiple_buckets(
             systems_results_seg_scores,
+            systems_names,
             -0.75,
             0.0,
             0.75,
@@ -544,6 +546,7 @@ def plot_bucket_multiple_comparison(
             left.pyplot(
                 update_multiple_buckets(
                     systems_results_seg_scores,
+                    systems_names,
                     red_bucket,
                     yellow_bucket,
                     blue_bucket,
@@ -583,6 +586,7 @@ def plot_bucket_multiple_comparison(
             st.pyplot(
                 update_multiple_buckets(
                     systems_results_seg_scores,
+                    systems_names,
                     red_bucket,
                     yellow_bucket,
                     blue_bucket,
@@ -591,7 +595,7 @@ def plot_bucket_multiple_comparison(
             plt.clf()
 
 def plot_multiple_distributions(
-    multiple_result: MultipleResult, saving_dir: str = None
+    multiple_result: MultipleResult, sys_names: List[str], saving_dir: str = None
 ) -> None:
     scores_list = [
         metric_system.seg_scores 
@@ -601,7 +605,7 @@ def plot_multiple_distributions(
     hist_data = [scores[:, i] for i in range(scores.shape[1])]
     fig = ff.create_distplot(
         hist_data,
-        list(multiple_result.systems_metric_results.keys()),
+        sys_names,
         bin_size=[0.1 for _ in range(scores.shape[1])],
     )
     if saving_dir is not None:
@@ -741,11 +745,11 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
     else:
         return None
 
-def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: List[str], labels:List[str]):
-    number_of_systems = len(systems_indexes)
+def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_names: List[str], labels:List[str]):
+    number_of_systems = len(systems_names)
     number_of_labels = len(labels)
     seg_scores_label = list(seg_scores_dict.values())
-    names = tuple(systems_indexes)
+    names = tuple(systems_names)
 
     ratio = int((number_of_systems)/2)
     r = [i* (number_of_systems) for i in range(number_of_systems)]
@@ -788,14 +792,13 @@ def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_indexes: Li
 
 
 
-def analysis_labels(result: MultipleResult, labels:List[str], saving_dir: str = None):
-    systems_indexes = list(result.systems_metric_results.keys())
+def analysis_labels(result: MultipleResult, sys_names: List[str], labels:List[str], saving_dir: str = None):
     seg_scores_list = [result_sys.seg_scores 
                 for result_sys in list(result.systems_metric_results.values())]
     seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
                 for i, label in enumerate(labels)}
 
-    plt = analysis_labels_bucket(seg_scores_dict, systems_indexes, labels)
+    plt = analysis_labels_bucket(seg_scores_dict, sys_names, labels)
 
     if saving_dir is not None:
         plt.savefig(saving_dir + "/analysis-labels-bucket.png")

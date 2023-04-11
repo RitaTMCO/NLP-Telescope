@@ -68,12 +68,14 @@ class NLGPlot(Plot):
     def display_plots(self) -> None:
         if self.metric == "COMET" or self.metric == "BERTScore":
             st.header(":blue[Error-type analysis:]")
-            plot_bucket_multiple_comparison(self.results[self.metric])
+            plot_bucket_multiple_comparison(self.results[self.metric], 
+                                                        self.collection_testsets.names_of_systems())
 
         if len(self.collection_testsets.testsets[self.ref_filename]) > 1:
             try:
                 st.header(":blue[Segment-level scores histogram:]")
-                plot_multiple_distributions(self.results[self.metric])
+                plot_multiple_distributions(self.results[self.metric],
+                                                        self.collection_testsets.names_of_systems())
             except np.linalg.LinAlgError as err:    
                 st.write(err)
 
@@ -81,22 +83,25 @@ class NLGPlot(Plot):
             st.header(":blue[Pairwise comparison:]")
 
             left, right = st.columns(2)
-            system_x = left.selectbox(
+            system_x_name = left.selectbox(
                 "Select the system x:",
-                list(self.results[self.metric].systems_metric_results.keys()),
+                self.collection_testsets.names_of_systems(),
                 index=0,
                 key = self.ref_filename + "_1"
             )
-            system_y = right.selectbox(
+            system_y_name = right.selectbox(
                 "Select the system y:",
-                list(self.results[self.metric].systems_metric_results.keys()),
+                self.collection_testsets.names_of_systems(),
                 index=1,
                 key = self.ref_filename + "_2"
             )
-            if system_x == system_y:
+            if system_x_name == system_y_name:
                 st.warning("The system x cannot be the same as system y")
             
             else:
+                system_x = self.collection_testsets.system_name_id(system_x_name)
+                system_y = self.collection_testsets.system_name_id(system_y_name)
+
                 st.subheader("Segment-level comparison:")
                 if self.task == "machine translation":
                     plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y,None,True)
@@ -165,14 +170,16 @@ class ClassificationPlot(Plot):
     def display_plots(self) -> None:
         testset = self.collection_testsets.testsets[self.ref_filename]
         labels = self.collection_testsets.labels
-        indexes_of_systems = self.collection_testsets.indexes_of_systems()
+        names_of_systems = self.collection_testsets.names_of_systems()
 
         st.header(":blue[Confusion Matrix]")
-        system = st.selectbox(
+        system_name = st.selectbox(
             "Select the system:",
-            indexes_of_systems,
+            names_of_systems,
             index=0
         )
+
+        system = self.collection_testsets.system_name_id(system_name)
 
         st.subheader("Overall Confusion Matrix")
         overall_confusion_matrix_table(testset,system,labels)
@@ -187,43 +194,48 @@ class ClassificationPlot(Plot):
         singular_confusion_matrix_table(testset,system,labels,label)
 
         st.header(":blue[Analysis Of Each Label]")
-        analysis_labels(self.results[self.metric], labels)
+        analysis_labels(self.results[self.metric], self.collection_testsets.names_of_systems(), labels)
 
         st.header(":blue[Examples That Are Incorrectly Labelled]")
-        system = st.selectbox(
+        system_name = st.selectbox(
             "Select the system:",
-            indexes_of_systems,
+            names_of_systems,
             index=0,
             key = "examples"
         )
 
-        sys_name = self.collection_testsets.systems_indexes[system]
-        
-        if 'num_' + sys_name + "_" + self.ref_filename not in st.session_state:
-            st.session_state['num_' + sys_name + "_" + self.ref_filename] = int(len(testset.ref)/4) + 1
-        if 'incorrect_ids_' + sys_name + "_" + self.ref_filename not in st.session_state:
-            st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename] = []
-        if 'tables_' + sys_name + "_" + self.ref_filename not in st.session_state:
-            st.session_state['tables_' + sys_name + "_" + self.ref_filename] = []
-        if 'num_incorrect_ids_' + sys_name + "_" + self.ref_filename not in st.session_state:
-            st.session_state['num_incorrect_ids_' + sys_name + "_" + self.ref_filename] = 0
+        system = self.collection_testsets.system_name_id(system_name)
+        ref_id = self.collection_testsets.refs_indexes[self.ref_filename]
 
-        df = incorrect_examples(
-                    testset, 
-                    system, 
-                    st.session_state['num_' + sys_name + "_" + self.ref_filename],
-                    st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename],
-                    st.session_state['tables_' + sys_name + "_" + self.ref_filename]
-        )
+        num = 'num_' + system + "_" + ref_id
+        incorrect_ids = 'incorrect_ids_' + system + "_" + ref_id
+        table = 'tables_' + system + "_" + ref_id
+        num_incorrect_ids = 'num_incorrect_ids_' + system + "_" + ref_id
+        
+        if num not in st.session_state:
+            st.session_state[num] = int(len(testset.ref)/4) + 1
+        if incorrect_ids not in st.session_state:
+            st.session_state[incorrect_ids] = []
+        if table not in st.session_state:
+            st.session_state[table] = []
+        if num_incorrect_ids  not in st.session_state:
+            st.session_state[num_incorrect_ids] = 0
+
+        df = incorrect_examples(testset, system, st.session_state[num], st.session_state[incorrect_ids],
+                st.session_state[table])
 
         if df is not None:
             st.dataframe(df)
+            old_num_incorrect_ids = st.session_state[num_incorrect_ids]
+            new_num_incorrect_ids = len(st.session_state[incorrect_ids])
 
-            if st.session_state['num_incorrect_ids_' + sys_name + "_" + self.ref_filename] != len(st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename]):
-                st.session_state['num_' + sys_name + "_" + self.ref_filename] +=  st.session_state['num_' + sys_name + "_" + self.ref_filename] 
-                st.session_state['num_incorrect_ids_' + sys_name + "_" + self.ref_filename] = len(st.session_state['incorrect_ids_' + sys_name + "_" + self.ref_filename])
+            def callback():
+                st.session_state[num] +=  st.session_state[num] 
+                st.session_state[num_incorrect_ids] = new_num_incorrect_ids
+
+            if old_num_incorrect_ids != new_num_incorrect_ids:
                 _, middle, _ = st.columns(3)
-                middle.button("More examples")
+                middle.button("More examples", on_click=callback)
             else:
                 st.warning("There are no more examples that are incorrectly labeled.")
         else:
