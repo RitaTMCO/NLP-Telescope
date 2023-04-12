@@ -617,61 +617,37 @@ def plot_multiple_distributions(
         st.plotly_chart(fig)
 
 
-def plot_multiple_segment_comparison(
-    multiple_result: MultipleResult, system_x:str, system_y:str, saving_dir: str = None, source: bool = False
-) -> None:
+def plot_multiple_segment_comparison(multiple_result: MultipleResult, system_x: List[str], 
+                            system_y:List[str], source: bool = False, saving_dir: str = None) -> None:
+
+    sys_x_id, sys_x_name = system_x
+    sys_y_id, sys_y_name = system_y
 
     scores = np.array(
-        [multiple_result.systems_metric_results[system_x].seg_scores, 
-        multiple_result.systems_metric_results[system_y].seg_scores]
-    ).T
-    chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
+        [multiple_result.systems_metric_results[sys_x_id].seg_scores, 
+        multiple_result.systems_metric_results[sys_y_id].seg_scores]).T
 
+    chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
     chart_data["difference"] = np.absolute(scores[:, 0] - scores[:, 1])
     if source:
         chart_data["source"] = multiple_result.src
     chart_data["reference"] = multiple_result.ref
-    chart_data["x"] = multiple_result.systems_metric_results[system_x].seg_scores
-    chart_data["y"] = multiple_result.systems_metric_results[system_y].seg_scores
+    chart_data["x"] = multiple_result.systems_metric_results[sys_x_id].seg_scores
+    chart_data["y"] = multiple_result.systems_metric_results[sys_y_id].seg_scores
 
     if source:
-        c = (
-            alt.Chart(chart_data, width="container")
-            .mark_circle()
-            .encode(
-                x="x_score",
-                y="y_score",
-                size="difference",
-                color=alt.Color("difference"),
-                tooltip=[
-                    "x",
-                    "y",
-                    "reference",
-                    "difference",
-                    "source",
-                    "x_score",
-                    "y_score",
-                ],
-            )
-        )
-    
+        tool = ["x", "y", "reference", "difference", "source", "x_score", "y_score"]
     else:
-        c = (
-            alt.Chart(chart_data, width="container")
+        tool = ["x", "y", "reference", "difference", "x_score", "y_score"]
+
+    c = (alt.Chart(chart_data, width="container")
             .mark_circle()
             .encode(
                 x="x_score",
                 y="y_score",
                 size="difference",
                 color=alt.Color("difference"),
-                tooltip=[
-                    "x",
-                    "y",
-                    "reference",
-                    "difference",
-                    "x_score",
-                    "y_score",
-                ],
+                tooltip=tool,
             )
         )
 
@@ -679,7 +655,7 @@ def plot_multiple_segment_comparison(
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
         c.properties(width=1300, height=600).save(
-            saving_dir + "/" + system_x.replace(" ", "") + "-" + system_y.replace(" ", "") + "_multiple-segment-comparison.html", 
+            saving_dir + "/" + sys_x_name + "-" + sys_y_name + "_multiple-segment-comparison.html", 
             format="html"
         )
 

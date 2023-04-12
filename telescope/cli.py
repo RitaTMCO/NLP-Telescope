@@ -372,8 +372,8 @@ def apply_filter(collection,filter,length_min_val,length_max_val):
             (1 - (len(collection.testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name,
                 fg="green" )
 
-def display_table(collection, ref_filename, systems_index, results):
-    results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_index)
+def display_table(collection, ref_filename, systems_names, results):
+    results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_names)
 
     click.secho('Reference: ' + ref_filename, fg="yellow")
 
@@ -520,6 +520,13 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     type=float,
     help="Proportion (P) of the initial sample.",
 )
+@click.option(
+    "--systems_names",
+    "-n",
+    required=False,
+    type=click.File(),
+    help="File that contains the names of the systems per line.",
+)
 def n_compare_nlg(
     source: click.File,
     system_output: Tuple[click.File],
@@ -537,8 +544,9 @@ def n_compare_nlg(
     sample_ratio: float,
     system_x: click.File,
     system_y: click.File,
+    systems_names: click.File
 ):  
-    collection = NLGTestsets.read_data_cli(source,system_output,reference,language)
+    collection = NLGTestsets.read_data_cli(source,systems_names,system_output,reference,language)
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
@@ -547,6 +555,7 @@ def n_compare_nlg(
 
     metric = seg_metric_in_metrics(seg_metric,metric)
     systems_index = collection.systems_indexes
+    systems_names =  collection.systems_names
     language = collection.language_pair.split("-")[1]
 
     for ref_filename in collection.refs_names:
@@ -555,17 +564,17 @@ def n_compare_nlg(
             m: available_metrics[m](language=language).multiple_comparison(testset) 
             for m in metric }
 
-        results_dicts = display_table(collection,ref_filename,systems_index,results)
+        results_dicts = display_table(collection,ref_filename,systems_names,results)
 
         if bootstrap and len(systems_index.values()) > 1: 
             if (system_x is None) and (system_y is None):
-                x = list(systems_index.keys())[0]
-                y = list(systems_index.keys())[1]
+                x = list(systems_index.values())[0]
+                y = list(systems_index.values())[1]
                 bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x,y,num_splits,sample_ratio)
         
-            elif system_x.name in list(systems_index.values()) and system_y.name in list(systems_index.values()):
+            elif system_x.name in list(systems_index.keys()) and system_y.name in list(systems_index.keys()):
                 indexes = list()
-                for index,name in systems_index.items():
+                for name, index in systems_index.items():
                     if system_x.name == name or system_y.name == name:
                         indexes.append(index)
                     if len(indexes) == 2:
@@ -653,6 +662,13 @@ def n_compare_nlg(
     type=str,
     help="Folder you wish to use to save plots.",
 )
+@click.option(
+    "--systems_names",
+    "-n",
+    required=False,
+    type=click.File(),
+    help="File that contains the names of the systems per line.",
+)
 def n_compare_classification(
     source: click.File,
     system_output: Tuple[click.File],
@@ -661,9 +677,10 @@ def n_compare_classification(
     metric: Union[Tuple[str], str],
     filter: Union[Tuple[str], str],
     seg_metric: str,
-    output_folder: str
+    output_folder: str,
+    systems_names: click.File
 ):  
-    collection = ClassTestsets.read_data_cli(source,system_output,reference,list(label))
+    collection = ClassTestsets.read_data_cli(source,systems_names,system_output,reference,list(label))
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
@@ -673,6 +690,7 @@ def n_compare_classification(
     metric = seg_metric_in_metrics(seg_metric,metric)
 
     systems_index = collection.systems_indexes
+    systems_names = collection.systems_names
 
     labels = collection.labels
     for ref_filename in collection.refs_names:
@@ -682,7 +700,7 @@ def n_compare_classification(
             for m in metric 
         }
 
-        results_dicts = display_table(collection,ref_filename,systems_index,results)
+        results_dicts = display_table(collection,ref_filename,systems_names,results)
 
         if output_folder != "":
             if not output_folder.endswith("/"):

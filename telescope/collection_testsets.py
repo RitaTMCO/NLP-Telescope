@@ -47,7 +47,7 @@ class CollectionTestsets:
     def display_systems(self) -> str:
         text = ""
         for sys_filename, sys_id in self.systems_indexes.items():
-            text += "   " + sys_filename + " : " + self.systems_names[sys_id] + " \n"
+            text += "--> " + sys_filename + " : " + self.systems_names[sys_id] + " \n"
         return text
 
     @staticmethod
@@ -142,15 +142,30 @@ class CollectionTestsets:
         return NotImplementedError
 
     @classmethod
-    def read_data_cli_aux(cls, source:click.File, system_output:click.File, reference:click.File):      
+    def read_data_cli_aux(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File]):      
         systems_indexes, systems_names, outputs = {}, {}, {}
-        i = 1
-        for sys_file in system_output:
-            sys_id = "Sys " + str(i)
-            i += 1
-            systems_indexes[sys_file.name] = sys_id
-            systems_names[sys_id] = sys_id
-            outputs[sys_id] = [l.strip() for l in sys_file.readlines()]
+        
+        if system_names_file:
+            sys_names = [l.replace("\n", "") for l in system_names_file.readlines()]
+
+            if len(sys_names) < len(systems_output):
+                for i in range(len(systems_output)-len(sys_names)):
+                    sys_names.append("Sys " + str(i+1))
+            
+            for sys_file,sys_name in zip(systems_output,sys_names):
+                data = [l.strip() for l in sys_file.readlines()]
+                sys_id = cls.create_sys_ids(sys_file.name,data)
+                systems_indexes[sys_file.name] = sys_id
+                systems_names[sys_id] = sys_name
+                outputs[sys_id] = data
+            
+        else:
+            for sys_file in systems_output:
+                data = [l.strip() for l in sys_file.readlines()]
+                sys_id = cls.create_sys_ids(sys_file.name,data)
+                systems_indexes[sys_file.name] = sys_id
+                systems_names[sys_id] = sys_id
+                outputs[sys_id] = data
         
         references,refs_indexes = {},{}
         for ref in reference:
@@ -161,14 +176,14 @@ class CollectionTestsets:
                 refs_indexes[ref.name] = ref_id
 
         src = [l.strip() for l in source.readlines()]
-        files = [source,src,reference,references,system_output,systems_indexes,systems_names,outputs]
+        files = [source,src,reference,references,refs_indexes,systems_output,systems_indexes,systems_names,outputs]
 
         testsets = cls.create_testsets(files)
         return systems_indexes,systems_names,outputs,references, refs_indexes, src,testsets
 
     @classmethod
     @abc.abstractmethod
-    def read_data_cli(cls, source:click.File, system_output:click.File, reference:click.File):
+    def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File]):
         return NotImplementedError
 
 
@@ -232,9 +247,9 @@ class NLGTestsets(CollectionTestsets):
                 testsets, language)
     
     @classmethod
-    def read_data_cli(cls, source:click.File, system_output:click.File, reference:click.File, 
+    def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
         language:str):
-        systems_indexes,systems_names,outputs,references,refs_indexes, src,testsets = cls.read_data_cli_aux(source,system_output,reference) 
+        systems_indexes,systems_names,outputs,references,refs_indexes, src,testsets = cls.read_data_cli_aux(source,system_names_file,systems_output,reference) 
         return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names,
             [source.name] +  list(references.keys()) + list(systems_indexes.values()), testsets, 
             "X-" + language)
@@ -405,9 +420,9 @@ class ClassTestsets(CollectionTestsets):
                 testsets, labels)
     
     @classmethod
-    def read_data_cli(cls, source:click.File, system_output:click.File, reference:click.File, 
+    def read_data_cli(cls, source:click.File,system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
         labels:str):
-        systems_indexes,systems_names,outputs,references, refs_indexes, src, testsets = cls.read_data_cli_aux(source,system_output,reference) 
-        return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names
+        systems_indexes,systems_names,outputs,references, refs_indexes, src, testsets = cls.read_data_cli_aux(source,system_names_file,systems_output,reference) 
+        return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names,
             [source.name] +  list(references.keys()) + list(systems_indexes.values()),
             testsets, labels)

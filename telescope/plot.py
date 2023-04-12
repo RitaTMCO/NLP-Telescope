@@ -99,12 +99,14 @@ class NLGPlot(Plot):
                 st.warning("The system x cannot be the same as system y")
             
             else:
-                system_x = self.collection_testsets.system_name_id(system_x_name)
-                system_y = self.collection_testsets.system_name_id(system_y_name)
+                system_x_id = self.collection_testsets.system_name_id(system_x_name)
+                system_x = [system_x_id, system_x_name]
+                system_y_id = self.collection_testsets.system_name_id(system_y_name)
+                system_y = [system_y_id, system_y_name]
 
                 st.subheader("Segment-level comparison:")
                 if self.task == "machine translation":
-                    plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y,None,True)
+                    plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y,True)
                 else:
                     plot_multiple_segment_comparison(self.results[self.metric],system_x,system_y)
 
@@ -129,30 +131,29 @@ class NLGPlot(Plot):
     def display_plots_cli(self, saving_dir:str, system_x:str, system_y:str) -> None:
         
         if self.metric == "COMET" or self.metric == "BERTScore":
-            plot_bucket_multiple_comparison(self.results[self.metric], saving_dir)
+            plot_bucket_multiple_comparison(self.results[self.metric], self.collection_testsets.names_of_systems(), 
+                                    saving_dir)
         
         if len(self.collection_testsets.testsets[self.ref_filename]) > 1:
-            plot_multiple_distributions(self.results[self.metric], saving_dir)
+            plot_multiple_distributions(self.results[self.metric], self.collection_testsets.names_of_systems(),
+                                    saving_dir)
         
         if len(self.collection_testsets.systems_indexes.values()) > 1: 
-            if (system_x is None) and (system_y is None):
-                x = list(self.collection_testsets.systems_indexes.keys())[0]
-                y = list(self.collection_testsets.systems_indexes.keys())[1]
-                if self.task == "machine-translation":
-                    plot_multiple_segment_comparison(self.results[self.metric],x,y,saving_dir,True)
-                else:
-                    plot_multiple_segment_comparison(self.results[self.metric],x,y,saving_dir)
+            if ((system_x.name in self.collection_testsets.systems_indexes) 
+                and (system_y.name in list(self.collection_testsets.systems_indexes))):
+                x_id = self.collection_testsets.systems_indexes[system_x.name]
+                y_id = self.collection_testsets.systems_indexes[system_y.name]
+            
+            else:
+                x_id = self.collection_testsets.indexes_of_systems()[0]
+                y_id = self.collection_testsets.indexes_of_systems()[1]
 
-            elif ((system_x.name in list(self.collection_testsets.systems_indexes.values())) 
-                and (system_y.name in list(self.collection_testsets.systems_indexes.values()))):
-                indexes = list()
-                for index,name in self.collection_testsets.systems_indexes.items():
-                    if system_x.name == name or system_y.name == name:
-                        indexes.append(index)
-                    if len(indexes) == 2:
-                        break
-                plot_multiple_segment_comparison(self.results[self.metric], indexes[0], indexes[1], saving_dir)
-
+            x = [x_id,self.collection_testsets.systems_names[x_id]]
+            y = [y_id,self.collection_testsets.systems_names[y_id]]
+            if self.task == "machine-translation":
+                plot_multiple_segment_comparison(self.results[self.metric],x,y,True,saving_dir)
+            else:
+                plot_multiple_segment_comparison(self.results[self.metric],x,y,saving_dir=saving_dir)
 
 class ClassificationPlot(Plot):
     def __init__(
@@ -242,25 +243,26 @@ class ClassificationPlot(Plot):
             st.warning("There are no examples that are incorrectly labelled.")
 
     def display_plots_cli(self, saving_dir:str) -> None:
-        sys_indexes = self.collection_testsets.systems_indexes
         testset = self.collection_testsets.testsets[self.ref_filename]
         labels = self.collection_testsets.labels
+        systems_names = self.collection_testsets.systems_names
 
-        analysis_labels(self.results[self.metric], labels, saving_dir)
+        analysis_labels(self.results[self.metric], self.collection_testsets.names_of_systems(), 
+            labels, saving_dir)
         
-        for sys in sys_indexes:
-            output_file = saving_dir + sys.replace(" ","_")
+        for sys_id, sys_name in systems_names.items():
+            output_file = saving_dir + sys_name
             if not os.path.exists(output_file):
                 os.makedirs(output_file)            
-            overall_confusion_matrix_table(testset,sys,labels,output_file)
+            overall_confusion_matrix_table(testset,sys_id,labels,output_file)
 
             num = int(len(testset.ref)/4) + 1
-            incorrect_examples(testset,sys,num, [], [], output_file)
+            incorrect_examples(testset,sys_id,num,[],[], output_file)
 
             label_file = output_file + "/" + "singular_confusion_matrix"
             if not os.path.exists(label_file):
                 os.makedirs(label_file)  
             for label in labels:
-                singular_confusion_matrix_table(testset,sys,labels,label,label_file)
+                singular_confusion_matrix_table(testset,sys_id,labels,label,label_file)
         
         

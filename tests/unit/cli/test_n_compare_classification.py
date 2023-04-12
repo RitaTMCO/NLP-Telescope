@@ -27,7 +27,9 @@ class TestCompareCli(unittest.TestCase):
     system_3 = os.path.join(DATA_PATH, "class/ref-c.txt")
     src = os.path.join(DATA_PATH, "class/src-c.txt")
     ref = os.path.join(DATA_PATH, "class/ref-c.txt")
+    sys_names_file = os.path.join(DATA_PATH, "systems_names.txt")
     labels = ["positive", "negative", "neutral"]
+    sys_names = ["Sys A", "Sys B", "Sys C"]
 
     def setUp(self):
         self.runner = CliRunner()
@@ -54,6 +56,32 @@ class TestCompareCli(unittest.TestCase):
             "F1-score",
             "--seg_metric",
             "Accuracy"
+        ]
+        result = self.runner.invoke(n_compare_classification, args, catch_exceptions=False)
+        self.assertEqual(result.exit_code, 0)
+
+    def test_with_systems_names_file(self):
+        args = [
+            "-s",
+            self.src,
+            "-c",
+            self.system_1,
+            "-c",
+            self.system_2,
+            "-c",
+            self.system_3,
+            "-r",
+            self.ref,
+            "-l",
+            self.labels[0],
+            "-l",
+            self.labels[1],
+            "-l",
+            self.labels[2],
+            "-m",
+            "F1-score",
+            "--systems_names",
+            self.sys_names_file
         ]
         result = self.runner.invoke(n_compare_classification, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
@@ -110,6 +138,8 @@ class TestCompareCli(unittest.TestCase):
             "Accuracy",
             "-f",
             "duplicates",
+            "--systems_names",
+            self.sys_names_file,
             "--output_folder",
             DATA_PATH
         ]
@@ -120,77 +150,41 @@ class TestCompareCli(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/results.json")))
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/analysis-labels-bucket.png")))
 
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_1/incorrect-examples.json"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_2/incorrect-examples.json"))
-        )
-        self.assertFalse(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_3/incorrect-examples.json"))
-        )
+        for sys_name in self.sys_names:
+            if sys_name != "Sys C":
+                self.assertTrue(
+                    os.path.isfile(os.path.join(DATA_PATH, 
+                        self.ref.replace("/","_")  + "/" + sys_name + "/incorrect-examples.json"))
+                )
+            self.assertTrue(
+                os.path.isfile(os.path.join(DATA_PATH, 
+                    self.ref.replace("/","_")  + "/" + sys_name + "/overall-confusion-matrix.png"))
+            )
+            self.assertTrue(
+                os.path.isfile(os.path.join(DATA_PATH, 
+                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/label-positive.png"))
+            )
+            self.assertTrue(
+                os.path.isfile(os.path.join(DATA_PATH, 
+                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/label-negative.png"))
+            )
+            self.assertTrue(
+                os.path.isfile(os.path.join(DATA_PATH, 
+                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/label-neutral.png"))
+            )
 
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_1/overall-confusion-matrix.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_2/overall-confusion-matrix.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_3/overall-confusion-matrix.png"))
-        )
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/label-neutral.png")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/label-negative.png")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/label-positive.png")
 
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_1/singular_confusion_matrix/label-positive.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_2/singular_confusion_matrix/label-positive.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_3/singular_confusion_matrix/label-positive.png"))
-        )
+            os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/")
+            
+            if sys_name != "Sys C":
+                os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/incorrect-examples.json")
 
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_1/singular_confusion_matrix/label-negative.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_2/singular_confusion_matrix/label-negative.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_3/singular_confusion_matrix/label-negative.png"))
-        )
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/overall-confusion-matrix.png")
 
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_1/singular_confusion_matrix/label-neutral.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_2/singular_confusion_matrix/label-neutral.png"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Sys_3/singular_confusion_matrix/label-neutral.png"))
-        )
-
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_1/singular_confusion_matrix/label-neutral.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_2/singular_confusion_matrix/label-neutral.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_3/singular_confusion_matrix/label-neutral.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_1/singular_confusion_matrix/label-negative.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_2/singular_confusion_matrix/label-negative.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_3/singular_confusion_matrix/label-negative.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_1/singular_confusion_matrix/label-positive.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_2/singular_confusion_matrix/label-positive.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_3/singular_confusion_matrix/label-positive.png")
-        os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_1/singular_confusion_matrix/")
-        os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_2/singular_confusion_matrix/")
-        os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_3/singular_confusion_matrix/")
-
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_1/incorrect-examples.json")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_2/incorrect-examples.json")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_1/overall-confusion-matrix.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_2/overall-confusion-matrix.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") +  "/Sys_3/overall-confusion-matrix.png")
-        os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/Sys_1/" )
-        os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/Sys_2/" )
-        os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/Sys_3/" )
+            os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" )
 
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/results.json")
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/analysis-labels-bucket.png")

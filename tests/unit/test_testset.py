@@ -48,10 +48,12 @@ class TestTestset(unittest.TestCase):
     collection =  MTTestsets(
         src_name = 'src.txt',
         refs_names = ['ref_1.txt','ref_2.txt'],
-        systems_indexes = {"Sys 1":"google.txt", "Sys 2":"unbabel_1.txt", "Sys 3":"unbabel_2.txt"},
+        refs_indexes = {'ref_1.txt':"Ref A", 'ref_2.txt':"Ref B"},
+        systems_indexes = {"google.txt":"Sys 1", "unbabel_1.txt":"Sys 2", "unbabel_2.txt":"Sys 3"},
+        systems_names = {"Sys 1":"Sys A", "Sys 2":"Sys B", "Sys 3":"Sys C"},
         filenames = ["src.txt", "ref_1.txt", "ref_2.txt", "google.txt", "unbabel_1.txt", "unbabel_2.txt"],
         testsets = [multiple_testset_1, multiple_testset_2],
-        language_pair="en-fr"
+        language_pair="fr-en"
     )
 
     def test_length(self):
@@ -91,13 +93,25 @@ class TestTestset(unittest.TestCase):
     
     def test_indexes_of_systems(self):
         self.assertListEqual(["Sys 1", "Sys 2", "Sys 3"], self.collection.indexes_of_systems())
+    
+    def test_names_of_systems(self):
+        self.assertListEqual(["Sys A", "Sys B", "Sys C"], self.collection.names_of_systems())
+    
+    def test_system_A_id(self):
+        self.assertEqual("Sys 1" , self.collection.system_name_id("Sys A"))
+    
+    def test_system_B_id(self):
+        self.assertEqual("Sys 2" , self.collection.system_name_id("Sys B"))
+    
+    def test_system_C_id(self):
+        self.assertEqual("Sys 3" , self.collection.system_name_id("Sys C"))
 
     def test_display_systems(self):
-        text = "\nSystems:\nSys 1: google.txt \nSys 2: unbabel_1.txt \nSys 3: unbabel_2.txt \n"
+        text = "--> google.txt : Sys A \n--> unbabel_1.txt : Sys B \n--> unbabel_2.txt : Sys C \n"
         self.assertEqual(text, self.collection.display_systems())
     
     def test_source_language(self):
-        self.assertEqual('en', self.collection.source_language)
+        self.assertEqual('fr', self.collection.source_language)
     
     def test_target_language(self):
-        self.assertEqual('fr', self.collection.target_language)
+        self.assertEqual('en', self.collection.target_language)

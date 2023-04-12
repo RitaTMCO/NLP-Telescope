@@ -151,7 +151,7 @@ class MultipleResult:
         return df
 
     @staticmethod
-    def results_to_dict(multiple_results: list, systems_indexes:list):
+    def results_to_dict(multiple_results: list, systems_names:Dict[str, str]):
         return {
             m_res.metric: {
                             sys_name: m_res.systems_metric_results[sys_id].sys_score 

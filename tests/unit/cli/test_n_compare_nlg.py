@@ -28,7 +28,10 @@ class TestCompareCli(unittest.TestCase):
     src = os.path.join(DATA_PATH, "cs_en/cs-en.txt")
     ref_b = os.path.join(DATA_PATH, "cs_en/cs-en.refB.txt")
     ref_c = os.path.join(DATA_PATH, "cs_en/cs-en.refC.txt")
+    sys_names_file = os.path.join(DATA_PATH, "systems_names.txt")
     task = "machine-translation"
+    refs = [ref_b,ref_c]
+    sys_names = ["Sys A", "Sys B", "Sys C"]
 
     def setUp(self):
         self.runner = CliRunner()
@@ -55,6 +58,34 @@ class TestCompareCli(unittest.TestCase):
             "chrF",
             "--seg_metric",
             "GLEU"
+        ]
+        result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
+        self.assertEqual(result.exit_code, 0)
+
+    def test_with_systems_names_file(self):
+        args = [
+            "-t",
+            self.task,
+            "-s",
+            self.src,
+            "-c",
+            self.system_a,
+            "-c",
+            self.system_b,
+            "-c",
+            self.system_g,
+            "-r",
+            self.ref_b,
+            "-r",
+            self.ref_c,
+            "-l",
+            "cs",
+            "-m",
+            "chrF",
+            "--seg_metric",
+            "GLEU",
+            "-n",
+            self.sys_names_file
         ]
         result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
@@ -195,54 +226,27 @@ class TestCompareCli(unittest.TestCase):
             10,
             "--sample_ratio",
             0.3,
+            "-n",
+            self.sys_names_file,
             "--output_folder",
             DATA_PATH
         ]
         result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
 
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-bucket-analysis.png")))
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-scores-distribution.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/results.json"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/bootstrap_results.json"))
-        )
+        for ref in self.refs:
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/multiple-bucket-analysis.png")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/multiple-scores-distribution.html")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys B-Sys C_multiple-segment-comparison.html")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/results.json")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bootstrap_results.json")))
 
-
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-bucket-analysis.png")))
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-scores-distribution.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/results.json"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/bootstrap_results.json"))
-        )
-
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-bucket-analysis.png")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/results.json")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/bootstrap_results.json")
-        os.rmdir(DATA_PATH + "/" + self.ref_b.replace("/","_"))
-
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-bucket-analysis.png")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/results.json")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/bootstrap_results.json")
-        os.rmdir(DATA_PATH + "/" + self.ref_c.replace("/","_"))
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/Sys B-Sys C_multiple-segment-comparison.html")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-scores-distribution.html")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-bucket-analysis.png")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/results.json")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/bootstrap_results.json")
+            os.rmdir(DATA_PATH + "/" + ref.replace("/","_"))
 
     def test_with_output_bertscore(self):
         args = [
@@ -285,43 +289,16 @@ class TestCompareCli(unittest.TestCase):
         result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
 
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-bucket-analysis.png")))
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/multiple-scores-distribution.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/results.json"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_b.replace("/","_")  + "/bootstrap_results.json"))
-        )
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-bucket-analysis.png")))
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/multiple-scores-distribution.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/Sys2-Sys3_multiple-segment-comparison.html"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/results.json"))
-        )
-        self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, self.ref_c.replace("/","_")  + "/bootstrap_results.json"))
-        )
+        for ref in self.refs:
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/multiple-bucket-analysis.png")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/multiple-scores-distribution.html")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys 2-Sys 3_multiple-segment-comparison.html")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/results.json")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bootstrap_results.json")))
 
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/multiple-bucket-analysis.png")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/results.json")
-        os.remove(DATA_PATH + "/" + self.ref_b.replace("/","_") +  "/bootstrap_results.json")
-        os.rmdir(DATA_PATH + "/" + self.ref_b.replace("/","_"))
-
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") + "/Sys2-Sys3_multiple-segment-comparison.html")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/multiple-bucket-analysis.png")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/results.json")
-        os.remove(DATA_PATH + "/" + self.ref_c.replace("/","_") +  "/bootstrap_results.json")
-        os.rmdir(DATA_PATH + "/" + self.ref_c.replace("/","_"))
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/Sys 2-Sys 3_multiple-segment-comparison.html")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-scores-distribution.html")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-bucket-analysis.png")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/results.json")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/bootstrap_results.json")
+            os.rmdir(DATA_PATH + "/" + ref.replace("/","_"))
