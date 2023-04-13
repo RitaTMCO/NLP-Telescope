@@ -81,10 +81,10 @@ class CollectionTestsets:
     def upload_files(cls) -> list:
         st.subheader("Upload Files for :blue[" + cls.title + "] analysis:")
         
-        source_file = st.file_uploader("Upload **one** file with the " + cls.type_of_source, type=["txt"])
+        source_file = st.file_uploader("Upload **one** file with the " + cls.type_of_source)
         sources = read_lines(source_file)
 
-        ref_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_references, type=["txt"], 
+        ref_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_references, 
                     accept_multiple_files=True)
         references, refs_indexes = {}, {}
         for ref_file in ref_files:
@@ -94,7 +94,7 @@ class CollectionTestsets:
                 references[ref_file.name] = data
                 refs_indexes[ref_file.name] = ref_id
 
-        outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output,  type=["txt"], 
+        outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output,
                                     accept_multiple_files=True)
         systems_indexes, systems_names, outputs = {}, {}, {}
 

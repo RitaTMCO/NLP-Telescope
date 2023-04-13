@@ -123,7 +123,7 @@ class NLGPlot(Plot):
                         for self.metric in self.metrics:
                             bootstrap_result = self.available_metrics[self.metric].multiple_bootstrap_resampling(
                                 self.collection_testsets.testsets[self.ref_filename], int(self.num_samples), 
-                                self.sample_ratio, system_x, system_y, self.collection_testsets.target_language, self.results[self.metric])
+                                self.sample_ratio, system_x_id, system_y_id, self.collection_testsets.target_language, self.results[self.metric])
 
                             plot_bootstraping_result(bootstrap_result)
 

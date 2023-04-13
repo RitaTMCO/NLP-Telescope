@@ -567,19 +567,15 @@ def n_compare_nlg(
         results_dicts = display_table(collection,ref_filename,systems_names,results)
 
         if bootstrap and len(systems_index.values()) > 1: 
-            if (system_x is None) and (system_y is None):
-                x = list(systems_index.values())[0]
-                y = list(systems_index.values())[1]
-                bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x,y,num_splits,sample_ratio)
+            if system_x.name in systems_index and system_y.name in systems_index:
+                x_id = systems_index[system_x.name]
+                y_id = systems_index[system_y.name]
         
-            elif system_x.name in list(systems_index.keys()) and system_y.name in list(systems_index.keys()):
-                indexes = list()
-                for name, index in systems_index.items():
-                    if system_x.name == name or system_y.name == name:
-                        indexes.append(index)
-                    if len(indexes) == 2:
-                        break
-                bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,indexes[0],indexes[1],num_splits,sample_ratio)
+            else:
+                x_id = collection.indexes_of_systems()[0]
+                y_id = collection.indexes_of_systems()[1]
+
+            bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x_id,y_id,num_splits,sample_ratio)
         
         if output_folder != "":
             if not output_folder.endswith("/"):
@@ -592,7 +588,10 @@ def n_compare_nlg(
                 json.dump(results_dicts, result_file, indent=4)
 
             if bootstrap and len(systems_index.values()) > 1:
-                bootstrap_df.to_json(saving_dir + "bootstrap_results.json", orient="index", indent=4)
+                x_name = systems_names[x_id]
+                y_name = systems_names[y_id]
+                filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.json"
+                bootstrap_df.to_json(filename, orient="index", indent=4)
 
             plot = NLGPlot(seg_metric,metric,available_metrics,results,collection,ref_filename,task,num_splits,sample_ratio)
             plot.display_plots_cli(saving_dir,system_x,system_y)

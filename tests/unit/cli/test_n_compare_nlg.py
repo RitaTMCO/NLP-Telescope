@@ -239,13 +239,13 @@ class TestCompareCli(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/multiple-scores-distribution.html")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys B-Sys C_multiple-segment-comparison.html")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/results.json")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bootstrap_results.json")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys B-Sys C_bootstrap_results.json")))
 
             os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/Sys B-Sys C_multiple-segment-comparison.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-scores-distribution.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-bucket-analysis.png")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/results.json")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/bootstrap_results.json")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys B-Sys C_bootstrap_results.json")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_"))
 
     def test_with_output_bertscore(self):
@@ -294,11 +294,11 @@ class TestCompareCli(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/multiple-scores-distribution.html")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys 2-Sys 3_multiple-segment-comparison.html")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/results.json")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bootstrap_results.json")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys 2-Sys 3_bootstrap_results.json")))
 
             os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/Sys 2-Sys 3_multiple-segment-comparison.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-scores-distribution.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/multiple-bucket-analysis.png")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/results.json")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/bootstrap_results.json")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys 2-Sys 3_bootstrap_results.json")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_"))
