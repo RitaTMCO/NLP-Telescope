@@ -105,6 +105,18 @@ class TestTestset(unittest.TestCase):
     
     def test_system_C_id(self):
         self.assertEqual("Sys 3" , self.collection.system_name_id("Sys C"))
+    
+    def test_already_exists_A(self):
+        self.assertTrue(self.collection.already_exists("Sys A"))
+    
+    def test_already_exists_B(self):
+        self.assertTrue(self.collection.already_exists("Sys B"))
+    
+    def test_already_exists_C(self):
+        self.assertTrue(self.collection.already_exists("Sys C"))
+    
+    def test_not_exists(self):
+        self.assertFalse(self.collection.already_exists("Sys D"))
 
     def test_display_systems(self):
         text = "--> google.txt : Sys A \n--> unbabel_1.txt : Sys B \n--> unbabel_2.txt : Sys C \n"

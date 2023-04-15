@@ -54,7 +54,8 @@ metric = st.sidebar.selectbox(
 )
 
 filters = st.sidebar.multiselect(
-    "Select testset filters:", list(available_filters.keys()), default=list(available_filters.keys())[0]
+    "Select testset filters:", list(available_filters.keys()), default=list(available_filters.keys())[0],
+    help = ("For named-entities, the following languages are available: ar, zh, nl, en, fr, de, ru and uk")
 )
 
 if "length" in available_filters:
@@ -212,9 +213,15 @@ if collection_testsets:
         list(collection_testsets.systems_indexes.keys()),
         index=0)
     sys_id = collection_testsets.systems_indexes[system_filename]
+
     system_name = st.text_input('Enter the system name', collection_testsets.systems_names[sys_id])
-    st.session_state[task + "_" + sys_id + "_rename"] = system_name
-    collection_testsets.systems_names[sys_id] = st.session_state[task + "_" + sys_id + "_rename"]
+
+    if (collection_testsets.systems_names[sys_id] != system_name 
+        and collection_testsets.already_exists(system_name)):
+        st.warning("This system name already exists")
+    else:
+        st.session_state[task + "_" + sys_id + "_rename"] = system_name
+        collection_testsets.systems_names[sys_id] = st.session_state[task + "_" + sys_id + "_rename"]
 
     st.subheader(":blue[Systems Names]" )
     st.text(collection_testsets.display_systems())

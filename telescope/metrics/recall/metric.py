@@ -12,6 +12,6 @@ class Recall(Metric):
     segment_level = False
 
     def score(self, src: List[str], cand: List[str], ref: List[str]) -> MetricResult:
-        score = recall_score(ref, cand, average='macro')
+        score = recall_score(ref, cand, average='macro', zero_division=0)
 
         return MetricResult(score, [], src, cand, ref, self.name)

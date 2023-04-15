@@ -39,10 +39,14 @@ class CollectionTestsets:
     def names_of_systems(self) -> List[str]:
         return list(self.systems_names.values())
     
-    def system_name_id(self, name:str) -> List[str]:
+    def system_name_id(self, name:str) -> str:
         for sys_id, sys_name in self.systems_names.items():
             if sys_name == name:
                 return sys_id
+        return ""
+    
+    def already_exists(self, name:str) -> bool:
+        return name in self.names_of_systems()
     
     def display_systems(self) -> str:
         text = ""
@@ -152,17 +156,21 @@ class CollectionTestsets:
                 for i in range(len(systems_output)-len(sys_names)):
                     sys_names.append("Sys " + str(i+1))
             
+            id = 1
             for sys_file,sys_name in zip(systems_output,sys_names):
                 data = [l.strip() for l in sys_file.readlines()]
-                sys_id = cls.create_sys_ids(sys_file.name,data)
+                sys_id = "Sys " + str(id)
+                id += 1
                 systems_indexes[sys_file.name] = sys_id
                 systems_names[sys_id] = sys_name
                 outputs[sys_id] = data
             
         else:
+            id = 1
             for sys_file in systems_output:
                 data = [l.strip() for l in sys_file.readlines()]
-                sys_id = cls.create_sys_ids(sys_file.name,data)
+                sys_id = "Sys " + str(id)
+                id += 1
                 systems_indexes[sys_file.name] = sys_id
                 systems_names[sys_id] = sys_id
                 outputs[sys_id] = data
@@ -171,7 +179,8 @@ class CollectionTestsets:
         for ref in reference:
             if ref.name not in references:
                 data = [l.strip() for l in ref.readlines()]
-                ref_id = cls.create_ref_ids(ref.name,data)
+                ref_id = "Ref " + str(cls.ref_ids)
+                cls.ref_ids += 1
                 references[ref.name] = data
                 refs_indexes[ref.name] = ref_id
 
@@ -218,7 +227,7 @@ class NLGTestsets(CollectionTestsets):
         language_pair = ""
         language = st.text_input(
             "Please input the language of the files to analyse (e.g. 'en'):",
-            "",
+            "", help=("If language is indifferent and BERTScore metric is not used then write X.")
         )
         if (language != ""):
             language_pair = language + "-" + language
@@ -278,7 +287,7 @@ class MTTestsets(NLGTestsets):
     def upload_language():
         language_pair = st.text_input(
             "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
-            "",
+            "", help=("If language is indifferent and BERTScore metric is not used then- write X-X.")
         )
         return language_pair
 
