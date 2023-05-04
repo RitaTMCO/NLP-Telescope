@@ -182,17 +182,17 @@ class ClassificationPlot(Plot):
 
         system = self.collection_testsets.system_name_id(system_name)
 
-        st.subheader("Overall Confusion Matrix")
-        overall_confusion_matrix_table(testset,system,labels)
+        st.subheader("Confusion Matrix of :blue[" + system_name + "]")
+        overall_confusion_matrix_table(testset,system,labels,system_name)
 
-        st.subheader("Confusion Matrix For Each Label")
+        st.subheader("Confusion Matrix of :blue[" + system_name + "] focused on one label")
         label = st.selectbox(
             "Select the label:",
             list(labels),
             index=0,
             key = "confusion_matrix"
         )
-        singular_confusion_matrix_table(testset,system,labels,label)
+        singular_confusion_matrix_table(testset,system,labels,label,system_name)
 
         st.header(":blue[Analysis Of Each Label]")
         analysis_labels(self.results[self.metric], self.collection_testsets.names_of_systems(), labels)
@@ -254,7 +254,7 @@ class ClassificationPlot(Plot):
             output_file = saving_dir + sys_name
             if not os.path.exists(output_file):
                 os.makedirs(output_file)            
-            overall_confusion_matrix_table(testset,sys_id,labels,output_file)
+            overall_confusion_matrix_table(testset,sys_id,labels,sys_name,output_file)
 
             num = int(len(testset.ref)/4) + 1
             incorrect_examples(testset,sys_id,num,[],[], output_file)
@@ -263,6 +263,6 @@ class ClassificationPlot(Plot):
             if not os.path.exists(label_file):
                 os.makedirs(label_file)  
             for label in labels:
-                singular_confusion_matrix_table(testset,sys_id,labels,label,label_file)
+                singular_confusion_matrix_table(testset,sys_id,labels,label,sys_name,label_file)
         
         

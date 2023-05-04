@@ -419,7 +419,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     "--system_output",
     "-c",
     required=True,
-    help="System candidate.",
+    help="System candidate. This option can be multiple.",
     type=click.File(),
     multiple=True,
 )
@@ -427,7 +427,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     "--reference",
     "-r",
     required=True,
-    help="Reference segments.",
+    help="Reference segments. This option can be multiple.",
     type=click.File(),
     multiple=True,
 )
@@ -450,7 +450,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     type=click.Choice(list(available_metrics.keys())),
     required=True,
     multiple=True,
-    help="Metric to run.",
+    help="Metric to run. This option can be multiple.",
 )
 @click.option(
     "--filter",
@@ -459,7 +459,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     required=False,
     default=[],
     multiple=True,
-    help="Filter to run.",
+    help="Filter to run. This option can be multiple.",
 )
 @click.option(
     "--length_min_val",
@@ -609,7 +609,7 @@ def n_compare_nlg(
     "--system_output",
     "-c",
     required=True,
-    help="System candidate.",
+    help="System candidate. This option can be multiple.",
     type=click.File(),
     multiple=True,
 )
@@ -617,7 +617,7 @@ def n_compare_nlg(
     "--reference",
     "-r",
     required=True,
-    help="Reference segments.",
+    help="Reference segments. This option can be multiple.",
     type=click.File(),
     multiple=True,
 )
@@ -634,7 +634,7 @@ def n_compare_nlg(
     type=click.Choice(list(available_class_metrics.keys())),
     required=True,
     multiple=True,
-    help="Metric to run.",
+    help="Metric to run.This option can be multiple.",
 )
 @click.option(
     "--filter",
@@ -643,7 +643,7 @@ def n_compare_nlg(
     required=False,
     default=[],
     multiple=True,
-    help="Filter to run.",
+    help="Filter to run. This option can be multiple.",
 )
 @click.option(
     "--seg_metric",

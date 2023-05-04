@@ -287,7 +287,7 @@ class MTTestsets(NLGTestsets):
     def upload_language():
         language_pair = st.text_input(
             "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
-            "", help=("If language is indifferent and BERTScore metric is not used then- write X-X.")
+            "", help=("If language is indifferent and BERTScore metric is not used then write X-X.")
         )
         return language_pair
 
@@ -295,6 +295,7 @@ class MTTestsets(NLGTestsets):
 class SummTestsets(NLGTestsets):
     task = "summarization"
     title = "Summarization"
+    type_of_source = "Text to be summarized"
     type_of_output = "Systems Summaries"
     message_of_success = "Source, References, Summaries and Language were successfully uploaded!"
     def __init__(
@@ -303,6 +304,7 @@ class SummTestsets(NLGTestsets):
         refs_names: List[str],
         refs_indexes: Dict[str, str],
         systems_indexes: Dict[str, str],
+        systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, List[MultipleTestset]],
         language_pair: str,

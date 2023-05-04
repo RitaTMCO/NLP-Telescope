@@ -270,19 +270,19 @@ class TestPlots(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "multiple-bucket-analysis.png")))
     
     def test_overall_confusion_matrix_table(self):
-        overall_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, DATA_PATH)
+        overall_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, self.system_A[1],DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "overall-confusion-matrix.png")))
     
     def test_singular_confusion_matrix_table_label_a(self):
-        singular_confusion_matrix_table(self.testset_class, "Sys 2", self.labels, "a", DATA_PATH)
+        singular_confusion_matrix_table(self.testset_class, "Sys 2", self.labels, "a", self.system_B[1], DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-a.png")))
 
     def test_singular_confusion_matrix_table_label_b(self):
-        singular_confusion_matrix_table(self.testset_class, "Sys 3", self.labels, "b", DATA_PATH)
+        singular_confusion_matrix_table(self.testset_class, "Sys 3", self.labels, "b", self.system_C[1], DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-b.png")))
 
     def test_singular_confusion_matrix_table_label_c(self):
-        singular_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, "c", DATA_PATH)
+        singular_confusion_matrix_table(self.testset_class, "Sys 1", self.labels, "c", self.system_A[1], DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "label-c.png")))
 
     def test_analysis_labels(self):

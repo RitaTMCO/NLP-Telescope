@@ -662,13 +662,14 @@ def plot_multiple_segment_comparison(multiple_result: MultipleResult, system_x: 
     if runtime.exists():
         st.altair_chart(c, use_container_width=True)
 
-def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], 
+def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], system_name:str,
                                 saving_dir: str = None):    
     true = testset.ref
     pred = testset.systems_output[system]
     matrix = confusion_matrix(true, pred, labels=labels)
     conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix,display_labels=labels)
     conf_mat.plot()
+    plt.title("Confusion Matrix of " + system_name)
 
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
@@ -679,7 +680,7 @@ def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: 
         st.pyplot(plt)
 
 def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], 
-                                label: List[str], saving_dir: str = None): 
+                                label: List[str], system_name:str, saving_dir: str = None): 
     true = testset.ref
     pred = testset.systems_output[system] 
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
@@ -688,6 +689,7 @@ def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels:
     
     conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix[index],display_labels=name)
     conf_mat.plot()
+    plt.title("Confusion Matrix of " + system_name)
 
     if saving_dir is not None:
         if not os.path.exists(saving_dir):

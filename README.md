@@ -1,95 +1,218 @@
-# NLP-Telescope
+# **NLP-Telescope**
+
+## **Table of contents**
+1) [Introduction](#introduction)
+2) [Requirements for the NLP systems evaluation](#requirements)
+      1) [Machine Traslation](#machine)
+      2) [Dialogue System](#dialogue)
+      3) [Summarization](#summarization)
+      4) [Classification](#classification)
+
+3) [Installation](#install)
+
+4) [Web Interface](#web)
+
+5) [Command Line Interface (CLI)](#cli)
+      1) [Comparing NLG systems](#cli-nlg)
+      2) [Comparing Classification systems](#cli-class)
+      3) [Scoring](#cli-score)
+      4) [Comparing two MT systems](#cli-compare)
+
+---------------------------------------
+
+## **Introduction:** <a name="introduction"></a>
 
 NLP-Telescope is a comparative analysis tool which is an updated and extended version of MT-Telescope [(rei, et al 2021)](https://aclanthology.org/2021.acl-demo.9/). Like MT-Telescope, it aims to facilitate researchers and developers to analyze their systems by offering features such as:
 
-1) SOTA MT evaluation metrics such as COMET  [(rei, et al 2020)](https://aclanthology.org/2020.emnlp-main.213/).
-2) Statistical tests such as bootstrap resampling [(Koehn, et al 2004)](https://aclanthology.org/W04-3250/).
-3) Dynamic Filters to select parts of your testset with specific phenomena
-4) Visual interface/plots to compare systems side-by-side segment-by-segment.
++ System-level metric that globally evaluate the outputs of the systems;
++ Segment-level metric that evaluate segment-by-segment the outputs of the systems;
++ Dynamic Corpus Filtering to filter your testset with specific linguistic phenomena such as named entities;
++ Visual interactive plots. Important to compare systems side-by-side segment-by-segment.
++ Statistical tests. For this purporse, the tool use bootstrap resampling [(Koehn, et al 2004)](https://aclanthology.org/W04-3250/);
 
 NLP-Telescope also offers new features compared to MT-Telescope such as:
 
-1) Analyze and compare the results of N systems from M references. **N and M are numbers greater than or equal to 1.** This functionality is updated from MT-Telescope which analyzes two systems from one reference;
++ Analyze and compare the results of N systems from M references. **N and M are numbers greater than or equal to 1.** This functionality is updated from MT-Telescope which analyzes only two systems from one reference;
 
-2) Being able to analyze four Natural Language Processing (NLP) tasks such as: **machine translation**, **text summarization**, **dialogue system** and **text classification**. Provide visual analysis interface appropriate for each task. This functionality is updated from MT-Telescope which analyzes machine translation systems;
++ Being able to analyze four Natural Language Processing (NLP) tasks such as: **machine translation**, **text summarization**, **dialogue system** and **text classification**. It is added **appropriate visual analysis interface, metrics and filters for each task**. This functionality is updated from MT-Telescope which analyzes only machine translation systems;
 
-3) Having metrics that **calculate and indicate the model’s
-sensitivity to biases**. An extended functionality of MT-Telescope; (coming soon)
++ Being able to **rename systems**. Important for systems to have the names that the user wants in the plot.
 
-4) Having a metric that ranks the compared systems based on the **aggregation of the scores of the metrics selected by the user**. (coming soon)
+For Natural Language Generation (NLG) tasks such as machine translation, text summarization and dialogue system, we have three types of visual interface:
 
-For all tasks and for each reference, the tool offers a table with system metrics scores. For Natural Language Generation (NLG) tasks such as machine translation, text summarization and dialogue system, we have three types of visual interface:
++ **Error-type analysis:** To evaluate system utility, the tool divides the errors into four parts through the stacked bar plot. Only available if COMET or BERTScore are selected for segment-level metrics;
 
-1) **Error-type analysis:** To evaluate system utility, the tool divides the errors into four parts through the stacked bar plot. Only available if COMET or BERTScore are selected for segment-level metrics;
++ **Segment-level scores histogram:** With a histogram plot, one may observe general evaluation of the distribution of scores between systems.
 
-2) **Segment-level scores histogram:** With a histogram plot, one may observe general evaluation of the distribution of scores between models.
++ **Pairwise comparison:** The user can choose two systems of many systems to analysis. It is used when the differences between two systems are not obvious. This type of comparison is composed by:
 
-3) **Segment-level comparison:** With bubble plot, the user may check the comparison of the sentence scores of the two models through the differences;
+    + Segment-level comparison (With bubble plot, the user may check the comparison of the sentence scores of the two systems through the differences);
+    + Bootstrap Resampling.
 
 For the classification task, we have following visual interfaces:
 
-1) Confusion matrix of each system;
-2) Confusion matrix of each label;
-3) Scores of each category for each system through the stacked bar plot.
++ Confusion Matrix of a system;
++ Confusion Matrix of a system focused on one label;
++ Scores of each label for each system through the stacked bar plot;
++ Examples that are incorrectly labelled
 
-In this document, we will explain how to install and run NLP-Telescope. To run the NLP-Telescope tool you can use:
+For all tasks and for each reference, the tool offers a table with system metrics scores. 
 
-1. A web browser
-2. The command line interface
+In this document, we will explain the requirements and how to install and run NLP-Telescope. To run the NLP-Telescope tool you can use:
+
+1) the web browser;
+2) the command line interface.
 
 
-## Install:
 
-Make sure you have [poetry](https://python-poetry.org/docs/#installation) installed.
 
-Create a virtual environment. Run:
+
+## **Requirements for the NLP systems evaluation:** <a name="requirements"></a>
+
+For the evaluation of systems, it is required three type of files: **input file**, **reference file** and **output file**. A type of file can have a specific name depending on the task. 
+
+The tool considers the file's text as a set of segments (which can be a sentence), which are organized by lines. The requirement of the number of segments per file type changes according to the task. 
+
+We will see in this section for each task what are the **specific names of the file types**, what are their **contents**, **size requirements** and indicate **examples**.
+
+
+### **Machine Translation:** <a name="machine"></a>
+
+It is required the following files:
+
+1) **Source file**: File that contains text written in one language (source language) that will be translated into another language (target language);
+
+2) **One or more refrerence files**: File(s) that contains text that will be the point of reference for the outputs of systems. Reference can be the human translation or the "correct" translation;
+
+3) **One or more output files**: File(s) that contains the outputs of the models which are texts translated from the source.
+
+**All files** must have the **same number of segments**.
+
+You can see examples of files [here](data/mt/)
+
+You also must indicate language that texts are. In web interface, you must write the language pair of the files as follows 'en-ru' which en is source language and ru is target language. In command line interface, you only indicate the target language. If language is indifferent and BERTScore metric is not used then write X-X.
+
+
+### **Dialogue System:** <a name="dialogue"></a>
+
+It is required the following files:
+
+1) **Context file**: File that contains the context between the user and the system;
+
+2) **One or more truth answers files**: File(s) that contains the correct text that the system should have answered to;
+
+3) **One or more systems answers files**: File(s) that contains the text that the system actually answered to.
+
+**The truth answers and the systems answers** must have the **same number of segments**.
+
+You can see examples of files [here](data/dialo/)
+
+You also must indicate language that texts are. If language is indifferent and BERTScore metric is not used then write X.
+
+
+
+### **Summarization:** <a name="summarization"></a>
+
+It is required the following files:
+
+1) **Text to be summarized file** (input file): File that contains text that will se summarized by the system;
+
+2) **One or more references files**:  File(s) that contains text that will be the point of reference for the outputs of systems;
+
+3) **One or more systems summaries files**: File(s) that contains the summary produced by system.
+
+**The reference and the systems summaries** must have the **same number of segments**.
+
+You can see examples of files [here](data/sum/)
+
+You also must indicate language that texts are. If language is indifferent and BERTScore metric is not used then write X.
+
+
+
+### **Classification:** <a name="classification"></a>
+
+It is required the following files:
+
+1) **Text to be samples file** (input file): File that contains the samples;
+
+2) **One or more true labels files**: File(s) that contains the true label of each sample;
+
+3) **One or more predicated labels files**: File(s) that contains the predicated labels of each sample.
+
+**All files** must have the **same number of segments**.
+
+You can see examples of files [here](data/class/)
+
+You also must indicate labels. 
+
+
+## **Installation:** <a name="install"></a>
+
+Create a virtual environment. Run 
 
 ```bash
-git clone https://github.com/RitaTMCO/NLP-Telescope
-git checkout development_v_2
-cd NLP-Telescope
-poetry install --without dev
+python3 -m venv NLP-ENV
 ```
-
-## Before running the tool:
 
 Activate virtual environment. Run:
 
 ```bash
-cd NLP-Telescope
-poetry shell
+source NLP-ENV/bin/activate
 ```
+
+Make sure you have [poetry](https://python-poetry.org/docs/#installation) installed, then run the following comands:
+
+```bash
+git clone https://github.com/RitaTMCO/NLP-Telescope
+cd NLP-Telescope
+poetry install --without dev
+```
+
+## **Before running the tool:**
 
 Some metrics like COMET can take some time. You can switch the COMET model to a more lightweight model with the following env variable:
 ```bash
 export COMET_MODEL=wmt21-cometinho-da
 ```
-## Web Interface:
 
-To run a web interface simply run:
+
+
+
+## **Web Interface:** <a name="web"></a>
+
+
+Run the following command to display the web interface:
 ```bash
 telescope streamlit
 ```
 
-## Command Line Interface (CLI):
-### Comparing NLG systems:
 
-For running system comparisons with CLI you should use the `telescope n-compare-nlg` command.
+
+
+## **Command Line Interface (CLI):** <a name="cli"></a>
+
+
+### **Comparing NLG systems:** <a name="cli-nlg"></a>
+
+Run command `telescope n-compare-nlg` to compare NLG systems with CLI.
 
 ```
 Usage: telescope n-compare-nlg [OPTIONS]
 
 Options:
   -s, --source FILENAME           Source segments.  [required]
-  -c, --system_output FILENAME    System candidate.  [required]
-  -r, --reference FILENAME        Reference segments.  [required]
+  -c, --system_output FILENAME    System candidate. This option can be
+                                  multiple.  [required]
+  -r, --reference FILENAME        Reference segments. This option can be
+                                  multiple.  [required]
   -t, --task [machine-translation|dialogue-system|summarization]
                                   NLG to evaluate.  [required]
   -l, --language TEXT             Language of the evaluated text.  [required]
   -m, --metric [COMET|BLEU|chrF|ZeroEdit|BERTScore|TER|GLEU|ROUGE-1|ROUGE-2|ROUGE-L|Accuracy|Precision|Recall|F1-score]
-                                  Metric to run.  [required]
+                                  Metric to run. This option can be multiple.
+                                  [required]
   -f, --filter [named-entities|length|duplicates]
-                                  Filter to run.
+                                  Filter to run. This option can be multiple.
   --length_min_val FLOAT          Min interval value for length filtering.
   --length_max_val FLOAT          Max interval value for length filtering.
   --seg_metric [COMET|ZeroEdit|BERTScore|GLEU|ROUGE-L|Accuracy]
@@ -104,6 +227,8 @@ Options:
   --num_splits INTEGER            Number of random partitions used in
                                   Bootstrap resampling.
   --sample_ratio FLOAT            Proportion (P) of the initial sample.
+  -n, --systems_names FILENAME    File that contains the names of the systems
+                                  per line.
   --help                          Show this message and exit.
 ```
 
@@ -142,24 +267,31 @@ telescope n-compare-nlg \
 
 For FOLDER-PATH location, a folder is created for each reference that contains the report.
 
-### Comparing Classification systems:
 
-For running system comparisons with CLI you should use the `telescope n-compare-classification` command.
+
+### **Comparing Classification systems:** <a name="cli-class"></a>
+
+Run command `telescope n-compare-classification` to compare classification systems with CLI.
 
 ```
 Usage: telescope n-compare-classification [OPTIONS]
 
 Options:
   -s, --source FILENAME           Source segments.  [required]
-  -c, --system_output FILENAME    System candidate.  [required]
-  -r, --reference FILENAME        Reference segments.  [required]
+  -c, --system_output FILENAME    System candidate. This option can be
+                                  multiple.  [required]
+  -r, --reference FILENAME        Reference segments. This option can be
+                                  multiple.  [required]
   -l, --label TEXT                Existing labels  [required]
   -m, --metric [Accuracy|Precision|Recall|F1-score]
-                                  Metric to run.  [required]
-  -f, --filter [duplicates]       Filter to run.
+                                  Metric to run.This option can be multiple.
+                                  [required]
+  -f, --filter [duplicates]       Filter to run. This option can be multiple.
   --seg_metric [Accuracy]         Segment-level metric to use for segment-
                                   level analysis.
   -o, --output_folder TEXT        Folder you wish to use to save plots.
+  -n, --systems_names FILENAME    File that contains the names of the systems
+                                  per line.
   --help                          Show this message and exit.
 ```
 
@@ -200,7 +332,9 @@ telescope telescope n-compare-classification \
 
 For FOLDER-PATH location, a folder is created for each reference that contains the report
 
-### Scoring:
+
+
+### **Scoring:** <a name="cli-score"></a>
 
 To get the system level scores for a particular MT simply run `telescope score`.
 
@@ -208,9 +342,11 @@ To get the system level scores for a particular MT simply run `telescope score`.
 telescope score -s {path/to/sources} -t {path/to/translations} -r {path/to/references} -l {target_language} -m COMET -m chrF
 ```
 
-### Comparing two MT systems:
 
-For running MT system comparisons with CLI you should use the `telescope compare` command.
+
+### **Comparing two MT systems:** <a name="cli-compare"></a>
+
+For running MT system comparisons for two system with one  with CLI you should use the `telescope compare` command.
 
 ```
 Usage: telescope compare [OPTIONS]
@@ -236,6 +372,5 @@ Options:
                                   Bootstrap resampling.
   --sample_ratio FLOAT            Folder you wish to use to save plots.
   --help                          Show this message and exit.
-
 ```
 
