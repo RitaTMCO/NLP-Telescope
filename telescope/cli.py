@@ -634,7 +634,7 @@ def n_compare_nlg(
     type=click.Choice(list(available_class_metrics.keys())),
     required=True,
     multiple=True,
-    help="Metric to run.This option can be multiple.",
+    help="Metric to run. This option can be multiple.",
 )
 @click.option(
     "--filter",

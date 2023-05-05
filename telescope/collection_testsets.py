@@ -227,7 +227,7 @@ class NLGTestsets(CollectionTestsets):
         language_pair = ""
         language = st.text_input(
             "Please input the language of the files to analyse (e.g. 'en'):",
-            "", help=("If language is indifferent and BERTScore metric is not used then write X.")
+            "", help=("If the language is indifferent and BERTScore metric is not used, then write X.")
         )
         if (language != ""):
             language_pair = language + "-" + language
@@ -287,7 +287,7 @@ class MTTestsets(NLGTestsets):
     def upload_language():
         language_pair = st.text_input(
             "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
-            "", help=("If language is indifferent and BERTScore metric is not used then write X-X.")
+            "", help=("If the language is indifferent and BERTScore metric is not used, then write X-X.")
         )
         return language_pair
 
