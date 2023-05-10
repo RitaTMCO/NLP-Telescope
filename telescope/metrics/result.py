@@ -139,11 +139,11 @@ class MultipleResult:
         return self.systems_metric_results[system_name].cand
 
     @staticmethod
-    def results_to_dataframe(multiple_results: list, systems_indexes: list) -> pd.DataFrame:
+    def results_to_dataframe(multiple_results: list, systems_names:Dict[str, str]) -> pd.DataFrame:
 
         summary = { 
-            system: [m_res.systems_metric_results[system].sys_score for m_res in multiple_results] 
-            for system in systems_indexes
+            sys_name: [m_res.systems_metric_results[sys_id].sys_score for m_res in multiple_results] 
+            for sys_id, sys_name in systems_names.items()
         }
 
         df = pd.DataFrame.from_dict(summary)
@@ -151,11 +151,11 @@ class MultipleResult:
         return df
 
     @staticmethod
-    def results_to_dict(multiple_results: list, systems_indexes:list):
+    def results_to_dict(multiple_results: list, systems_names:Dict[str, str]):
         return {
             m_res.metric: {
-                            system: m_res.systems_metric_results[system].sys_score 
-                            for system in systems_indexes
+                            sys_name: m_res.systems_metric_results[sys_id].sys_score 
+                            for sys_id, sys_name in systems_names.items()
                         }
             for m_res in multiple_results
         }

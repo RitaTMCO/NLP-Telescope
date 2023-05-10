@@ -14,7 +14,8 @@
 # limitations under the License.
 import unittest
 
-from telescope.testset import PairwiseTestset, MultipleTestset, NLPTestset
+from telescope.testset import PairwiseTestset, MultipleTestset
+from telescope.collection_testsets import MTTestsets
 
 
 class TestTestset(unittest.TestCase):
@@ -33,7 +34,6 @@ class TestTestset(unittest.TestCase):
         ref=['Hello world.', 'This is a test.'],
         systems_output={"Sys 1": ['Greetings world', 'This is an experiment.'], 
         "Sys 2":['Hi world.', 'This is a Test.'], "Sys 3":['Hello world.', 'This is a test']},
-        language_pair="en-fr",
         filenames=["src.txt", "ref_1.txt", "google.txt", "unbabel_1.txt", "unbabel_2.txt"]
     )
 
@@ -42,18 +42,18 @@ class TestTestset(unittest.TestCase):
         ref=['Greetings world', 'This is an experiment.'],
         systems_output={"Sys 1": ['Greetings world', 'This is an experiment.'], 
         "Sys 2":['Hi world.', 'This is a Test.'], "Sys 3":['Hello world.', 'This is a test']},
-        language_pair="en-fr",
         filenames=["src.txt", "ref_2.txt", "google.txt", "unbabel_1.txt", "unbabel_2.txt"]
     )
 
-    nlp_testset = NLPTestset(
+    collection =  MTTestsets(
         src_name = 'src.txt',
         refs_names = ['ref_1.txt','ref_2.txt'],
+        refs_indexes = {'ref_1.txt':"Ref A", 'ref_2.txt':"Ref B"},
         systems_indexes = {"google.txt":"Sys 1", "unbabel_1.txt":"Sys 2", "unbabel_2.txt":"Sys 3"},
-        language_pair = "en-fr",
+        systems_names = {"Sys 1":"Sys A", "Sys 2":"Sys B", "Sys 3":"Sys C"},
         filenames = ["src.txt", "ref_1.txt", "ref_2.txt", "google.txt", "unbabel_1.txt", "unbabel_2.txt"],
-        multiple_testsets = [multiple_testset_1, multiple_testset_2]
-
+        testsets = [multiple_testset_1, multiple_testset_2],
+        language_pair="fr-en"
     )
 
     def test_length(self):
@@ -91,5 +91,39 @@ class TestTestset(unittest.TestCase):
         )
         self.assertTupleEqual(expected_2, self.multiple_testset_2[0])
     
-    def test_systems_names(self):
-        self.assertListEqual(["Sys 1", "Sys 2", "Sys 3"], self.nlp_testset.systems_names())
+    def test_indexes_of_systems(self):
+        self.assertListEqual(["Sys 1", "Sys 2", "Sys 3"], self.collection.indexes_of_systems())
+    
+    def test_names_of_systems(self):
+        self.assertListEqual(["Sys A", "Sys B", "Sys C"], self.collection.names_of_systems())
+    
+    def test_system_A_id(self):
+        self.assertEqual("Sys 1" , self.collection.system_name_id("Sys A"))
+    
+    def test_system_B_id(self):
+        self.assertEqual("Sys 2" , self.collection.system_name_id("Sys B"))
+    
+    def test_system_C_id(self):
+        self.assertEqual("Sys 3" , self.collection.system_name_id("Sys C"))
+    
+    def test_already_exists_A(self):
+        self.assertTrue(self.collection.already_exists("Sys A"))
+    
+    def test_already_exists_B(self):
+        self.assertTrue(self.collection.already_exists("Sys B"))
+    
+    def test_already_exists_C(self):
+        self.assertTrue(self.collection.already_exists("Sys C"))
+    
+    def test_not_exists(self):
+        self.assertFalse(self.collection.already_exists("Sys D"))
+
+    def test_display_systems(self):
+        text = "--> google.txt : Sys A \n--> unbabel_1.txt : Sys B \n--> unbabel_2.txt : Sys C \n"
+        self.assertEqual(text, self.collection.display_systems())
+    
+    def test_source_language(self):
+        self.assertEqual('fr', self.collection.source_language)
+    
+    def test_target_language(self):
+        self.assertEqual('en', self.collection.target_language)
