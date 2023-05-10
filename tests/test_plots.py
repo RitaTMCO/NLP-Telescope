@@ -216,7 +216,7 @@ class TestPlots(unittest.TestCase):
         os.remove(DATA_PATH + "/label-b.png")
         os.remove(DATA_PATH + "/label-c.png")
         os.remove(DATA_PATH + "/analysis-labels-bucket.png")
-        os.remove(DATA_PATH + "/incorrect-examples.json")
+        os.remove(DATA_PATH + "/incorrect-examples.csv")
 
     def test_segment_comparison(self):
         plot_segment_comparison(self.result, DATA_PATH)
@@ -292,4 +292,4 @@ class TestPlots(unittest.TestCase):
     def test_incorrect_examples(self):
         num = int(len(self.testset_class.ref)/4) + 1
         incorrect_examples(self.testset_class, "Sys 1", num, [], [], DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.json")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.csv")))

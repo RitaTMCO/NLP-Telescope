@@ -383,7 +383,7 @@ def display_table(collection, ref_filename, systems_names, results):
         for sys_name, sys_score in systems.items():
             click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
 
-    return results_dicts
+    return pd.DataFrame.from_dict(results_dicts)
 
 def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,num_splits,sample_ratio):
 
@@ -546,7 +546,7 @@ def n_compare_nlg(
     system_y: click.File,
     systems_names: click.File
 ):  
-    collection = NLGTestsets.read_data_cli(source,systems_names,system_output,reference,language)
+    collection = NLGTestsets.read_data_cli(source,systems_names,system_output,reference,"X-" + language)
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
@@ -564,7 +564,7 @@ def n_compare_nlg(
             m: available_metrics[m](language=language).multiple_comparison(testset) 
             for m in metric }
 
-        results_dicts = display_table(collection,ref_filename,systems_names,results)
+        results_df = display_table(collection,ref_filename,systems_names,results)
 
         if bootstrap and len(systems_index.values()) > 1: 
             if system_x.name in systems_index and system_y.name in systems_index:
@@ -584,14 +584,13 @@ def n_compare_nlg(
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
 
-            with open(saving_dir + "results.json", "w") as result_file:
-                json.dump(results_dicts, result_file, indent=4)
+            results_df.to_csv(saving_dir + "/results.csv")
 
             if bootstrap and len(systems_index.values()) > 1:
                 x_name = systems_names[x_id]
                 y_name = systems_names[y_id]
-                filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.json"
-                bootstrap_df.to_json(filename, orient="index", indent=4)
+                filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.csv"
+                bootstrap_df.to_csv(filename)
 
             plot = NLGPlot(seg_metric,metric,available_metrics,results,collection,ref_filename,task,num_splits,sample_ratio)
             plot.display_plots_cli(saving_dir,system_x,system_y)
@@ -699,7 +698,7 @@ def n_compare_classification(
             for m in metric 
         }
 
-        results_dicts = display_table(collection,ref_filename,systems_names,results)
+        results_df = display_table(collection,ref_filename,systems_names,results)
 
         if output_folder != "":
             if not output_folder.endswith("/"):
@@ -708,10 +707,8 @@ def n_compare_classification(
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
 
-            with open(saving_dir + "results.json", "w") as result_file:
-                json.dump(results_dicts, result_file, indent=4)
+            results_df.to_csv(saving_dir + "/results.csv")
             
-            plot = ClassificationPlot(seg_metric,metric,available_class_metrics,results,
-                collection, ref_filename, "classification")
+            plot = ClassificationPlot(seg_metric,metric,available_class_metrics,results,collection, ref_filename, "classification")
             
             plot.display_plots_cli(saving_dir)

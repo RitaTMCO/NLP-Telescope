@@ -7,14 +7,16 @@ import click
 import abc
 
 class CollectionTestsets:
+
     task = "nlp"
     title = "NLP"
     type_of_source = "Source"
     type_of_references = "References"
     type_of_output = "Systems Outputs"
     message_of_success = "Source, References and Outputs were successfully uploaded!"
-    sys_ids = 1
-    ref_ids = 1
+    last_sys_id = 1
+    last_ref_id = 1
+
     def __init__(
         self,
         src_name: str,
@@ -81,55 +83,6 @@ class CollectionTestsets:
         assert len(system_x) == len(ref), "mismatch between systems and references ({} > {})".format(
             len(system_x), len(ref))
     
-    @classmethod
-    def upload_files(cls) -> list:
-        st.subheader("Upload Files for :blue[" + cls.title + "] analysis:")
-        
-        source_file = st.file_uploader("Upload **one** file with the " + cls.type_of_source)
-        sources = read_lines(source_file)
-
-        ref_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_references, 
-                    accept_multiple_files=True)
-        references, refs_indexes = {}, {}
-        for ref_file in ref_files:
-            if ref_file.name not in references:
-                data = read_lines(ref_file)
-                ref_id = cls.create_ref_ids(ref_file.name,data)
-                references[ref_file.name] = data
-                refs_indexes[ref_file.name] = ref_id
-
-        outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output,
-                                    accept_multiple_files=True)
-        systems_indexes, systems_names, outputs = {}, {}, {}
-
-        for output_file in outputs_files:
-            output = read_lines(output_file)
-            sys_id = cls.create_sys_ids(output_file.name,output)
-            systems_indexes[output_file.name] = sys_id
-            if cls.task + "_" + sys_id + "_rename" not in st.session_state:
-                systems_names[sys_id] = sys_id
-            else:
-                systems_names[sys_id] = st.session_state[cls.task + "_" + sys_id + "_rename" ]
-            outputs[sys_id] = output
-
-        res = [source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_indexes,
-            systems_names,outputs]
-
-        return res
-
-    @classmethod
-    @st.cache
-    def create_sys_ids(cls,filename,output):
-        sys_id = "Sys " + str(cls.sys_ids)
-        cls.sys_ids += 1
-        return sys_id
-    
-    @classmethod
-    @st.cache
-    def create_ref_ids(cls,filename,output):
-        ref_id = "Ref " + str(cls.ref_ids)
-        cls.ref_ids += 1
-        return ref_id
 
     @staticmethod
     def create_testsets(files:list) -> Dict[str, Testset]:
@@ -141,12 +94,58 @@ class CollectionTestsets:
         return testsets
     
     @classmethod
+    def upload_files(cls) -> list:
+        st.subheader("Upload Files for :blue[" + cls.title + "] analysis:")
+        
+        source_file = st.file_uploader("Upload **one** file with the " + cls.type_of_source)
+        sources = read_lines(source_file)
+
+        ref_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_references, accept_multiple_files=True)
+        references, refs_indexes = {}, {}
+        for ref_file in ref_files:
+            if ref_file.name not in references:
+                data = read_lines(ref_file)
+                ref_id = cls.create_ref_id(ref_file.name,data)
+                references[ref_file.name] = data
+                refs_indexes[ref_file.name] = ref_id
+
+        outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output, accept_multiple_files=True)
+        systems_indexes, systems_names, outputs = {}, {}, {}
+        for output_file in outputs_files:
+            output = read_lines(output_file)
+            sys_id = cls.create_sys_id(output_file.name,output)
+            systems_indexes[output_file.name] = sys_id
+            if cls.task + "_" + sys_id + "_rename" not in st.session_state:
+                systems_names[sys_id] = sys_id
+            else:
+                systems_names[sys_id] = st.session_state[cls.task + "_" + sys_id + "_rename" ]
+            outputs[sys_id] = output
+
+        return source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_indexes,systems_names,outputs
+
+    @classmethod
+    @st.cache
+    def create_sys_id(cls,filename,output):
+        sys_id = "Sys " + str(cls.last_sys_id)
+        cls.last_sys_id += 1
+        return sys_id
+    
+    @classmethod
+    @st.cache
+    def create_ref_id(cls,filename,output):
+        ref_id = "Ref " + str(cls.last_ref_id)
+        cls.last_ref_id += 1
+        return ref_id
+    
+    @classmethod
     @abc.abstractmethod
     def read_data(cls):
         return NotImplementedError
 
     @classmethod
-    def read_data_cli_aux(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File]):      
+    def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
+                      extra_info:str): 
+    
         systems_indexes, systems_names, outputs = {}, {}, {}
         
         if system_names_file:
@@ -175,12 +174,13 @@ class CollectionTestsets:
                 systems_names[sys_id] = sys_id
                 outputs[sys_id] = data
         
+        id = 1
         references,refs_indexes = {},{}
         for ref in reference:
             if ref.name not in references:
                 data = [l.strip() for l in ref.readlines()]
-                ref_id = "Ref " + str(cls.ref_ids)
-                cls.ref_ids += 1
+                ref_id = "Ref " + str(id)
+                id += 1
                 references[ref.name] = data
                 refs_indexes[ref.name] = ref_id
 
@@ -188,14 +188,10 @@ class CollectionTestsets:
         files = [source,src,reference,references,refs_indexes,systems_output,systems_indexes,systems_names,outputs]
 
         testsets = cls.create_testsets(files)
-        return systems_indexes,systems_names,outputs,references, refs_indexes, src,testsets
-
-    @classmethod
-    @abc.abstractmethod
-    def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File]):
-        return NotImplementedError
-
-
+    
+        return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names,
+                    [source.name] +  list(references.keys()) + list(systems_indexes.values()), testsets, extra_info)
+    
 
 class NLGTestsets(CollectionTestsets):
     task = "nlg"
@@ -227,9 +223,10 @@ class NLGTestsets(CollectionTestsets):
         language_pair = ""
         language = st.text_input(
             "Please input the language of the files to analyse (e.g. 'en'):",
-            "", help=("If the language is indifferent and BERTScore metric is not used, then write X.")
+            "", 
+            help=("If the language is indifferent and BERTScore metric is not used, then write X.")
         )
-        if (language != ""):
+        if language != "":
             language_pair = language + "-" + language
         return language_pair
     
@@ -254,14 +251,6 @@ class NLGTestsets(CollectionTestsets):
             return cls(source_file.name, references.keys(), refs_indexes, systems_indexes, systems_names,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
                 testsets, language)
-    
-    @classmethod
-    def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-        language:str):
-        systems_indexes,systems_names,outputs,references,refs_indexes, src,testsets = cls.read_data_cli_aux(source,system_names_file,systems_output,reference) 
-        return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names,
-            [source.name] +  list(references.keys()) + list(systems_indexes.values()), testsets, 
-            "X-" + language)
 
 
 class MTTestsets(NLGTestsets):
@@ -429,11 +418,3 @@ class ClassTestsets(CollectionTestsets):
             return cls(source_file.name, references.keys(), refs_indexes, systems_indexes, systems_names,
                 [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
                 testsets, labels)
-    
-    @classmethod
-    def read_data_cli(cls, source:click.File,system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-        labels:str):
-        systems_indexes,systems_names,outputs,references, refs_indexes, src, testsets = cls.read_data_cli_aux(source,system_names_file,systems_output,reference) 
-        return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names,
-            [source.name] +  list(references.keys()) + list(systems_indexes.values()),
-            testsets, labels)

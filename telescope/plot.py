@@ -2,8 +2,9 @@ import abc
 import os
 import streamlit as st
 import numpy as np
+import pandas as pd
 
-from typing import List, Dict
+from typing import List
 from telescope.collection_testsets import CollectionTestsets, NLGTestsets, ClassTestsets
 from telescope.plotting import (
     plot_bootstraping_result,
@@ -13,11 +14,11 @@ from telescope.plotting import (
     overall_confusion_matrix_table,
     singular_confusion_matrix_table,
     analysis_labels,
-    incorrect_examples,
-    analysis_extractive_summarization
+    incorrect_examples
 )
 
 class Plot(metaclass=abc.ABCMeta):
+    export_folder_temp = "analysis_data"
     def __init__(
         self,
         metric: str, 
@@ -37,6 +38,17 @@ class Plot(metaclass=abc.ABCMeta):
         self.ref_filename = ref_filename
         self.task = task
 
+    @staticmethod
+    def export_dataframe(label:str, name:str, dataframe:pd.DataFrame):
+        st.download_button(
+            label = label,
+            data=dataframe.to_csv().encode('utf-8'),
+            file_name=name,
+            mime='text/csv',
+            key ='export_' + name
+        )
+
+
     @abc.abstractmethod
     def display_plots(self) -> None:
         pass
@@ -44,6 +56,7 @@ class Plot(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def display_plots_cli(self, saving_dir:str, *args) -> None:
         pass
+
 
 
 class NLGPlot(Plot):
@@ -60,7 +73,7 @@ class NLGPlot(Plot):
         sample_ratio: float,
     ) -> None:
 
-        super().__init__(metric, metrics, available_metrics, results, collection_testsets, ref_filename, task)
+        super().__init__(metric, metrics, available_metrics, results, collection_testsets, ref_filename,task)
         self.num_samples = num_samples
         self.sample_ratio = sample_ratio
 
@@ -68,14 +81,12 @@ class NLGPlot(Plot):
     def display_plots(self) -> None:
         if self.metric == "COMET" or self.metric == "BERTScore":
             st.header(":blue[Error-type analysis:]")
-            plot_bucket_multiple_comparison(self.results[self.metric], 
-                                                        self.collection_testsets.names_of_systems())
+            plot_bucket_multiple_comparison(self.results[self.metric], self.collection_testsets.names_of_systems())
 
         if len(self.collection_testsets.testsets[self.ref_filename]) > 1:
             try:
                 st.header(":blue[Segment-level scores histogram:]")
-                plot_multiple_distributions(self.results[self.metric],
-                                                        self.collection_testsets.names_of_systems())
+                plot_multiple_distributions(self.results[self.metric], self.collection_testsets.names_of_systems())
             except np.linalg.LinAlgError as err:    
                 st.write(err)
 
@@ -119,24 +130,25 @@ class NLGPlot(Plot):
                         )
                     )
                     st.subheader("Bootstrap resampling results:")
+                    list_df = list()
                     with st.spinner("Running bootstrap resampling..."):
                         for self.metric in self.metrics:
                             bootstrap_result = self.available_metrics[self.metric].multiple_bootstrap_resampling(
                                 self.collection_testsets.testsets[self.ref_filename], int(self.num_samples), 
                                 self.sample_ratio, system_x_id, system_y_id, self.collection_testsets.target_language, self.results[self.metric])
-
-                            plot_bootstraping_result(bootstrap_result)
+                            df = plot_bootstraping_result(bootstrap_result)
+                            list_df.append(df)
+                    name = system_x_name + "-" + system_y_name + "_bootstrap_results.csv"
+                    self.export_dataframe(label="Export bootstrap resampling results", name=name, dataframe=pd.concat(list_df))
 
 
     def display_plots_cli(self, saving_dir:str, system_x:str, system_y:str) -> None:
         
         if self.metric == "COMET" or self.metric == "BERTScore":
-            plot_bucket_multiple_comparison(self.results[self.metric], self.collection_testsets.names_of_systems(), 
-                                    saving_dir)
+            plot_bucket_multiple_comparison(self.results[self.metric], self.collection_testsets.names_of_systems(), saving_dir)
         
         if len(self.collection_testsets.testsets[self.ref_filename]) > 1:
-            plot_multiple_distributions(self.results[self.metric], self.collection_testsets.names_of_systems(),
-                                    saving_dir)
+            plot_multiple_distributions(self.results[self.metric], self.collection_testsets.names_of_systems(), saving_dir)
         
         if len(self.collection_testsets.systems_indexes.values()) > 1: 
             if ((system_x.name in self.collection_testsets.systems_indexes) 
@@ -168,7 +180,10 @@ class ClassificationPlot(Plot):
     ) -> None:
         super().__init__(metric, metrics, available_metrics, results, collection_testsets, ref_filename, task)
     
+    
     def display_plots(self) -> None:
+
+        ref_id = self.collection_testsets.refs_indexes[self.ref_filename]
         testset = self.collection_testsets.testsets[self.ref_filename]
         labels = self.collection_testsets.labels
         names_of_systems = self.collection_testsets.names_of_systems()
@@ -206,7 +221,6 @@ class ClassificationPlot(Plot):
         )
 
         system = self.collection_testsets.system_name_id(system_name)
-        ref_id = self.collection_testsets.refs_indexes[self.ref_filename]
 
         num = 'num_' + system + "_" + ref_id
         incorrect_ids = 'incorrect_ids_' + system + "_" + ref_id
@@ -214,7 +228,10 @@ class ClassificationPlot(Plot):
         num_incorrect_ids = 'num_incorrect_ids_' + system + "_" + ref_id
         
         if num not in st.session_state:
-            st.session_state[num] = int(len(testset.ref)/4) + 1
+            if len(testset.ref) <= 55:
+                st.session_state[num] = int(len(testset.ref)/4) + 1
+            else:
+                st.session_state[num] = 5
         if incorrect_ids not in st.session_state:
             st.session_state[incorrect_ids] = []
         if table not in st.session_state:
@@ -222,8 +239,9 @@ class ClassificationPlot(Plot):
         if num_incorrect_ids  not in st.session_state:
             st.session_state[num_incorrect_ids] = 0
 
-        df = incorrect_examples(testset, system, st.session_state[num], st.session_state[incorrect_ids],
-                st.session_state[table])
+        df = incorrect_examples(testset, system, st.session_state[num], st.session_state[incorrect_ids],st.session_state[table])
+        
+        self.export_dataframe(label="Export incorrect examples", name=system_name + "_incorrect-examples.csv", dataframe=df)
 
         if df is not None:
             st.dataframe(df)
@@ -242,6 +260,7 @@ class ClassificationPlot(Plot):
         else:
             st.warning("There are no examples that are incorrectly labelled.")
 
+
     def display_plots_cli(self, saving_dir:str) -> None:
         testset = self.collection_testsets.testsets[self.ref_filename]
         labels = self.collection_testsets.labels
@@ -256,7 +275,7 @@ class ClassificationPlot(Plot):
                 os.makedirs(output_file)            
             overall_confusion_matrix_table(testset,sys_id,labels,sys_name,output_file)
 
-            num = int(len(testset.ref)/4) + 1
+            num = 15
             incorrect_examples(testset,sys_id,num,[],[], output_file)
 
             label_file = output_file + "/" + "singular_confusion_matrix"

@@ -20,6 +20,7 @@ from PIL import Image
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleResult
 from telescope.collection_testsets import CollectionTestsets
+from telescope.plot import Plot
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
@@ -216,8 +217,7 @@ if collection_testsets:
 
     system_name = st.text_input('Enter the system name', collection_testsets.systems_names[sys_id])
 
-    if (collection_testsets.systems_names[sys_id] != system_name 
-        and collection_testsets.already_exists(system_name)):
+    if (collection_testsets.systems_names[sys_id] != system_name and collection_testsets.already_exists(system_name)):
         st.warning("This system name already exists")
     else:
         st.session_state[task + "_" + sys_id + "_rename"] = system_name
@@ -238,14 +238,13 @@ if collection_testsets:
     results = results_per_ref[ref_filename]
 
     if len(results) > 0:
-        st.dataframe(MultipleResult.results_to_dataframe(list(results.values()), 
-            collection_testsets.systems_names))
+        dataframe = MultipleResult.results_to_dataframe(list(results.values()),collection_testsets.systems_names)
+        Plot.export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe)
+        st.dataframe(dataframe)
     
     if metric in results:
         if task != "classification":
-            available_tasks[task].plots_interface(metric, metrics, available_metrics,
-                                                results, collection_testsets, ref_filename,
-                                                num_samples, sample_ratio)
+            available_tasks[task].plots_interface(metric, metrics, available_metrics, results,collection_testsets, ref_filename, num_samples, 
+                                                  sample_ratio)
         else:
-            available_tasks[task].plots_interface(metric, metrics, available_metrics,
-                                                results, collection_testsets, ref_filename)
+            available_tasks[task].plots_interface(metric, metrics, available_metrics, results,collection_testsets, ref_filename)

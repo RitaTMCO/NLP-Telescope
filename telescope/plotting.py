@@ -328,6 +328,7 @@ def plot_bootstraping_result(bootstrap_result: BootstrapResult):
     )
     df = pd.DataFrame(data)
     st.dataframe(df)
+    return df
 
 
 
@@ -699,8 +700,9 @@ def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels:
     if runtime.exists():
         st.pyplot(plt)
 
-def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_ids: List[str] = [] ,
-    table: List[List[str]] = [], saving_dir:str = None):
+
+def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], 
+                       saving_dir:str = None):
     src = testset.src
     true = testset.ref
     pred = testset.systems_output[system]
@@ -709,16 +711,16 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
     ids = random.sample(range(n),n)
     
     for i in ids:
+        if len(incorrect_ids) == num:
+            break
         if (true[i] != pred[i]) and ("line " + str(i+1) not in incorrect_ids):
             incorrect_ids.append("line " + str(i+1))
             table.append([src[i], true[i], pred[i]])
-        if len(incorrect_ids) == num:
-            break
     
     if len(incorrect_ids) != 0:
         df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"])
         if saving_dir is not None:
-            df.to_json(saving_dir + "/incorrect-examples.json", orient="index", indent=4)
+            df.to_csv(saving_dir + "/incorrect-examples.csv")
         return df
     else:
         return None
@@ -803,3 +805,4 @@ def analysis_extractive_summarization(src: List[str], system_output: List[str]):
             right.markdown(f'<p style="color:#3d85c6"><b>{seg}<b/></p>', unsafe_allow_html=True)
         else:
             right.markdown(seg)
+

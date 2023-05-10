@@ -1,4 +1,5 @@
 import abc
+import pandas as pd
 from telescope.collection_testsets import CollectionTestsets
 from telescope.filters import AVAILABLE_NLP_FILTERS
 
@@ -17,8 +18,7 @@ class Task(metaclass=abc.ABCMeta):
         
     @classmethod
     @abc.abstractmethod
-    def plots_interface(cls,metric:str, metrics:list, available_metrics:dict, results:dict, 
-                        collection_testsets: CollectionTestsets, ref_file: str, 
-                        num_samples: int, sample_ratio: float) -> None:
+    def plots_interface(cls,metric:str, metrics:list, available_metrics:dict, results:dict, collection_testsets: CollectionTestsets, 
+                        ref_file: str, *args) -> None:
         """ Interfave to display the plots"""
         pass

@@ -1,3 +1,4 @@
+import pandas as pd
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, ClassTestsets
 from telescope.plot import ClassificationPlot
@@ -16,8 +17,7 @@ class Classification(Task):
         return class_testset
     
     @classmethod
-    def plots_interface(cls, metric:str, metrics:list, available_metrics:dict, results:dict, 
-                        collection_testsets: CollectionTestsets, ref_file: str) -> None:
+    def plots_interface(cls, metric:str, metrics:list, available_metrics:dict, results:dict, collection_testsets: CollectionTestsets, 
+                        ref_file: str, *args) -> None:
         """ Interfave to display the plots"""
-        return ClassificationPlot(metric,metrics,available_metrics,
-                                    results,collection_testsets,ref_file,cls.name).display_plots()
+        return ClassificationPlot(metric,metrics,available_metrics,results,collection_testsets,ref_file,cls.name).display_plots()

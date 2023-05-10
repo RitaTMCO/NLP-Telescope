@@ -17,7 +17,6 @@ import streamlit as st
 
 from telescope.utils import read_lines
 
-
 class Testset:
     def __init__(
         self,
@@ -49,14 +48,6 @@ class Testset:
         self.src = [self.src[idx] for idx in to_keep]
         self.mt = [self.mt[idx] for idx in to_keep]
         self.ref = [self.ref[idx] for idx in to_keep]
-    
-    @property
-    def source_language(self):
-        return self.language_pair.split("-")[0]
-
-    @property
-    def target_language(self):
-        return self.language_pair.split("-")[1]
 
 
 class PairwiseTestset(Testset):
@@ -91,6 +82,14 @@ class PairwiseTestset(Testset):
         ), "mismatch between system x and references ({} > {})".format(
             len(system_x), len(ref)
         )
+    
+    @property
+    def source_language(self):
+        return self.language_pair.split("-")[0]
+
+    @property
+    def target_language(self):
+        return self.language_pair.split("-")[1]
 
     @staticmethod
     def hash_func(testset):
@@ -169,5 +168,4 @@ class MultipleTestset(Testset):
         to_keep = filter.apply_filter()
         self.src = [self.src[idx] for idx in to_keep]
         self.ref = [self.ref[idx] for idx in to_keep]
-        self.systems_output = {name: [output[idx] for idx in to_keep] 
-                                for name,output in self.systems_output.items()}
+        self.systems_output = {name: [output[idx] for idx in to_keep] for name,output in self.systems_output.items()}
