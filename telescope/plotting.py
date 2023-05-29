@@ -788,21 +788,12 @@ def analysis_labels(result: MultipleResult, sys_names: List[str], labels:List[st
     plt.clf()
 
 
-def analysis_extractive_summarization(src: List[str], system_output: List[str]):
-    output = []
-    left, right = st.columns(2)
-    left.subheader("Source")
-    right.subheader("Output")
-    for seg in src:
-        if seg in system_output:
-            output.append(seg)
-            left.markdown(f'<p style="color:#3d85c6"><b>{seg}<b/></p>', unsafe_allow_html=True)
-        else:
-            left.markdown(seg)
-    
-    for seg in system_output:
-        if seg in output:
-            right.markdown(f'<p style="color:#3d85c6"><b>{seg}<b/></p>', unsafe_allow_html=True)
-        else:
-            right.markdown(seg)
+def export_dataframe(label:str, name:str, dataframe:pd.DataFrame):
+    st.download_button(
+        label = label,
+        data=dataframe.to_csv().encode('utf-8'),
+        file_name=name,
+        mime='text/csv',
+        key ='export_' + name
+    )
 

@@ -20,7 +20,8 @@ from PIL import Image
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleResult
 from telescope.collection_testsets import CollectionTestsets
-from telescope.plot import Plot
+
+from telescope.plotting import export_dataframe
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
@@ -33,14 +34,16 @@ def load_image(image_url):
 st.sidebar.image("data/nlp-telescope-logo.png")
 
 # --------------------  APP Settings --------------------
+
+#---------- |NLP task| ------------
 task = st.sidebar.selectbox(
     "Select the natural language processing task:",
     list(t.name for t in available_tasks.values()),
     index=0,
 )
 
+#---------- |Metrics| ------------
 available_metrics = {m.name: m for m in available_tasks[task].metrics}
-available_filters = {f.name: f for f in available_tasks[task].filters}
 
 metrics = st.sidebar.multiselect(
     "Select the system-level metric you wish to run:",
@@ -53,6 +56,9 @@ metric = st.sidebar.selectbox(
     list(m.name for m in available_metrics.values() if m.segment_level),
     index=0,
 )
+
+#---------- |Filters| ------------
+available_filters = {f.name: f for f in available_tasks[task].filters}
 
 filters = st.sidebar.multiselect(
     "Select testset filters:", list(available_filters.keys()), default=list(available_filters.keys())[0],
@@ -83,8 +89,11 @@ if "length" in available_filters:
             else [
                 "length",
             ]
-        )      
-if task != "classification":
+        ) 
+
+#---------- |Bootstrap resampling| ------------    
+
+if available_tasks[task].bootstrap:
     st.sidebar.subheader("Bootstrap resampling settings:")
     num_samples = st.sidebar.number_input(
         "Number of random partitions:",
@@ -97,16 +106,25 @@ if task != "classification":
         "Proportion (P) of the initial sample:", 0.0, 1.0, value=0.5, step=0.1
     )
 
+
+#---------- |Bias Evaluation| ------------ 
+
+available_bias_evaluations = {b.name: b for b in available_tasks[task].bias_evaluations}
+
+if available_bias_evaluations:
+    st.sidebar.subheader("Bias Evaluations:")
+
+    bias_evaluations = st.sidebar.multiselect(
+        "Select Bias Evaluations:", list(available_bias_evaluations.keys()), default=list(available_bias_evaluations.keys())[0]
+    )         
+
 # --------------------- Streamlit APP Caching functions! --------------------------
 
 cache_time = 60 * 60  # 1 hour cache time for each object
 cache_max_entries = 30  # 1 hour cache time for each object
 
 
-def hash_metrics(metrics):
-    return " ".join([m.name for m in metrics])
-
-
+# --------| Filters |-----------
 st.cache(
     hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
     suppress_st_warning=True,
@@ -135,6 +153,11 @@ def apply_filters(testset, filters, ref_name, source_language, target_language, 
     testset.filenames = [filter_prefix + f for f in testset.filenames]
     return testset
 
+
+
+# --------| Metrics |-----------
+def hash_metrics(metrics):
+    return " ".join([m.name for m in metrics])
 
 @st.cache(
     hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
@@ -186,6 +209,9 @@ def run_all_metrics(collection, metrics, filters):
         for metric in metrics}
         for ref_name in refs_names
         }
+
+
+# --------| Rename systems |-----------
 @st.cache
 def rename_system(system_name,sys_id):
     st.session_state[sys_id + "_name"] = system_name
@@ -195,7 +221,9 @@ def rename_system(system_name,sys_id):
 # --------------------  APP  --------------------
 
 st.title("Welcome to NLP-Telescope! :telescope:")
-collection_testsets = available_tasks[task].input_interface()
+
+
+collection_testsets = available_tasks[task].input_web_interface()
 
 if collection_testsets:
     if metric not in metrics:
@@ -239,12 +267,21 @@ if collection_testsets:
 
     if len(results) > 0:
         dataframe = MultipleResult.results_to_dataframe(list(results.values()),collection_testsets.systems_names)
-        Plot.export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe)
+        export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe)
         st.dataframe(dataframe)
     
+    
     if metric in results:
-        if task != "classification":
-            available_tasks[task].plots_interface(metric, metrics, available_metrics, results,collection_testsets, ref_filename, num_samples, 
-                                                  sample_ratio)
+        if available_tasks[task].bootstrap:
+            available_tasks[task].plots_web_interface(metric, results, collection_testsets, ref_filename, metrics, available_metrics, 
+                                                      num_samples, sample_ratio)
         else:
-            available_tasks[task].plots_interface(metric, metrics, available_metrics, results,collection_testsets, ref_filename)
+            available_tasks[task].plots_web_interface(metric, results, collection_testsets, ref_filename)
+
+    if available_tasks[task].bias_evaluations and bias_evaluations:
+        st.write("---")
+        st.title("Bias Evaluation")
+        for evaluation in bias_evaluations:
+            st.header(":blue[" + evaluation + " Bias Evaluation:]")
+            st.write(available_bias_evaluations[evaluation](collection_testsets.target_language).evaluation_with_reference([],[]))
+

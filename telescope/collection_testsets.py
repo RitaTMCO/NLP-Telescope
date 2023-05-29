@@ -25,7 +25,7 @@ class CollectionTestsets:
         systems_indexes: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[Testset]]
+        testsets: Dict[str, Testset]
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
@@ -185,10 +185,13 @@ class CollectionTestsets:
                 refs_indexes[ref.name] = ref_id
 
         src = [l.strip() for l in source.readlines()]
-        files = [source,src,reference,references,refs_indexes,systems_output,systems_indexes,systems_names,outputs]
+
+        cls.validate_files(src,references,systems_names,outputs)
+
+        files = [source,src,reference,references,refs_indexes,systems_output,systems_indexes,systems_names,outputs] 
 
         testsets = cls.create_testsets(files)
-    
+
         return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names,
                     [source.name] +  list(references.keys()) + list(systems_indexes.values()), testsets, extra_info)
     
@@ -204,7 +207,7 @@ class NLGTestsets(CollectionTestsets):
         systems_indexes: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[Testset]],
+        testsets: Dict[str, Testset],
         language_pair: str
     ) -> None:
         super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, testsets)
@@ -266,7 +269,7 @@ class MTTestsets(NLGTestsets):
         systems_indexes: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
+        testsets: Dict[str, MultipleTestset],
         language_pair: str,
     ) -> None:
         super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames,
@@ -295,7 +298,7 @@ class SummTestsets(NLGTestsets):
         systems_indexes: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
+        testsets: Dict[str, MultipleTestset],
         language_pair: str,
     ) -> None:
         super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, 
@@ -338,7 +341,7 @@ class DialogueTestsets(NLGTestsets):
         systems_indexes: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
+        testsets: Dict[str, MultipleTestset],
         language_pair: str
     ) -> None:
         super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, 
@@ -381,23 +384,19 @@ class ClassTestsets(CollectionTestsets):
         systems_indexes: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
-        labels: List[str]
+        testsets: Dict[str, MultipleTestset],
+        labels: str
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, 
-                testsets)
-        self.labels = labels
+        super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, testsets)
+        self.labels = list(set(labels.split(",")))
     
     @staticmethod
     def upload_labels() -> List[str]:
-        labels_list = list()
         labels = st.text_input(
             "Please input the existing labels separated by commas (e.g. 'positive,negative,neutral'):",
             "",
         )
-        if (labels != ""):
-            labels_list = list(set(labels.split(",")))
-        return labels_list
+        return labels
     
     @classmethod
     def read_data(cls):
@@ -408,7 +407,7 @@ class ClassTestsets(CollectionTestsets):
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (labels != [])):
+            and (labels != "")):
 
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)

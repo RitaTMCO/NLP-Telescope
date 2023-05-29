@@ -21,16 +21,14 @@ Main commands:
 from typing import List, Union, Tuple
 import os
 import click
-import json
 import pandas as pd
 
 from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, AVAILABLE_MT_METRICS, PairwiseResult
 from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
-from telescope.tasks import AVAILABLE_NLG
+from telescope.tasks import AVAILABLE_NLG_TASKS, AVAILABLE_CLASSIFICATION_TASKS
+from telescope.tasks.classification import Classification
 from telescope.metrics.result import MultipleResult
-from telescope.testset import PairwiseTestset, MultipleTestset
-from telescope.collection_testsets import NLGTestsets, ClassTestsets
-from telescope.plot import ClassificationPlot, NLGPlot
+from telescope.testset import PairwiseTestset
 from telescope.plotting import (
     plot_segment_comparison,
     plot_pairwise_distributions,
@@ -42,7 +40,7 @@ available_mt_metrics = {m.name: m for m in AVAILABLE_MT_METRICS}
 available_class_metrics = {m.name: m for m in AVAILABLE_CLASSIFICATION_METRICS}
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
 available_class_filters = {f.name: f for f in AVAILABLE_CLASSIFICATION_FILTERS}
-available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG}
+available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
 
 
 def readlines(ctx, param, file: click.File) -> List[str]:
@@ -546,7 +544,8 @@ def n_compare_nlg(
     system_y: click.File,
     systems_names: click.File
 ):  
-    collection = NLGTestsets.read_data_cli(source,systems_names,system_output,reference,"X-" + language)
+    available_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
+    collection = available_tasks[task].input_cli_interface(source,systems_names,system_output,reference,language)
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
@@ -592,8 +591,7 @@ def n_compare_nlg(
                 filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.csv"
                 bootstrap_df.to_csv(filename)
 
-            plot = NLGPlot(seg_metric,metric,available_metrics,results,collection,ref_filename,task,num_splits,sample_ratio)
-            plot.display_plots_cli(saving_dir,system_x,system_y)
+            available_tasks[task].plots_cli_interface(seg_metric, results, collection, ref_filename, saving_dir, system_x, system_y)
 
 
 @telescope.command()
@@ -678,7 +676,7 @@ def n_compare_classification(
     output_folder: str,
     systems_names: click.File
 ):  
-    collection = ClassTestsets.read_data_cli(source,systems_names,system_output,reference,list(label))
+    collection = Classification.input_cli_interface(source,systems_names,system_output,reference,','.join(label))
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
@@ -687,7 +685,6 @@ def n_compare_classification(
 
     metric = seg_metric_in_metrics(seg_metric,metric)
 
-    systems_index = collection.systems_indexes
     systems_names = collection.systems_names
 
     labels = collection.labels
@@ -708,7 +705,5 @@ def n_compare_classification(
                 os.makedirs(saving_dir)
 
             results_df.to_csv(saving_dir + "/results.csv")
-            
-            plot = ClassificationPlot(seg_metric,metric,available_class_metrics,results,collection, ref_filename, "classification")
-            
-            plot.display_plots_cli(saving_dir)
+
+            Classification.plots_cli_interface(seg_metric,results,collection,ref_filename,saving_dir)
