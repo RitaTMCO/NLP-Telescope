@@ -117,7 +117,7 @@ class BootstrapResult:
 class MultipleResult:
     def __init__(
         self,
-        systems_metric_results: Dict[str, MetricResult],
+        systems_metric_results: Dict[str, MetricResult],  # {sys_id:  MetricResult}
     ) -> None:
 
         self.systems_metric_results = systems_metric_results

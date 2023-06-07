@@ -150,9 +150,9 @@ class PairwiseTestset(Testset):
 class MultipleTestset(Testset):
     def __init__(
         self,
-        src: List[str],
-        ref: List[str],
-        systems_output: Dict[str, List[str]],
+        src: List[str], 
+        ref: List[str], 
+        systems_output: Dict[str, List[str]], # {sys_id: system output}
         filenames: List[str],
     ) -> None:
         self.src = src

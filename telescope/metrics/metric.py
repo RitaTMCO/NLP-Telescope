@@ -54,7 +54,7 @@ class Metric(metaclass=abc.ABCMeta):
         """ Function that scores the multiple candidate systems inside a testset. """
         ref = testset.ref
         src = testset.src
-        systems_metric_results = {name: self.score(src,output,ref) for name,output in testset.systems_output.items()}
+        systems_metric_results = {sys_id: self.score(src,output,ref) for sys_id,output in testset.systems_output.items()}
         return MultipleResult(systems_metric_results)
 
     @classmethod

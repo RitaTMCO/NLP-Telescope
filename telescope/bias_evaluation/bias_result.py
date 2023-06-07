@@ -1,21 +1,55 @@
-import abc
-from typing import List
+from typing import List, Dict
+from telescope.collection_testsets import CollectionTestsets
 
-
-class BiasResult(metaclass=abc.ABCMeta):
+class BiasResult():
     def __init__(
         self,
-        fairness_metrics_score: List[float],
-        src: List[str],
-        cand: List[str],
         ref: List[str],
-        metric: str,
+        system_output: List[str],
+        groups_ref: List[str],
+        groups_system: List[str]
     ) -> None:
-        self.fairness_metrics_score = fairness_metrics_score
-        self.src = src
         self.ref = ref
-        self.cand = cand
-        self.metric = metric
+        self.system_output = system_output
+        
+        assert len(groups_ref) == len(groups_system)
+        self.groups_ref = groups_ref
+        self.groups_system = groups_system
+
+    def display_groups(self) -> str:
+        def dispaly_groups_aux(display,sets_of_groups):
+            for group in sets_of_groups:
+                display += group + "  "
+            display += "\n"
+            return display
+
+        display = "\nReference:\n "
+        display = dispaly_groups_aux(display,self.groups_ref)
+        display +="Systems:\n"
+        display = dispaly_groups_aux(display,self.groups_system)
+
+        return display
     
-    def display_result():
-        return NotImplementedError
+
+# each reference have one MultipleBiasResult
+class MultipleBiasResult():
+    def __init__(
+        self,
+        systems_bias_results: Dict[str,BiasResult] # {id_of_systems:BiasResults}
+    ) -> None:
+        self.systems_bias_results = systems_bias_results
+        bias_result = list(systems_bias_results.values())[0]
+        self.ref = bias_result.ref
+
+    def display_groups_of_each_systems(self,collection_testsets:CollectionTestsets) -> str:
+        display = ""
+
+        for sys_id, bias_result in self.systems_bias_results.items():
+            system_name = collection_testsets.systems_names[sys_id]
+            display += "---" + system_name + "---"
+            display += bias_result.display_groups() 
+
+        return display
+
+
+            

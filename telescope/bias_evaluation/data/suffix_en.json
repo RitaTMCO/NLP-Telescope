@@ -1,0 +1,133 @@
+[   
+    {
+        "person": "neutral",
+        "woman": "female",
+        "man": "male"
+    },
+    {
+        "people": "neutral",
+        "women": "female",
+        "men": "male"
+    },
+    {
+        "child": "neutral",
+        "girl": "female",
+        "boy": "male"
+    },
+    {
+        "children": "neutral",
+        "girls": "female",
+        "boys": "male"
+    },
+    {
+        "person": "neutral",
+        "girl": "female",
+        "boy": "male"
+    },
+    {
+        "people": "neutral",
+        "girls": "female",
+        "boys": "male"
+    },
+    {
+        "parent": "neutral",
+        "father": "female",
+        "mother": "male"
+    },
+    {
+        "parents": "neutral",
+        "fathers": "female",
+        "mothers": "male"
+    },
+    {
+        "sibling": "neutral",
+        "sister": "female",
+        "brother": "male"
+    },
+    {
+        "siblings": "neutral",
+        "sisters": "female",
+        "brothers": "male"
+    },
+    {
+        "child": "neutral",
+        "daughter": "female",
+        "son": "male"
+    },
+    {
+        "children": "neutral",
+        "daughters": "female",
+        "sons": "male"
+    },
+    {
+        "partner": "neutral",
+        "wife": "female",
+        "husband": "male"
+    },
+    {
+        "partners": "neutral",
+        "wives": "female",
+        "husbands": "male"
+    },
+    {
+        "lady": "female",
+        "lord": "male"
+    },
+    {
+        "ladies": "female",
+        "lords": "male"
+    },
+    {
+        "ess":"female",
+        "or":"male"
+    },
+    {
+        "esses":"female",
+        "ors":"male"
+    },
+    {
+        "dess":"female",
+        "d":"male"
+    },
+    {
+        "desses":"female",
+        "ds":"male"
+    },
+    {
+        "tess":"female",
+        "t":"male"
+    },
+    {
+        "tesses":"female",
+        "ts":"male"
+    },
+    {
+        "ness":"female",
+        "n":"male"
+    },
+    {
+        "nesses":"female",
+        "ns":"male"
+    },
+    {
+        "nesses":"female",
+        "ns":"male"
+    },
+    {
+        "ress":"female",
+        "er":"male"
+    },
+    {
+        "resses":"female",
+        "ers":"male"
+    },
+    {
+        "ess":"female",
+        "e":"male"
+    },
+    {
+        "esses":"female",
+        "es":"male"
+    }
+
+]

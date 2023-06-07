@@ -134,7 +134,6 @@ st.cache(
     max_entries=cache_max_entries,
 )
 def apply_filters(testset, filters, ref_name, source_language, target_language, labels):
-
     for filter in filters:
         with st.spinner(f"Applying {filter} filter for reference {ref_name}..." ):
             if filter == "length":
@@ -211,6 +210,37 @@ def run_all_metrics(collection, metrics, filters):
         }
 
 
+# --------| Bias Evaluation |-----------
+
+@st.cache(
+    hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
+    show_spinner=False,
+    allow_output_mutation=True,
+    ttl=cache_time,
+    max_entries=cache_max_entries,
+)
+def run_bias_evalutaion(testset, evaluation, ref_filename, language):
+    with st.spinner(f"Running {evaluation} Bias Evaluation for reference {ref_filename}..."):
+        bias_evaluation = available_bias_evaluations[evaluation](language)
+        return bias_evaluation.multiple_evaluation(testset)
+
+def run_all_bias_evalutaions(collection):
+    refs_names = collection.refs_names
+    language = collection_testsets.target_language
+    # {gender_bias_evaluation:{ref_1: MultipleBiasResults, ref_2: MultipleBiasResults}, ....}
+    return {
+        evaluation: { 
+            ref_name: run_bias_evalutaion(collection_testsets.testsets[ref_name], 
+                                          evaluation,
+                                          ref_name,
+                                          language)
+            for ref_name in refs_names
+            }
+        for evaluation in bias_evaluations
+    }
+
+
+
 # --------| Rename systems |-----------
 @st.cache
 def rename_system(system_name,sys_id):
@@ -231,7 +261,11 @@ if collection_testsets:
             metric,
         ] + metrics
 
-    results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
+    if available_tasks[task].bias_evaluations and bias_evaluations:
+        bias_results_per_evaluation = run_all_bias_evalutaions(collection_testsets)
+    metrics_results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
+
+    # ----------------------------| Informations About The Systems |-------------------------------
 
     st.write("---")
     st.title("Informations About The Systems")
@@ -242,9 +276,7 @@ if collection_testsets:
         list(collection_testsets.systems_indexes.keys()),
         index=0)
     sys_id = collection_testsets.systems_indexes[system_filename]
-
     system_name = st.text_input('Enter the system name', collection_testsets.systems_names[sys_id])
-
     if (collection_testsets.systems_names[sys_id] != system_name and collection_testsets.already_exists(system_name)):
         st.warning("This system name already exists")
     else:
@@ -255,33 +287,45 @@ if collection_testsets:
     st.text(collection_testsets.display_systems())
 
 
+    # ----------------------------| Select the Reference |-----------------------------------
+
     st.write("---")
-    st.title("Analysis")
+    st.title("Reference")
     ref_filename = st.selectbox(
         "**:blue[Select the Reference:]**",
         collection_testsets.refs_names,
         index=0,
     )
+    st.text("Reference: " + ref_filename)
 
-    results = results_per_ref[ref_filename]
 
-    if len(results) > 0:
-        dataframe = MultipleResult.results_to_dataframe(list(results.values()),collection_testsets.systems_names)
+    # ----------------------------| Metric Analysis and Plots |-------------------------------
+
+    st.write("---")
+    st.title("Metric Analysis")
+
+    metrics_results = metrics_results_per_ref[ref_filename]
+
+    if len(metrics_results) > 0:
+        dataframe = MultipleResult.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
         export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe)
         st.dataframe(dataframe)
     
     
-    if metric in results:
+    if metric in metrics_results:
         if available_tasks[task].bootstrap:
-            available_tasks[task].plots_web_interface(metric, results, collection_testsets, ref_filename, metrics, available_metrics, 
+            available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, metrics, available_metrics, 
                                                       num_samples, sample_ratio)
         else:
-            available_tasks[task].plots_web_interface(metric, results, collection_testsets, ref_filename)
+            available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename)
+    
+    # ----------------------------| Bias Evaluation |-------------------------------
 
     if available_tasks[task].bias_evaluations and bias_evaluations:
         st.write("---")
         st.title("Bias Evaluation")
         for evaluation in bias_evaluations:
             st.header(":blue[" + evaluation + " Bias Evaluation:]")
-            st.write(available_bias_evaluations[evaluation](collection_testsets.target_language).evaluation_with_reference([],[]))
+            multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
+            st.text(multiple_bias_results.display_groups_of_each_systems(collection_testsets))
 

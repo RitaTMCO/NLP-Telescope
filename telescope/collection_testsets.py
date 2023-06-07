@@ -19,13 +19,13 @@ class CollectionTestsets:
 
     def __init__(
         self,
-        src_name: str,
-        refs_names: List[str],
-        refs_indexes: Dict[str, str],
-        systems_indexes: Dict[str, str],
-        systems_names: Dict[str, str],
-        filenames: List[str],
-        testsets: Dict[str, Testset]
+        src_name: str, #filename of source file 
+        refs_names: List[str], #filenames of references files 
+        refs_indexes: Dict[str, str],  #id of each reference file. {filename:ref_id} 
+        systems_indexes: Dict[str, str], #id of each system. {filename:sys_id} 
+        systems_names: Dict[str, str], #name of each system. {sys_id:name} 
+        filenames: List[str], # all filenames
+        testsets: Dict[str, Testset] # set of testsets. Each testset refers to one reference. {reference_filename:testset}
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
