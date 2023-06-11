@@ -11,8 +11,8 @@ from telescope.metrics import AVAILABLE_CLASSIFICATION_METRICS
 from telescope.filters import AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.bias_evaluation import AVAILABLE_CLASSIFICATION_BIAS_EVALUATIONS
 from telescope.plotting import (
-    overall_confusion_matrix_table,
-    singular_confusion_matrix_table,
+    confusion_matrix_of_system,
+    confusion_matrix_focused_on_one_label,
     analysis_labels,
     incorrect_examples,
     export_dataframe
@@ -59,7 +59,7 @@ class Classification(Task):
         # Overall Confusion Matrix
         system = collection_testsets.system_name_id(system_name)
         st.subheader("Confusion Matrix of :blue[" + system_name + "]")
-        overall_confusion_matrix_table(testset,system,labels,system_name)
+        confusion_matrix_of_system(testset.ref,testset.systems_output[system],labels,system_name)
 
 
         # Singular Confusion Matrix
@@ -70,7 +70,7 @@ class Classification(Task):
             index=0,
             key = "confusion_matrix"
         )
-        singular_confusion_matrix_table(testset,system,labels,label,system_name)
+        confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[system_name],label,labels,system_name)
 
 
         #-------------- |Analysis Of Each Label| --------------------
@@ -143,7 +143,7 @@ class Classification(Task):
             output_file = saving_dir + sys_name
             if not os.path.exists(output_file):
                 os.makedirs(output_file)            
-            overall_confusion_matrix_table(testset,sys_id,labels,sys_name,output_file)
+            confusion_matrix_of_system(testset.ref,testset.systems_output[sys_id],labels,sys_name,output_file)
 
             num = 15
             incorrect_examples(testset,sys_id,num,[],[], output_file)
@@ -152,4 +152,4 @@ class Classification(Task):
             if not os.path.exists(label_file):
                 os.makedirs(label_file)  
             for label in labels:
-                singular_confusion_matrix_table(testset,sys_id,labels,label,sys_name,label_file)
+                confusion_matrix_focused_on_one_label(testset.ref, testset.systems_output[sys_id], label,labels,sys_name,label_file)

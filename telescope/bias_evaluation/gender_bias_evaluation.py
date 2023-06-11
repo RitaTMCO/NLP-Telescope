@@ -3,9 +3,10 @@ import streamlit as st
 import string
 
 from typing import Tuple, List
-from telescope.bias_evaluation.bias_result import BiasResult, MultipleBiasResult
-from telescope.testset import MultipleTestset
+
+from telescope.bias_evaluation.bias_result import BiasResult
 from telescope.bias_evaluation.bias_evaluation import BiasEvaluation
+
 from nltk.tokenize import word_tokenize
 
 
@@ -24,8 +25,13 @@ class GenderBiasEvaluation(BiasEvaluation):
 
     def __init__(self, language: str):
         super().__init__(language)
-        self.sets_of_prons = self.open_and_read_identify_terms(self.directory + 'gendered_terms_' + self.language + '.json') # [{"they":"neutral", "she":"female", "he":"male"},...]
-        self.sets_of_suffixes = self.open_and_read_identify_terms(self.directory + 'suffix_' + self.language + '.json') 
+        self.directory = self.directory + self.language + "/"
+
+        # [{"they":"neutral", "she":"female", "he":"male"},...]
+        self.sets_of_gender_terms = self.open_and_read_identify_terms(self.directory + 'gendered_terms.json')
+        self.sets_of_occupations = self.open_and_read_identify_terms(self.directory + 'occupations.json')
+        self.sets_of_prons_dets = self.open_and_read_identify_terms(self.directory + 'pronouns_determinants.json')
+        self.sets_of_suffixes = self.open_and_read_identify_terms(self.directory + 'suffixes.json') 
         download('punkt')
 
 
@@ -47,19 +53,48 @@ class GenderBiasEvaluation(BiasEvaluation):
 
 
     @st.cache
-    def find_and_extract_genders_words(self, identify_word_ref:str, identify_word_sys:str) -> List[str]:
-            for set in self.sets_of_prons:
-                if identify_word_ref in set and identify_word_sys in set:
-                    gender_ref = self.gender_of_word(identify_word_ref,set)
-                    gender_system = self.gender_of_word(identify_word_sys,set)
-                    return [gender_ref,gender_system]
+    def find_and_extract_genders_words(self, set_words_ref:List[str], set_words_sys:List[str], word_k) -> List[str]:
             
+            word_ref = set_words_ref[word_k]
+            word_sys = set_words_sys[word_k]
+
+            if word_k + 1 < len(set_words_ref): 
+                next_word_ref = set_words_ref[word_k + 1]
+            else:
+                next_word_ref = ""
+            if word_k + 1 < len(set_words_sys): 
+                next_word_sys = set_words_sys[word_k + 1]
+            else:
+                next_word_sys = ""
+
+            sets_of_terms = self.sets_of_prons_dets + self.sets_of_occupations + self.sets_of_gender_terms
+            for set in sets_of_terms:
+                if word_ref in set and word_sys in set:
+                    gender_ref = self.gender_of_word(word_ref,set)
+                    gender_system = self.gender_of_word(word_sys,set)
+                    return [gender_ref,gender_system]
+                
+                elif word_ref in set and word_sys + " " + next_word_sys in set:
+                    gender_ref = self.gender_of_word(word_ref,set)
+                    gender_system = self.gender_of_word(word_sys + " " + next_word_sys,set)
+                    return [gender_ref,gender_system]
+                
+                elif word_ref + " " + next_word_ref in set and word_sys in set:
+                    gender_ref = self.gender_of_word(word_ref + " " + next_word_ref,set)
+                    gender_system = self.gender_of_word(word_sys,set)
+                    return [gender_ref,gender_system]
+                
+                elif word_ref + " " + next_word_ref in set and word_sys + " " + next_word_sys in set:
+                    gender_ref = self.gender_of_word(word_ref + " " + next_word_ref,set)
+                    gender_system = self.gender_of_word(word_sys + " " + next_word_sys,set)
+                    return [gender_ref,gender_system]
+ 
             for set in self.sets_of_suffixes:
                 suffixes = tuple(set.keys())
-                if identify_word_ref.endswith(suffixes) and identify_word_sys.endswith(suffixes):
-                    suffix_ref = self.find_suffix(identify_word_ref,suffixes)
+                if word_ref.endswith(suffixes) and word_sys.endswith(suffixes):
+                    suffix_ref = self.find_suffix(word_ref,suffixes)
                     gender_ref = self.gender_of_word(suffix_ref,set)
-                    suffix_sys = self.find_suffix(identify_word_sys,suffixes)
+                    suffix_sys = self.find_suffix(word_sys,suffixes)
                     gender_system = self.gender_of_word(suffix_sys,set)
                     return [gender_ref,gender_system]
             return ["", ""]
@@ -87,17 +122,18 @@ class GenderBiasEvaluation(BiasEvaluation):
                 elif words_ref[word_k] in puns or words_sys[word_k] in puns:
                     continue
                 else:
-                    gender_word_ref, gender_word_sys = self.find_and_extract_genders_words(words_ref[word_k],words_sys[word_k])
+                    gender_word_ref, gender_word_sys = self.find_and_extract_genders_words(words_ref,words_sys,word_k)
 
                     if gender_word_ref and gender_word_sys:
                         genders_ref.append(gender_word_ref)
                         genders_sys.append(gender_word_sys)
+
         return [genders_ref,genders_sys]
 
                   
     def evaluation(self, sys_output: List[str], ref: List[str]) -> BiasResult:
         """ Gender Bias Evaluation."""
         genders_ref, genders_sys = self.find_extract_genders_all_identify_terms(sys_output,ref)
-        return BiasResult(ref,sys_output,genders_ref,genders_sys)
+        return BiasResult(self.groups,ref,sys_output,genders_ref,genders_sys)
     
     

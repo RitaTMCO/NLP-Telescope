@@ -158,31 +158,31 @@ class TestCompareCli(unittest.TestCase):
                 )
             self.assertTrue(
                 os.path.isfile(os.path.join(DATA_PATH, 
-                    self.ref.replace("/","_")  + "/" + sys_name + "/overall-confusion-matrix.png"))
+                    self.ref.replace("/","_")  + "/" + sys_name + "/confusion-matrix-" + sys_name.replace(" ", "_") + ".png"))
             )
             self.assertTrue(
                 os.path.isfile(os.path.join(DATA_PATH, 
-                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/label-positive.png"))
+                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-positive.png"))
             )
             self.assertTrue(
                 os.path.isfile(os.path.join(DATA_PATH, 
-                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/label-negative.png"))
+                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-negative.png"))
             )
             self.assertTrue(
                 os.path.isfile(os.path.join(DATA_PATH, 
-                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/label-neutral.png"))
+                    self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-neutral.png"))
             )
 
-            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/label-neutral.png")
-            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/label-negative.png")
-            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/label-positive.png")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-neutral.png")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-negative.png")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-positive.png")
 
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/")
             
             if sys_name != "Sys C":
                 os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/incorrect-examples.csv")
 
-            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/overall-confusion-matrix.png")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/confusion-matrix-" + sys_name.replace(" ", "_") + ".png")
 
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" )
 

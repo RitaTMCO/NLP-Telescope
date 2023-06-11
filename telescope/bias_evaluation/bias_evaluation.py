@@ -37,6 +37,6 @@ class BiasEvaluation(metaclass=abc.ABCMeta):
     def multiple_evaluation(self, testset: MultipleTestset) -> MultipleBiasResult:
         ref = testset.ref
         systems_bias_results = {sys_id: self.evaluation(sys_output,ref) for sys_id,sys_output in testset.systems_output.items()}
-        return MultipleBiasResult(systems_bias_results)
+        return MultipleBiasResult(self.groups,systems_bias_results)
 
 

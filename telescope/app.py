@@ -327,5 +327,18 @@ if collection_testsets:
         for evaluation in bias_evaluations:
             st.header(":blue[" + evaluation + " Bias Evaluation:]")
             multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
-            st.text(multiple_bias_results.display_groups_of_each_systems(collection_testsets))
 
+            st.subheader("Confusion Matrices")
+            system_name = st.selectbox(
+                "**Select the System**",
+                collection_testsets.names_of_systems(),
+                index=0)
+    
+            multiple_bias_results.display_confusion_matrix_of_one_system(collection_testsets,system_name)
+
+            group = st.selectbox(
+                "**Select the Protected Group**",
+                multiple_bias_results.groups,
+                index=0)
+
+            multiple_bias_results.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,system_name,group)

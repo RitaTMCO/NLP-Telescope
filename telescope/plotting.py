@@ -663,10 +663,8 @@ def plot_multiple_segment_comparison(multiple_result: MultipleResult, system_x: 
     if runtime.exists():
         st.altair_chart(c, use_container_width=True)
 
-def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], system_name:str,
-                                saving_dir: str = None):    
-    true = testset.ref
-    pred = testset.systems_output[system]
+def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[str], system_name:str, saving_dir: str = None):    
+    
     matrix = confusion_matrix(true, pred, labels=labels)
     conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix,display_labels=labels)
     conf_mat.plot()
@@ -675,15 +673,13 @@ def overall_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: 
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/overall-confusion-matrix.png")
+        plt.savefig(saving_dir + "/confusion-matrix-" + system_name.replace(" ", "_") + ".png")
 
     if runtime.exists():
         st.pyplot(plt)
 
-def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels: List[str], 
-                                label: List[str], system_name:str, saving_dir: str = None): 
-    true = testset.ref
-    pred = testset.systems_output[system] 
+def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], label: str, labels: List[str], system_name:str, saving_dir: str = None):
+    
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
     index = labels.index(label)
     name = ["other labels"] + [label] 
@@ -695,7 +691,7 @@ def singular_confusion_matrix_table(testset:MultipleTestset ,system:str, labels:
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/label-" + label + ".png")
+        plt.savefig(saving_dir + "/" + system_name.replace(" ", "_") + "-label-" + label + ".png")
 
     if runtime.exists():
         st.pyplot(plt)

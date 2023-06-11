@@ -1,5 +1,5 @@
 [
-    { 
+        { 
         "éle":"neutral",
         "ela":"female",
         "ele":"male"
@@ -48,50 +48,5 @@
         "aquéles":"neutral",
         "aquelas":"female",
         "aqueles":"male"
-    },
-    { 
-        "estudante":"neutral",
-        "aluna":"female",
-        "aluno":"male"
-    },
-    { 
-        "estudantes":"neutral",
-        "alunas":"female",
-        "alunos":"male"
-    },
-    { 
-        "nobre":"neutral",
-        "dama":"female",
-        "cavalheiro":"male"
-    },
-    { 
-        "nobres":"neutral",
-        "damas":"female",
-        "cavalheiros":"male"
-    },
-    { 
-        "monarca":"neutral",
-        "rainha":"female",
-        "rei":"male"
-    },
-    { 
-        "monarcas":"neutral",
-        "rainhas":"female",
-        "reis":"male"
-    },
-    { 
-        "pessoa":"neutral",
-        "mulher":"female",
-        "homem":"male"
-    },
-    { 
-        "pessoas":"neutral",
-        "mulheres":"female",
-        "homens":"male"
-    },
-    { 
-        "parente":"neutral",
-        "mães":"female",
-        "pais":"male"
     }
 ]
