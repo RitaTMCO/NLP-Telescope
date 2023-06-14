@@ -2,8 +2,9 @@ import abc
 import json
 import streamlit as st
 from typing import List,Dict
-from telescope.bias_evaluation.bias_result import BiasResult, MultipleBiasResult
+from telescope.bias_evaluation.bias_result import BiasResult, MultipleBiasResults
 from telescope.testset import MultipleTestset
+from telescope.metrics.metric import Metric
 
 
 
@@ -12,12 +13,14 @@ class BiasEvaluation(metaclass=abc.ABCMeta):
     name = None
     available_languages = list()
     groups = list()
+    metrics = list()
 
     def __init__(self, language: str):
         if not self.language_support(language):
             raise Exception(f"{language} is not supported by {self.name} Bias Evaluation.")
         else:
-            self.language = language
+            self.language = language 
+            self.init_metrics = {metric.name:metric(self.language,self.groups) for metric in self.metrics}
 
     @st.cache
     def open_and_read_identify_terms(self, filename:str) -> List[Dict[str,str]]:
@@ -31,12 +34,8 @@ class BiasEvaluation(metaclass=abc.ABCMeta):
         return language in cls.available_languages
     
     @abc.abstractmethod
-    def evaluation(self, sys: List[str], ref: List[str]) -> BiasResult:
+    def evaluation(self, testset: MultipleTestset) -> MultipleBiasResults:
         pass
 
-    def multiple_evaluation(self, testset: MultipleTestset) -> MultipleBiasResult:
-        ref = testset.ref
-        systems_bias_results = {sys_id: self.evaluation(sys_output,ref) for sys_id,sys_output in testset.systems_output.items()}
-        return MultipleBiasResult(self.groups,systems_bias_results)
 
 

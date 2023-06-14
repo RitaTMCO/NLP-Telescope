@@ -33,5 +33,55 @@
         "parente":"neutral",
         "mães":"female",
         "pais":"male"
+    },
+    {
+        "menine":"neutral",
+        "menina":"female",
+        "menino":"male"
+    },
+    {
+        "menines":"neutral",
+        "meninas":"female",
+        "meninos":"male"
+    },
+    {
+        "dues":"neutral",
+        "duas":"female",
+        "dois":"male"
+    },
+    {   
+        "duzentes":"neutral",
+        "duzentas":"female",
+        "duzentos":"male"
+    },
+    {   
+        "primeire":"neutral",
+        "primeira":"female",
+        "primeiro":"male"
+
+    },
+    {   
+        "primeires":"neutral",
+        "primeiras":"female",
+        "primeiros":"male"
+
+    },
+    {   
+        "segunde":"neutral",
+        "segunda":"female",
+        "segundo":"male"
+
+    },
+    {   
+        "segundes":"neutral",
+        "segundas":"female",
+        "segundos":"male"
+
+    },
+    {
+        "bacharele":"neutral",
+        "bacharela":"female",
+        "bacharel":"male"
     }
+    
 ]

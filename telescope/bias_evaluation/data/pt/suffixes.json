@@ -1,25 +1,5 @@
 [   
     {
-        "e": "neutral",
-        "a": "female",
-        "o": "male"
-    },
-    {
-        "es": "neutral",
-        "as": "female",
-        "os": "male"
-    },
-    {
-        "ê": "neutral",
-        "a": "female",
-        "o": "male"
-    },
-    {
-        "ês": "neutral",
-        "as": "female",
-        "os": "male"
-    },
-    {
         "oe": "neutral",
         "oa": "female",
         "ão": "male"
@@ -45,43 +25,19 @@
         "or": "male"
     },
     {
+        "eire": "neutral",
+        "eira": "female",
+        "eiro": "male"
+    },
+    {
         "tore": "neutral",
         "triz": "female",
         "tor": "male"
     },
     {
-        "ê": "neutral",
-        "a": "female",
-        "e": "male"
-    },
-    {
-        "e": "neutral",
-        "a": "female"
-    },
-    {
         "ese": "neutral",
         "esa": "female",
         "ês": "male"
-    },
-    {
-        "le": "neutral",
-        "la": "female",
-        "l": "male"
-    },
-    {
-        "ze": "neutral",
-        "za": "female",
-        "z": "male"
-    },
-    {
-        "ue": "neutral",
-        "ua": "female",
-        "u": "male"
-    },
-    {
-        "ues": "neutral",
-        "uas": "female",
-        "us": "male"
     },
     {
         "eie": "neutral",
@@ -107,5 +63,10 @@
         "umes":"neutral",
         "umas":"female",
         "uns":"male"
+    },
+    {
+        "rie":"neutral",
+        "ria":"female",
+        "rio":"male"
     }
 ]

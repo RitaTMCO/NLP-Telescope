@@ -114,9 +114,7 @@ available_bias_evaluations = {b.name: b for b in available_tasks[task].bias_eval
 if available_bias_evaluations:
     st.sidebar.subheader("Bias Evaluations:")
 
-    bias_evaluations = st.sidebar.multiselect(
-        "Select Bias Evaluations:", list(available_bias_evaluations.keys()), default=list(available_bias_evaluations.keys())[0]
-    )         
+    bias_evaluations = st.sidebar.multiselect("Select Bias Evaluations:", list(available_bias_evaluations.keys()))     
 
 # --------------------- Streamlit APP Caching functions! --------------------------
 
@@ -222,7 +220,7 @@ def run_all_metrics(collection, metrics, filters):
 def run_bias_evalutaion(testset, evaluation, ref_filename, language):
     with st.spinner(f"Running {evaluation} Bias Evaluation for reference {ref_filename}..."):
         bias_evaluation = available_bias_evaluations[evaluation](language)
-        return bias_evaluation.multiple_evaluation(testset)
+        return bias_evaluation.evaluation(testset)
 
 def run_all_bias_evalutaions(collection):
     refs_names = collection.refs_names
@@ -328,12 +326,15 @@ if collection_testsets:
             st.header(":blue[" + evaluation + " Bias Evaluation:]")
             multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
 
+            dataframe = multiple_bias_results.metrics_scores_and_number_of_identified_terms_to_dataframe(collection_testsets)
+            export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
+            st.dataframe(dataframe)
+
             st.subheader("Confusion Matrices")
             system_name = st.selectbox(
                 "**Select the System**",
                 collection_testsets.names_of_systems(),
                 index=0)
-    
             multiple_bias_results.display_confusion_matrix_of_one_system(collection_testsets,system_name)
 
             group = st.selectbox(
@@ -342,3 +343,14 @@ if collection_testsets:
                 index=0)
 
             multiple_bias_results.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,system_name,group)
+
+
+            st.subheader("Analysis Of Each Label")
+            multiple_bias_results.display_analysis_labels(collection_testsets)
+
+
+            st.subheader("Number of times each group was identified correctly")           
+            multiple_bias_results.display_number_of_correct_labels_of_each_system(collection_testsets)
+
+            st.subheader("Number of times each group was identified incorrectly")            
+            multiple_bias_results.display_number_of_incorrect_labels_of_each_system(collection_testsets)

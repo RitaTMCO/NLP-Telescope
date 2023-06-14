@@ -721,7 +721,7 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
     else:
         return None
 
-def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_names: List[str], labels:List[str]):
+def analysis_labels_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str):
     number_of_systems = len(systems_names)
     number_of_labels = len(labels)
     seg_scores_label = list(seg_scores_dict.values())
@@ -763,24 +763,63 @@ def analysis_labels_bucket(seg_scores_dict: Dict[str,float], systems_names: List
     plt.xlabel("Model",fontsize=22)
     plt.ylabel("Score",fontsize=22)
     plt.legend(labels)
+    plt.title(title,fontsize=22,pad=25)
 
     return plt
 
+
+def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str], systems_pred: List[List[str]], labels: List[str], 
+                                            saving_dir: str = None):
+    
+    num_of_systems = len(sys_names)
+    number_of_correct_labels = { label: np.array([0 for _ in range(num_of_systems)]) for label in labels }
+
+    for sys_i in range(num_of_systems):
+        pred = systems_pred[sys_i]
+        for t, p in zip(true,pred):
+            if t == p:
+                number_of_correct_labels[t][sys_i] += 1
+    
+    plt = analysis_labels_bucket(number_of_correct_labels, sys_names, labels, "Number of times each label was identified correctly")
+    if saving_dir is not None:
+        plt.savefig(saving_dir + "/number-of-correct-labels-of-each-system.png")
+    if runtime.exists():
+        st.pyplot(plt)
+    plt.clf()
+
+
+def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[str], systems_pred: List[List[str]], labels: List[str], 
+                                              saving_dir: str = None):
+    
+    num_of_systems = len(sys_names)
+    number_of_incorrect_labels = { label: np.array([0 for _ in range(num_of_systems)]) for label in labels }
+
+    for sys_i in range(num_of_systems):
+        pred = systems_pred[sys_i]
+        for t, p in zip(true,pred):
+            if t != p:
+                number_of_incorrect_labels[t][sys_i] += 1
+
+    plt = analysis_labels_bucket(number_of_incorrect_labels, sys_names, labels, "Number of times each label was identified incorrectly")
+    if saving_dir is not None:
+        plt.savefig(saving_dir + "/number-of-incorrect-labels.of-each-system.png")
+    if runtime.exists():
+        st.pyplot(plt)
+    plt.clf()
 
 
 def analysis_labels(result: MultipleResult, sys_names: List[str], labels:List[str], saving_dir: str = None):
     seg_scores_list = [result_sys.seg_scores 
                 for result_sys in list(result.systems_metric_results.values())]
+    
     seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
                 for i, label in enumerate(labels)}
 
-    plt = analysis_labels_bucket(seg_scores_dict, sys_names, labels)
-
+    plt = analysis_labels_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
     if saving_dir is not None:
         plt.savefig(saving_dir + "/analysis-labels-bucket.png")
     if runtime.exists():
         st.pyplot(plt)
-
     plt.clf()
 
 
@@ -792,4 +831,3 @@ def export_dataframe(label:str, name:str, dataframe:pd.DataFrame):
         mime='text/csv',
         key ='export_' + name
     )
-
