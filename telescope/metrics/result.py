@@ -114,7 +114,7 @@ class BootstrapResult:
         }
 
 
-class MultipleResult:
+class MultipleMetricResults:
     def __init__(
         self,
         systems_metric_results: Dict[str, MetricResult],  # {sys_id:  MetricResult}

@@ -1,11 +1,8 @@
 import abc
 import json
-import streamlit as st
 from typing import List,Dict
-from telescope.bias_evaluation.bias_result import BiasResult, MultipleBiasResults
+from telescope.bias_evaluation.bias_result import MultipleBiasResults
 from telescope.testset import MultipleTestset
-from telescope.metrics.metric import Metric
-
 
 
 class BiasEvaluation(metaclass=abc.ABCMeta):
@@ -22,20 +19,19 @@ class BiasEvaluation(metaclass=abc.ABCMeta):
             self.language = language 
             self.init_metrics = {metric.name:metric(self.language,self.groups) for metric in self.metrics}
 
-    @st.cache
     def open_and_read_identify_terms(self, filename:str) -> List[Dict[str,str]]:
         with open(filename) as file:
             identify_terms = json.load(file)
         return identify_terms
 
-    
     @classmethod
     def language_support(cls, language: str):
         return language in cls.available_languages
-    
+
     @abc.abstractmethod
     def evaluation(self, testset: MultipleTestset) -> MultipleBiasResults:
         pass
+
 
 
 

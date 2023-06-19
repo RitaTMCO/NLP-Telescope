@@ -17,7 +17,7 @@ import os
 import unittest
 
 from telescope.testset import MultipleTestset
-from telescope.metrics.result import MetricResult, PairwiseResult, MultipleResult
+from telescope.metrics.result import MetricResult, PairwiseResult, MultipleMetricResults
 from telescope.plotting import (plot_bucket_comparison,
                                 plot_bucket_multiple_comparison,
                                 plot_pairwise_distributions,
@@ -68,7 +68,7 @@ class TestPlots(unittest.TestCase):
         filenames = ["src.txt","ref.txt","sys1.txt","sys2.txt","sys3.txt"]
     )
 
-    multiple_result = MultipleResult(
+    multiple_result = MultipleMetricResults(
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.833,
@@ -97,7 +97,7 @@ class TestPlots(unittest.TestCase):
         }
     )
 
-    multiple_result_comet = MultipleResult(
+    multiple_result_comet = MultipleMetricResults(
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.833,
@@ -126,7 +126,7 @@ class TestPlots(unittest.TestCase):
         }
     )
 
-    multiple_result_bertscore = MultipleResult(
+    multiple_result_bertscore = MultipleMetricResults(
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.833,
@@ -169,7 +169,7 @@ class TestPlots(unittest.TestCase):
         filenames = ["src.txt","ref.txt","sys1.txt","sys2.txt","sys3.txt"],
     )
 
-    multiple_result_class = MultipleResult(
+    multiple_result_class = MultipleMetricResults(
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.833,
@@ -198,7 +198,6 @@ class TestPlots(unittest.TestCase):
         }
     )
 
-
     @classmethod
     def tearDownClass(cls):
         os.remove(DATA_PATH + "/segment-comparison.html")
@@ -213,7 +212,7 @@ class TestPlots(unittest.TestCase):
         os.remove(DATA_PATH + "/Sys_B-label-a.png")
         os.remove(DATA_PATH + "/Sys_C-label-b.png")
         os.remove(DATA_PATH + "/Sys_A-label-c.png")
-        os.remove(DATA_PATH + "/analysis-labels-bucket.png")
+        os.remove(DATA_PATH + "/mock-analysis-labels-bucket.png")
         os.remove(DATA_PATH + "/incorrect-examples.csv")
 
     def test_segment_comparison(self):
@@ -292,7 +291,7 @@ class TestPlots(unittest.TestCase):
 
     def test_analysis_labels(self):
         analysis_labels(self.multiple_result_class, list(self.systems_names.values()), self.labels, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "analysis-labels-bucket.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "mock-analysis-labels-bucket.png")))
     
     def test_incorrect_examples(self):
         num = int(len(self.testset_class.ref)/4) + 1

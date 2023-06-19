@@ -18,7 +18,7 @@ import requests
 from PIL import Image
 
 from telescope.tasks import AVAILABLE_TASKS
-from telescope.metrics.result import MultipleResult
+from telescope.metrics.result import MultipleMetricResults
 from telescope.collection_testsets import CollectionTestsets
 
 from telescope.plotting import export_dataframe
@@ -225,7 +225,7 @@ def run_bias_evalutaion(testset, evaluation, ref_filename, language):
 def run_all_bias_evalutaions(collection):
     refs_names = collection.refs_names
     language = collection_testsets.target_language
-    # {gender_bias_evaluation:{ref_1: MultipleBiasResults, ref_2: MultipleBiasResults}, ....}
+    # {gender_bias_evaluation:{Ref 1: MultipleBiasResults, Ref 2: MultipleBiasResults}, ....}
     return {
         evaluation: { 
             ref_name: run_bias_evalutaion(collection_testsets.testsets[ref_name], 
@@ -271,9 +271,9 @@ if collection_testsets:
     st.subheader(":blue[Rename Systems]")
     system_filename = st.selectbox(
         "**Select the System Filename**",
-        list(collection_testsets.systems_indexes.keys()),
+        list(collection_testsets.systems_ids.keys()),
         index=0)
-    sys_id = collection_testsets.systems_indexes[system_filename]
+    sys_id = collection_testsets.systems_ids[system_filename]
     system_name = st.text_input('Enter the system name', collection_testsets.systems_names[sys_id])
     if (collection_testsets.systems_names[sys_id] != system_name and collection_testsets.already_exists(system_name)):
         st.warning("This system name already exists")
@@ -305,7 +305,7 @@ if collection_testsets:
     metrics_results = metrics_results_per_ref[ref_filename]
 
     if len(metrics_results) > 0:
-        dataframe = MultipleResult.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
+        dataframe = MultipleMetricResults.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
         export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe)
         st.dataframe(dataframe)
     
@@ -325,32 +325,4 @@ if collection_testsets:
         for evaluation in bias_evaluations:
             st.header(":blue[" + evaluation + " Bias Evaluation:]")
             multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
-
-            dataframe = multiple_bias_results.metrics_scores_and_number_of_identified_terms_to_dataframe(collection_testsets)
-            export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
-            st.dataframe(dataframe)
-
-            st.subheader("Confusion Matrices")
-            system_name = st.selectbox(
-                "**Select the System**",
-                collection_testsets.names_of_systems(),
-                index=0)
-            multiple_bias_results.display_confusion_matrix_of_one_system(collection_testsets,system_name)
-
-            group = st.selectbox(
-                "**Select the Protected Group**",
-                multiple_bias_results.groups,
-                index=0)
-
-            multiple_bias_results.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,system_name,group)
-
-
-            st.subheader("Analysis Of Each Label")
-            multiple_bias_results.display_analysis_labels(collection_testsets)
-
-
-            st.subheader("Number of times each group was identified correctly")           
-            multiple_bias_results.display_number_of_correct_labels_of_each_system(collection_testsets)
-
-            st.subheader("Number of times each group was identified incorrectly")            
-            multiple_bias_results.display_number_of_incorrect_labels_of_each_system(collection_testsets)
+            multiple_bias_results.plots_bias_results_web_interface(collection_testsets)

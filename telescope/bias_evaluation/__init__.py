@@ -3,7 +3,7 @@ from .gender_bias_evaluation import GenderBiasEvaluation
 from .bias_result import BiasResult
 
 
-AVAILABLE_METRICS = [ 
+AVAILABLE_BIAS_EVALUATIONS  = [ 
     GenderBiasEvaluation,
 ]
 

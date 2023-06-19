@@ -97,7 +97,7 @@ class NLG(Task):
 
     @classmethod
     def plots_cli_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
-                            saving_dir:str, system_x:str ,system_y:str) -> None:
+                            saving_dir:str, x_id:str ,y_id:str) -> None:
         """CLI Interfave to display the plots"""
 
         if metric == "COMET" or metric == "BERTScore":
@@ -106,17 +106,7 @@ class NLG(Task):
         if len(collection_testsets.testsets[ref_filename]) > 1:
             plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), saving_dir)
         
-        if len(collection_testsets.systems_indexes.values()) > 1: 
-            if ((system_x.name in collection_testsets.systems_indexes) 
-                and (system_y.name in list(collection_testsets.systems_indexes))):
-                x_id = collection_testsets.systems_indexes[system_x.name]
-                y_id = collection_testsets.systems_indexes[system_y.name]
-            
-            else:
-                x_id = collection_testsets.indexes_of_systems()[0]
-                y_id = collection_testsets.indexes_of_systems()[1]
-
+        if len(collection_testsets.systems_ids.values()) > 1: 
             x = [x_id,collection_testsets.systems_names[x_id]]
             y = [y_id,collection_testsets.systems_names[y_id]]
-
             plot_multiple_segment_comparison(results[metric],x,y,cls.segment_result_source,saving_dir)

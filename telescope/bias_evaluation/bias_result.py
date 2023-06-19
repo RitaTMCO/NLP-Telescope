@@ -1,13 +1,17 @@
-import pandas as pd
+import os
+import streamlit as st
+
 from typing import List, Dict
 from telescope.collection_testsets import CollectionTestsets
+from telescope.metrics.metric import MetricResult, MultipleMetricResults
 from telescope.plotting import ( 
     confusion_matrix_of_system, 
     confusion_matrix_focused_on_one_label,
     number_of_correct_labels_of_each_system,
     number_of_incorrect_labels_of_each_system,
-    analysis_labels)
-from telescope.metrics.metric import MetricResult, MultipleResult
+    analysis_labels,
+    export_dataframe
+    )
 
 class BiasResult():
     def __init__(
@@ -27,26 +31,12 @@ class BiasResult():
         self.groups_system = groups_system
         self.metrics_results_per_metric = metrics_results_per_metric
 
-    def display_groups(self) -> str:
-        def dispaly_groups_aux(display,sets_of_groups):
-            for group in sets_of_groups:
-                display += group + "  "
-            display += "\n"
-            return display
-        display = "\nReference:\n "
-        display = dispaly_groups_aux(display,self.groups_ref)
-        display +="System:\n"
-        display = dispaly_groups_aux(display,self.groups_system)
-        return display
-
-    def display_confusion_matrix_of_system(self,system_name:str) -> None:
-        confusion_matrix_of_system(self.groups_ref, self.groups_system, self.groups, system_name)
+    def display_confusion_matrix_of_system(self,system_name:str, saving_dir:str=None) -> None:
+        confusion_matrix_of_system(self.groups_ref, self.groups_system, self.groups, system_name, saving_dir)
     
-    def display_confusion_matrix_of_one_group(self,system_name:str,group:str) -> None:
+    def display_confusion_matrix_of_one_group(self,system_name:str,group:str,saving_dir:str=None) -> None:
         if group in self.groups:
-            confusion_matrix_focused_on_one_label(self.groups_ref, self.groups_system, group,self.groups, system_name)
-    
-
+            confusion_matrix_focused_on_one_label(self.groups_ref, self.groups_system, group,self.groups, system_name, saving_dir)
 
 
 # each reference have one MultipleBiasResult
@@ -69,7 +59,7 @@ class MultipleBiasResults():
         self.groups = groups
         self.systems_bias_results = systems_bias_results
         self.metrics = metrics
-        self.multiple_metrics_results_per_metris = { metric: MultipleResult(
+        self.multiple_metrics_results_per_metris = { metric: MultipleMetricResults(
                                                                 {
                                                                     sys_id: bias_result.metrics_results_per_metric[metric] 
                                                                     for sys_id,bias_result in self.systems_bias_results.items()
@@ -78,58 +68,84 @@ class MultipleBiasResults():
             for metric in self.metrics
         }
 
-    
-    def metrics_scores_and_number_of_identified_terms_to_dataframe(self,collection_testsets:CollectionTestsets):
-        all_multiple_metrics_results = list(self.multiple_metrics_results_per_metris.values())
-        summary = { 
-            sys_name: [m_res.systems_metric_results[sys_id].sys_score for m_res in all_multiple_metrics_results]
-            for sys_id, sys_name in collection_testsets.systems_names.items()
-        }
-        df = pd.DataFrame.from_dict(summary)
-        df.index = [m_res.metric for m_res in all_multiple_metrics_results]
-        return df
-
-
-    def display_groups_of_each_system(self,collection_testsets:CollectionTestsets) -> str:
-        display = ""
-        for sys_id, bias_result in self.systems_bias_results.items():
-            system_name = collection_testsets.systems_names[sys_id]
-            display += "---" + system_name + "---"
-            display += bias_result.display_groups() 
-        return display
-    
-    def display_confusion_matrix_of_one_system(self,collection_testsets:CollectionTestsets, system_name:str):
+        
+    def display_confusion_matrix_of_one_system(self,collection_testsets:CollectionTestsets, system_name:str, saving_dir:str=None):
         sys_id = collection_testsets.system_name_id(system_name)
         bias_result = self.systems_bias_results[sys_id]
-        bias_result.display_confusion_matrix_of_system(system_name)
+        bias_result.display_confusion_matrix_of_system(system_name,saving_dir)
 
-    def display_confusion_matrix_of_one_system_focused_on_one_label(self, collection_testsets:CollectionTestsets, system_name:str, group:str):
+    def display_confusion_matrix_of_one_system_focused_on_one_label(self, collection_testsets:CollectionTestsets, system_name:str, group:str,
+                                                                    saving_dir:str=None):
         sys_id = collection_testsets.system_name_id(system_name)
         bias_result = self.systems_bias_results[sys_id]
-        bias_result.display_confusion_matrix_of_one_group(system_name, group)
+        bias_result.display_confusion_matrix_of_one_group(system_name, group, saving_dir)
     
-    def display_number_of_correct_labels_of_each_system(self,collection_testsets:CollectionTestsets):
+    def display_number_of_correct_labels_of_each_system(self,collection_testsets:CollectionTestsets, saving_dir:str=None):
         systems_names = []
         groups_sys_per_system = []
         for sys_id, bias_result in self.systems_bias_results.items():
             systems_names.append(collection_testsets.systems_names[sys_id])
             groups_sys_per_system.append(bias_result.groups_system)
-        number_of_correct_labels_of_each_system(systems_names,self.groups_ref,groups_sys_per_system,self.groups)
+        number_of_correct_labels_of_each_system(systems_names,self.groups_ref,groups_sys_per_system,self.groups, saving_dir)
 
-    def display_number_of_incorrect_labels_of_each_system(self,collection_testsets:CollectionTestsets):
+    def display_number_of_incorrect_labels_of_each_system(self,collection_testsets:CollectionTestsets, saving_dir:str=None):
         systems_names = []
         groups_sys_per_system = []
         for sys_id, bias_result in self.systems_bias_results.items():
             systems_names.append(collection_testsets.systems_names[sys_id])
             groups_sys_per_system.append(bias_result.groups_system)
-        number_of_incorrect_labels_of_each_system(systems_names,self.groups_ref,groups_sys_per_system,self.groups)
+        number_of_incorrect_labels_of_each_system(systems_names,self.groups_ref,groups_sys_per_system,self.groups, saving_dir)
     
-    def display_analysis_labels(self,collection_testsets:CollectionTestsets):
+    def display_analysis_labels(self,collection_testsets:CollectionTestsets,saving_dir:str=None):
         systems_names = collection_testsets.systems_names.values()
-        for metric, multiple_metrics_results in self.multiple_metrics_results_per_metris.items():
-            analysis_labels(multiple_metrics_results,systems_names,self.groups)
+        for _, multiple_metrics_results in self.multiple_metrics_results_per_metris.items():
+            analysis_labels(multiple_metrics_results,systems_names,self.groups, saving_dir)
 
 
 
+    def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets):
+        dataframe = MultipleMetricResults.results_to_dataframe(list(self.multiple_metrics_results_per_metris.values()),collection_testsets.systems_names)
+        export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
+        st.dataframe(dataframe)
 
-            
+        st.subheader("Confusion Matrices")
+        system_name = st.selectbox(
+            "**Select the System**",
+            collection_testsets.names_of_systems(),
+            index=0)
+        self.display_confusion_matrix_of_one_system(collection_testsets,system_name)
+
+        group = st.selectbox(
+            "**Select the Protected Group**",
+            self.groups,
+            index=0)
+
+        self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,system_name,group)
+
+        st.subheader("Analysis Of Each Label")
+        self.display_analysis_labels(collection_testsets)
+
+        st.subheader("Number of times each group was identified correctly")           
+        self.display_number_of_correct_labels_of_each_system(collection_testsets)
+
+        st.subheader("Number of times each group was identified incorrectly")            
+        self.display_number_of_incorrect_labels_of_each_system(collection_testsets)
+
+
+    
+    def plots_bias_results_cli_interface(self, collection_testsets:CollectionTestsets, saving_dir:str):
+        self.display_analysis_labels(collection_testsets, saving_dir)        
+        self.display_number_of_correct_labels_of_each_system(collection_testsets,saving_dir)       
+        self.display_number_of_incorrect_labels_of_each_system(collection_testsets,saving_dir)
+    
+        for system_name in collection_testsets.names_of_systems():
+            output_file = saving_dir + system_name + "/"
+            if not os.path.exists(output_file):
+                os.makedirs(output_file)  
+            self.display_confusion_matrix_of_one_system(collection_testsets,system_name,output_file)
+
+            group_file = output_file + "/" + "singular_confusion_matrix/"
+            if not os.path.exists(group_file):
+                os.makedirs(group_file)  
+            for group in self.groups:
+                self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,system_name,group,group_file)

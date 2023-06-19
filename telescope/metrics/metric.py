@@ -17,7 +17,7 @@ from typing import List, Tuple, Dict
 from itertools import combinations
 
 import numpy as np
-from telescope.metrics.result import BootstrapResult, MetricResult, PairwiseResult, MultipleResult
+from telescope.metrics.result import BootstrapResult, MetricResult, PairwiseResult, MultipleMetricResults
 from telescope.testset import PairwiseTestset, MultipleTestset
 
 
@@ -55,7 +55,7 @@ class Metric(metaclass=abc.ABCMeta):
         ref = testset.ref
         src = testset.src
         systems_metric_results = {sys_id: self.score(src,output,ref) for sys_id,output in testset.systems_output.items()}
-        return MultipleResult(systems_metric_results)
+        return MultipleMetricResults(systems_metric_results)
 
     @classmethod
     def bootstrap_resampling(
@@ -144,7 +144,7 @@ class Metric(metaclass=abc.ABCMeta):
         system_x: str,
         system_y: str,
         language: str,
-        multiple_result: MultipleResult = None,
+        multiple_result: MultipleMetricResults = None,
     ):
 
         """
@@ -170,7 +170,7 @@ class Metric(metaclass=abc.ABCMeta):
                 wins[2] += 1
             return wins
 
-        def recompute_sys_scores(multiple_result: MultipleResult) -> (float, float):
+        def recompute_sys_scores(multiple_result: MultipleMetricResults) -> (float, float):
             if cls.segment_level and multiple_result is not None:
                 reduces_x_scr = [
                     multiple_result.systems_metric_results[system_x].seg_scores[i] 

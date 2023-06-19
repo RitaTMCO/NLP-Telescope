@@ -26,7 +26,7 @@ import random
 from streamlit import runtime
 from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix, ConfusionMatrixDisplay
 from telescope.testset import MultipleTestset
-from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleResult
+from telescope.metrics.result import BootstrapResult, PairwiseResult, MultipleMetricResults
 
 T1_COLOR = "#9ACD32"
 T2_COLOR = "#56C3FF"
@@ -479,7 +479,7 @@ def update_multiple_buckets(
 
 
 def plot_bucket_multiple_comparison(
-    multiple_result: MultipleResult, systems_names: List[str], saving_dir: str = None
+    multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None
 ) -> None:
 
 
@@ -594,10 +594,9 @@ def plot_bucket_multiple_comparison(
                 )
             )
             plt.clf()
+            plt.close()
 
-def plot_multiple_distributions(
-    multiple_result: MultipleResult, sys_names: List[str], saving_dir: str = None
-) -> None:
+def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None) -> None:
     scores_list = [
         metric_system.seg_scores 
         for metric_system in list(multiple_result.systems_metric_results.values())]
@@ -618,8 +617,8 @@ def plot_multiple_distributions(
         st.plotly_chart(fig)
 
 
-def plot_multiple_segment_comparison(multiple_result: MultipleResult, system_x: List[str], 
-                            system_y:List[str], source: bool = False, saving_dir: str = None) -> None:
+def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, system_x: List[str], system_y:List[str], source: bool = False, 
+                                     saving_dir: str = None) -> None:
 
     sys_x_id, sys_x_name = system_x
     sys_y_id, sys_y_name = system_y
@@ -663,8 +662,8 @@ def plot_multiple_segment_comparison(multiple_result: MultipleResult, system_x: 
     if runtime.exists():
         st.altair_chart(c, use_container_width=True)
 
+
 def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[str], system_name:str, saving_dir: str = None):    
-    
     matrix = confusion_matrix(true, pred, labels=labels)
     conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix,display_labels=labels)
     conf_mat.plot()
@@ -677,6 +676,8 @@ def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[st
 
     if runtime.exists():
         st.pyplot(plt)
+    plt.clf()
+    plt.close()
 
 def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], label: str, labels: List[str], system_name:str, saving_dir: str = None):
     
@@ -695,7 +696,8 @@ def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], labe
 
     if runtime.exists():
         st.pyplot(plt)
-
+    plt.clf()
+    plt.close()
 
 def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], 
                        saving_dir:str = None):
@@ -786,6 +788,7 @@ def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str
     if runtime.exists():
         st.pyplot(plt)
     plt.clf()
+    plt.close()
 
 
 def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[str], systems_pred: List[List[str]], labels: List[str], 
@@ -802,25 +805,28 @@ def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[s
 
     plt = analysis_labels_bucket(number_of_incorrect_labels, sys_names, labels, "Number of times each label was identified incorrectly")
     if saving_dir is not None:
-        plt.savefig(saving_dir + "/number-of-incorrect-labels.of-each-system.png")
+        plt.savefig(saving_dir + "/number-of-incorrect-labels-of-each-system.png")
     if runtime.exists():
         st.pyplot(plt)
     plt.clf()
+    plt.close()
 
 
-def analysis_labels(result: MultipleResult, sys_names: List[str], labels:List[str], saving_dir: str = None):
+def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None):
     seg_scores_list = [result_sys.seg_scores 
                 for result_sys in list(result.systems_metric_results.values())]
     
     seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
                 for i, label in enumerate(labels)}
+    metric = result.metric
 
     plt = analysis_labels_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
     if saving_dir is not None:
-        plt.savefig(saving_dir + "/analysis-labels-bucket.png")
+        plt.savefig(saving_dir + "/" + metric + "-analysis-labels-bucket.png")
     if runtime.exists():
         st.pyplot(plt)
     plt.clf()
+    plt.close()
 
 
 def export_dataframe(label:str, name:str, dataframe:pd.DataFrame):
