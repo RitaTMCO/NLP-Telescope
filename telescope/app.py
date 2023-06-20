@@ -20,7 +20,7 @@ from PIL import Image
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleMetricResults
 from telescope.collection_testsets import CollectionTestsets
-
+from telescope.bias_evaluation.bias_evaluation import BiasEvaluation
 from telescope.plotting import export_dataframe
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
@@ -114,8 +114,15 @@ available_bias_evaluations = {b.name: b for b in available_tasks[task].bias_eval
 if available_bias_evaluations:
     st.sidebar.subheader("Bias Evaluations:")
 
-    bias_evaluations = st.sidebar.multiselect("Select Bias Evaluations:", list(available_bias_evaluations.keys()))     
+    bias_evaluations = st.sidebar.multiselect("Select Bias Evaluations:", list(available_bias_evaluations.keys()))   
 
+    option_bias_evaluation = st.sidebar.selectbox(
+        "Select how you want the evaluation to be done:",
+        BiasEvaluation.options_bias_evaluation,
+        index=0,
+    ) 
+
+     
 # --------------------- Streamlit APP Caching functions! --------------------------
 
 cache_time = 60 * 60  # 1 hour cache time for each object
@@ -220,7 +227,7 @@ def run_all_metrics(collection, metrics, filters):
 def run_bias_evalutaion(testset, evaluation, ref_filename, language):
     with st.spinner(f"Running {evaluation} Bias Evaluation for reference {ref_filename}..."):
         bias_evaluation = available_bias_evaluations[evaluation](language)
-        return bias_evaluation.evaluation(testset)
+        return bias_evaluation.evaluation(testset,option_bias_evaluation)
 
 def run_all_bias_evalutaions(collection):
     refs_names = collection.refs_names
@@ -236,7 +243,6 @@ def run_all_bias_evalutaions(collection):
             }
         for evaluation in bias_evaluations
     }
-
 
 
 # --------| Rename systems |-----------

@@ -722,6 +722,28 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
         return df
     else:
         return None
+    
+def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int, List[str]], gender_sys_seg: Dict[int, List[str]], ids: List[int], saving_dir:str = None):
+    n = len(gender_refs_seg)
+    if ids == []:
+        ids = list(random.sample(range(n),n)).sort()
+    num = 10
+    bias_segments = list()
+    table = list()
+    for i in ids:
+        if len(bias_segments) == num:
+            break
+        if (gender_refs_seg[i] != gender_sys_seg[i]) and ("line " + str(i+1) not in bias_segments):
+            bias_segments.append("line " + str(i+1))
+            table.append([i+1, ref[i], output_sys[i]])
+    
+    if len(bias_segments) != 0:
+        df = pd.DataFrame(np.array(table), columns=["line", "reference", "system output"])
+        if saving_dir is not None:
+            df.to_csv(saving_dir + "/bias-segments.csv")
+        return df.sort_index()
+    else:
+        return None
 
 def analysis_labels_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str):
     number_of_systems = len(systems_names)

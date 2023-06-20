@@ -149,7 +149,6 @@ class TestCompareCli(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/results.csv")))
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Accuracy-analysis-labels-bucket.png")))
-
         for sys_name in self.sys_names:
             if sys_name != "Sys C":
                 self.assertTrue(
@@ -173,17 +172,15 @@ class TestCompareCli(unittest.TestCase):
                     self.ref.replace("/","_")  + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-neutral.png"))
             )
 
+
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-neutral.png")
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-negative.png")
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-positive.png")
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/")
-            
             if sys_name != "Sys C":
                 os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/incorrect-examples.csv")
-
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/confusion-matrix-" + sys_name.replace(" ", "_") + ".png")
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" )
-
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/results.csv")
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/Accuracy-analysis-labels-bucket.png")
         os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_"))

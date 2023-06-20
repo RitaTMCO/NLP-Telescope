@@ -574,7 +574,7 @@ def n_compare_nlg(
 
     if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
         bias_evalutaions_results = {bias_eval: { 
-            ref_name: available_bias_evaluation[bias_eval](language).evaluation(collection.testsets[ref_name])
+            ref_name: available_bias_evaluation[bias_eval](language).evaluation(collection.testsets[ref_name], "with datasets and library")
                 for ref_name in collection.refs_names
                 }
             for bias_eval in bias_evaluations

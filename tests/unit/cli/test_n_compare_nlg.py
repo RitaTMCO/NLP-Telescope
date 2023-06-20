@@ -281,13 +281,16 @@ class TestCompareCli(unittest.TestCase):
                     os.path.isfile(os.path.join(
                         DATA_PATH, dir + "/confusion-matrix-" + sys_name.replace(" ","_") + ".png"))
                     )
+                self.assertTrue(
+                    os.path.isfile(os.path.join(
+                        DATA_PATH, dir + "/bias-segments.csv"))
+                    )
                 for group in ["male", "female", "neutral" , "unidentified"]:
                     self.assertTrue(
                         os.path.isfile(os.path.join(
                             DATA_PATH, dir + "/singular_confusion_matrix/" + sys_name.replace(" ","_") + "-label-" + group + ".png"))
                         )
-
-
+                    
             os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/Sys B-Sys C_multiple-segment-comparison.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/multiple-scores-distribution.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/multiple-bucket-analysis.png")
@@ -301,6 +304,7 @@ class TestCompareCli(unittest.TestCase):
             for sys_name in ["Sys A", "Sys B", "Sys C"]:
                 dir = ref.replace("/","_")  + "/bias_results/gender/" + sys_name
                 os.remove(DATA_PATH + "/" + dir + "/confusion-matrix-" + sys_name.replace(" ","_") + ".png")
+                os.remove(DATA_PATH + "/" + dir + "/bias-segments.csv")
                 for group in ["male", "female", "neutral" , "unidentified"]:
                     os.remove(DATA_PATH + "/" + dir + "/singular_confusion_matrix/" + sys_name.replace(" ","_")  + "-label-" + group + ".png")
                 os.rmdir(DATA_PATH + "/" + dir + "/singular_confusion_matrix/")
@@ -357,7 +361,6 @@ class TestCompareCli(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys 2-Sys 3_multiple-segment-comparison.html")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/results.csv")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys 2-Sys 3_bootstrap_results.csv")))
-
             os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/Sys 2-Sys 3_multiple-segment-comparison.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/multiple-scores-distribution.html")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/multiple-bucket-analysis.png")
