@@ -20,7 +20,7 @@ from PIL import Image
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleMetricResults
 from telescope.collection_testsets import CollectionTestsets
-from telescope.bias_evaluation.bias_evaluation import BiasEvaluation
+from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.plotting import export_dataframe
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
@@ -114,13 +114,17 @@ available_bias_evaluations = {b.name: b for b in available_tasks[task].bias_eval
 if available_bias_evaluations:
     st.sidebar.subheader("Bias Evaluations:")
 
-    bias_evaluations = st.sidebar.multiselect("Select Bias Evaluations:", list(available_bias_evaluations.keys()))   
+    option_bias_evaluation = ""
+
+    bias_evaluations = st.sidebar.multiselect("Select Bias Evaluations:", list(available_bias_evaluations.keys()))  
 
     option_bias_evaluation = st.sidebar.selectbox(
-        "Select how you want the evaluation to be done:",
-        BiasEvaluation.options_bias_evaluation,
-        index=0,
-    ) 
+            "Select how you want the evaluation to be done:",
+            GenderBiasEvaluation.options_bias_evaluation,
+            index=0,
+            disabled = ("Gender" not in bias_evaluations)
+        ) 
+
 
      
 # --------------------- Streamlit APP Caching functions! --------------------------

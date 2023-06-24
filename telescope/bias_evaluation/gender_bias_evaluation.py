@@ -1,6 +1,8 @@
 import nltk
 import spacy
 import string
+import time
+
 from typing import Tuple, List, Dict
 from nltk.tokenize import word_tokenize
 from spacy.tokens import Token, Doc
@@ -13,13 +15,14 @@ from telescope.metrics.metric import Metric
 class GenderBiasEvaluation(BiasEvaluation):
     name = "Gender"
     available_languages = ["en", "pt"]
-    groups = ["neutral", "female", "male", "unidentified"]
-    directory = 'telescope/bias_evaluation/data/'
+    groups = ["neutral", "female", "male"]
     metrics =  [Accuracy, F1Score]
 
+    directory = 'telescope/bias_evaluation/data/'
     nltk_languages = {"en":"english", "pt":"portuguese"}
     models = {"en":"en_core_web_sm","pt":"pt_core_news_sm"}
     groups_nlp = {"Neut": "neutral", "Fem" : "female", "Masc":"male"}
+    options_bias_evaluation = ["with dataset","with library","with datasets and library"]
 
     def __init__(self, language: str):
         super().__init__(language)
@@ -41,7 +44,6 @@ class GenderBiasEvaluation(BiasEvaluation):
             
 
     def find_extract_genders_identify_terms(self, output_per_sys:Dict[str,List[str]], ref:List[str], option_bias_evaluation:str):
-        puns = list(string.punctuation)
         num_segs = len(ref)
         genders_ref_per_seg = {}
         genders_per_sys_per_seg = {sys_id:{} for sys_id in list(output_per_sys.keys())}
@@ -49,13 +51,20 @@ class GenderBiasEvaluation(BiasEvaluation):
         for seg_i in range(num_segs):
             genders_ref = list()
             genders_per_sys = {sys_id:list() for sys_id in list(output_per_sys.keys())}
+            sys_seg_output = {sys_id:sys_output[seg_i] for sys_id, sys_output in output_per_sys.items()}
 
-            option_fun = self.options_bias_evaluation_funs[option_bias_evaluation]
-            genders_ref,genders_per_sys = option_fun(output_per_sys, ref, puns, seg_i, genders_ref, genders_per_sys)
+            _option_fun = self.options_bias_evaluation_funs[option_bias_evaluation]
+            
+            genders_ref, genders_per_sys = _option_fun(ref[seg_i], sys_seg_output, genders_ref, genders_per_sys)   
+            num = len(genders_ref)
+            if any(len(genders)!=num for genders in list(genders_per_sys.values())):
+                genders_ref = []
+                genders_per_sys = {sys_id:list() for sys_id in list(output_per_sys.keys())}
 
             genders_ref_per_seg[seg_i] = genders_ref
             for sys_id, groups in genders_per_sys.items():
                 genders_per_sys_per_seg[sys_id].update({seg_i:groups})
+        
         return genders_ref_per_seg,genders_per_sys_per_seg
     
 
@@ -68,6 +77,7 @@ class GenderBiasEvaluation(BiasEvaluation):
 
     def evaluation(self, testset: MultipleTestset, option_bias_evaluation:str) -> MultipleBiasResults:
         """ Gender Bias Evaluation."""
+        start = time.time()
         ref = testset.ref
         output_per_sys = testset.systems_output
 
@@ -79,24 +89,24 @@ class GenderBiasEvaluation(BiasEvaluation):
             sys_id: self.score_with_metrics(ref,sys_output,genders_ref,genders_ref_per_seg,genders_per_sys_per_seg[sys_id],init_metrics)
             for sys_id,sys_output in output_per_sys.items()
             }
-        return MultipleBiasResults(ref, genders_ref, genders_ref_per_seg, self.groups, systems_bias_results, self.metrics)
+        end = time.time()
+        return MultipleBiasResults(ref, genders_ref, genders_ref_per_seg, self.groups, systems_bias_results, self.metrics, (end-start))
 
 
 #------------------------- Evaluation with datasets ---------------------------------
-
-    def find_gender_from_set(self, word:str,set_of_words:dict) -> str:
-         # [{"they":"neutral", "she":"female", "he":"male"},...]
-        if word in set_of_words:
-            gender = set_of_words.get(word)
-        else:
-            gender = "unidentified"
-        return gender
     
+    def find_gender_from_dataset(self, set_words:List[str], word_k:int):
+        
+        
+        def find_gender_from_set(word:str,set_of_words:dict):
+         # [{"they":"neutral", "she":"female", "he":"male"},...]
+            if word in set_of_words:
+                gender = set_of_words.get(word)
+            else:
+                gender = ""
+            return gender
 
-    def extract_gender_from_dataset(self, set_words_ref:List[str], set_words_per_sys:Dict[str,List[str]], word_k:int, genders_ref:List[str], 
-                                    genders_per_sys: Dict[str,List[str]], sets_of_terms:List[Dict[str,str]]):
-
-        def next_word(set_words:List[str], word_k:int):
+        def find_next_word(set_words:List[str], word_k:int):
             if word_k + 1 < len(set_words): 
                 return set_words[word_k + 1]
             else:
@@ -104,9 +114,9 @@ class GenderBiasEvaluation(BiasEvaluation):
         
         def is_word_in_set(word:str, next_word:str, set:Dict[str,str]):
             if word in set:
-                return self.find_gender_from_set(word,set)
+                return find_gender_from_set(word,set)
             elif word + " " + next_word in set:
-                return self.find_gender_from_set(word + " " + next_word,set)
+                return find_gender_from_set(word + " " + next_word,set)
             return ""
     
         # Exemple: suffixes --> woman and man
@@ -117,142 +127,147 @@ class GenderBiasEvaluation(BiasEvaluation):
                     bigger_suffix = suffix
             return bigger_suffix
         
-        word_ref = set_words_ref[word_k]
-        next_word_ref = next_word(set_words_ref, word_k)
-
-        word_per_sys,next_word_per_sys = {}, {}
-        for sys_id, set_words_sys in set_words_per_sys.items():
-            word_per_sys[sys_id] = set_words_sys[word_k]
-            next_word_per_sys[sys_id] = next_word(set_words_sys,word_k)
-        systems_ids = list(word_per_sys.keys())
+        sets_of_terms = self.sets_of_prons_dets + self.sets_of_occupations + self.sets_of_gender_terms
+        word = set_words[word_k]
+        next_word = find_next_word(set_words, word_k)
 
         # sets_of_terms
         for set in sets_of_terms:
-            gender_ref = is_word_in_set(word_ref, next_word_ref, set)
-            if gender_ref and all(is_word_in_set(word_per_sys[sys_id],next_word_per_sys[sys_id],set) for sys_id in systems_ids):
-                genders_ref.append(gender_ref)
-                for sys_id in systems_ids:
-                    gender_system = is_word_in_set(word_per_sys[sys_id], next_word_per_sys[sys_id], set)
-                    genders_per_sys[sys_id].append(gender_system) 
-                return [genders_ref,genders_per_sys]
+            gender = is_word_in_set(word, next_word, set) 
+            if gender:    
+                return gender, set
 
         # sets_of_suffixes
         for set in self.sets_of_suffixes:
             suffixes = tuple(set.keys())
-            if word_ref.endswith(suffixes) and all(word_per_sys[sys_id].endswith(suffixes) for sys_id in systems_ids):
-                suffix_ref = find_suffix(word_ref,suffixes)
-                genders_ref.append(self.find_gender_from_set(suffix_ref,set))
-                for sys_id, set_words_sys in set_words_per_sys.items():
-                    suffix_sys = find_suffix(set_words_sys[word_k],suffixes)
-                    genders_per_sys[sys_id].append(self.find_gender_from_set(suffix_sys,set))
-                return [genders_ref,genders_per_sys]    
-              
-        return [genders_ref,genders_per_sys]
+            if word.endswith(suffixes):
+                suffix = find_suffix(word,suffixes)
+                gender = find_gender_from_set(suffix,set)
+                if gender:    
+                    return gender, set
+        return "", {}
 
-
-
-    def find_extract_genders_identify_terms_with_dataset(self, output_per_sys: Dict[str,List[str]], ref: List[str], puns:List[str], seg_i:int, 
-                                                             genders_ref:List[str], genders_per_sys:Dict[str,List[str]]):
-
-        words_ref = word_tokenize(ref[seg_i].lower(), language=self.nltk_language)
-        num_words = len(words_ref)
-        words_per_sys = {}
-        min_num_words_sys = num_words
-        
-        for sys_id, sys_output in output_per_sys.items():
-            words_per_sys[sys_id] = word_tokenize(sys_output[seg_i].lower(), language=self.nltk_language)
-            if min_num_words_sys > len(words_per_sys[sys_id]):
-                min_num_words_sys = len(words_per_sys[sys_id])
-
+    def find_identify_terms_with_dataset(self, text:str):
+        words = word_tokenize(text.lower(), language=self.nltk_language)
+        num_words = len(words)
+        tokens = []
         for word_k in range(num_words):
-            if  word_k + 1 > min_num_words_sys:
-                    break
-            elif words_ref[word_k] in puns:
-                continue
-            else:
-                genders_ref,genders_per_sys = self.extract_gender_from_dataset(words_ref, 
-                                                                               words_per_sys, 
-                                                                               word_k, 
-                                                                               genders_ref, 
-                                                                               genders_per_sys,
-                                                                               self.sets_of_prons_dets + self.sets_of_occupations + self.sets_of_gender_terms)        
-        return genders_ref,genders_per_sys
+            gender,set = self.find_gender_from_dataset(words, word_k)
+            if set:
+                tokens.append([words[word_k], gender, set])
+        return tokens
     
+    def has_match_with_dataset(self, set:Dict[str,str], set_tokens_per_sys:Dict[str,List[list]]):
+        return all(any(set == token_sys[2] for token_sys in set_tokens_sys)
+                   for set_tokens_sys in list(set_tokens_per_sys.values())) and set != {}
+    
+    def is_match_with_dataset(self,set_ref:Dict[str,str],set_sys: Dict[str,str]):
+        return set_ref == set_sys
 
+    def match_identify_terms_with_dataset(self,set_tokens_ref, set_tokens_per_sys, genders_ref, genders_per_sys):
+        for [_,gender,set]in set_tokens_ref:
+            if self.has_match_with_dataset(set, set_tokens_per_sys):
+                genders_ref.append(gender)
+                for sys_id, set_tokens_sys in set_tokens_per_sys.items():
+                    for [token_sys, gender_sys, set_sys] in set_tokens_sys:
+                        if self.is_match_with_dataset(set,set_sys):
+                            genders_per_sys[sys_id].append(gender_sys)
+                            set_tokens_per_sys[sys_id].remove([token_sys,gender_sys,set_sys])
+                            break
+        return genders_ref, genders_per_sys
+
+    
+    def find_extract_genders_identify_terms_with_dataset(self, ref_seg:str, seg_per_sys:Dict[str,str], genders_ref:List[str], 
+                                                         genders_per_sys: Dict[str,List[str]]):     
+        set_tokens_ref = self.find_identify_terms_with_dataset(ref_seg)
+        set_tokens_per_sys = {sys_id:self.find_identify_terms_with_dataset(seg_per_sys[sys_id]) for sys_id in list(genders_per_sys.keys())}
+        genders_ref, genders_per_sys = self.match_identify_terms_with_dataset(set_tokens_ref, set_tokens_per_sys, genders_ref, genders_per_sys)
+        return genders_ref, genders_per_sys
 
 #------------------------- Evaluation with library ---------------------------------
 
-    def find_gender_morph(self,token:Token):
-        gender = token.morph.get("Gender")
-        if gender:
-            return self.groups_nlp[gender[0]]
-        return "unidentified"
+    def find_gender_from_morph(self,token:Token):
+        gen = token.morph.get("Gender")
+        gender = self.groups_nlp[gen[0]]
+        return gender
+        
+    def has_gender(self,token:Token):
+        return (token.has_morph() and token.morph.get("Gender"))
     
-    def has_morph_gender_and_same_lemma(self,doc_ref:Doc, doc_per_sys:Dict[str,Doc], token_k:int):
-        has_morph = doc_ref[token_k].has_morph() and all(doc_sys[token_k].has_morph() for doc_sys in list(doc_per_sys.values()))
-        same_lemma = all(doc_ref[token_k].lemma_ == doc_sys[token_k].lemma_ for doc_sys in list(doc_per_sys.values()))
-        has_gender_ref = (self.find_gender_morph(doc_ref[token_k]) != "unidentified")
-        return has_morph and has_gender_ref and same_lemma
+    def find_identify_terms_with_library(self, text:str):
+        doc = self.nlp(text.lower())  
+        tokens = [[token,self.find_gender_from_morph(token)] for token in doc if self.has_gender(token) 
+                  and token.dep_== "nsubj"]
+        return tokens
+        
+    def has_match_with_library(self,token:Token, set_tokens_per_sys:Dict[str,List[list]]):
+        def pronoum_or_determinant(token:Token, set_tokens_per_sys:Dict[str,List[list]]):
+            if token.pos_ == "PRON":
+                return all("PRON" in [token_sys[0].pos_ for token_sys in set_tokens_sys] for set_tokens_sys in list(set_tokens_per_sys.values())) 
+            elif token.pos_ == "DET":
+                return all("DET" in [token_sys[0].pos_ for token_sys in set_tokens_sys] for set_tokens_sys in list(set_tokens_per_sys.values()))
+            return False
+        lemma = all(token.lemma_ in [token_sys[0].lemma_ for token_sys in set_tokens_sys] for set_tokens_sys in list(set_tokens_per_sys.values())) 
+        pron_det = pronoum_or_determinant(token, set_tokens_per_sys)
+        return lemma or pron_det
     
-    def extract_gender_from_libary(self, doc_ref:Doc, doc_per_sys:Dict[str,Doc], token_k:int, genders_ref:List[str], genders_per_sys:Dict[str,List[str]]):
-        gender_ref = self.find_gender_morph(doc_ref[token_k])
-        genders_ref.append(gender_ref)
-        for sys_id, doc_sys in doc_per_sys.items():
-            gender_sys = self.find_gender_morph(doc_sys[token_k])
-            genders_per_sys[sys_id].append(gender_sys)
-        return genders_ref,genders_per_sys
+    def is_match_with_library(self,token_ref:Token, token_sys:Token):
+        return token_ref.lemma_ == token_sys.lemma_ or token_ref.tag_ == token_sys.tag
+    
+    def match_identify_terms_with_library(self, set_tokens_ref:List[list], set_tokens_per_sys:Dict[str,List[list]], genders_ref:List[str], 
+                                          genders_per_sys:Dict[str,List[str]]):
+        
+        for [token,gender]in set_tokens_ref:
+            if self.has_match_with_library(token, set_tokens_per_sys):
+                genders_ref.append(gender)
+                for sys_id, set_tokens_sys in set_tokens_per_sys.items():
+                    for [token_sys, gender_sys] in set_tokens_sys:
+                        if self.is_match_with_library(token,token_sys):
+                            genders_per_sys[sys_id].append(gender_sys)
+                            set_tokens_per_sys[sys_id].remove([token_sys,gender_sys])
+                            break
+        return genders_ref, genders_per_sys
 
-      
-    def find_extract_genders_identify_terms_with_library(self, output_per_sys: Dict[str,List[str]], ref: List[str], puns:List[str],seg_i:int, 
-                                                             genders_ref:List[str], genders_per_sys:Dict[str,List[str]]):
-        doc_ref = self.nlp(ref[seg_i].lower())
-        num_tokens = len(doc_ref)
-        doc_per_sys = {}
-        min_num_tokens_sys = num_tokens 
-        for sys_id, sys_output in output_per_sys.items():
-            doc_per_sys[sys_id] = self.nlp(sys_output[seg_i].lower())
-            if min_num_tokens_sys > len(doc_per_sys[sys_id]):
-                min_num_tokens_sys = len(doc_per_sys[sys_id])
-
-        for token_k in range(num_tokens):
-            if  token_k + 1 > min_num_tokens_sys:
-                    break
-            elif doc_ref[token_k].text in puns:
-                continue
-            elif self.has_morph_gender_and_same_lemma(doc_ref,doc_per_sys,token_k):
-                genders_ref,genders_per_sys = self.extract_gender_from_libary(doc_ref, 
-                                                                              doc_per_sys, 
-                                                                              token_k, 
-                                                                              genders_ref, 
-                                                                              genders_per_sys)
-        return genders_ref,genders_per_sys
+    
+    def find_extract_genders_identify_terms_with_library(self, ref_seg:str, seg_per_sys:Dict[str,str], genders_ref:List[str], 
+                                                         genders_per_sys: Dict[str,List[str]]):     
+        set_tokens_ref = self.find_identify_terms_with_library(ref_seg)
+        set_tokens_per_sys = {sys_id:self.find_identify_terms_with_library(seg_per_sys[sys_id]) for sys_id in list(genders_per_sys.keys())}
+        genders_ref, genders_per_sys = self.match_identify_terms_with_library(set_tokens_ref, set_tokens_per_sys, genders_ref, genders_per_sys)
+        return genders_ref, genders_per_sys
     
 #------------------------- Evaluation with library and datasets ---------------------------------
-    def find_extract_genders_identify_terms_combination(self, output_per_sys: Dict[str,List[str]], ref: List[str], puns:List[str], seg_i:int, 
-                                                             genders_ref:List[str], genders_per_sys:Dict[str,List[str]]):
 
-        doc_ref = self.nlp(ref[seg_i].lower())
-        num_tokens = len(doc_ref)
-        doc_per_sys = {}
-        min_num_tokens_sys = num_tokens 
-        for sys_id, sys_output in output_per_sys.items():
-            doc_per_sys[sys_id] = self.nlp(sys_output[seg_i].lower())
-            min_num_tokens_sys = min(len(doc_per_sys[sys_id]),min_num_tokens_sys)
-
+    def find_identify_terms_combination(self, text:str):
+        doc = self.nlp(text.lower())        
+        num_tokens = len(doc)
+        tokens = []
         for token_k in range(num_tokens):
-            if  token_k + 1 > min_num_tokens_sys:
-                break
-            elif doc_ref[token_k].text in puns:
-                continue
-            elif self.has_morph_gender_and_same_lemma(doc_ref,doc_per_sys,token_k):
-                genders_ref,genders_per_sys = self.extract_gender_from_libary(doc_ref, doc_per_sys, token_k, genders_ref, genders_per_sys)
-            else:   
-                set_tokes_ref = [token.text for token in doc_ref]
-                set_tokes_per_sys = {sys_id:[token.text for token in doc_sys] for sys_id,doc_sys in doc_per_sys.items()}
-                genders_ref, genders_per_sys = self.extract_gender_from_dataset(set_tokes_ref,
-                                                                                set_tokes_per_sys,
-                                                                                token_k,
-                                                                                genders_ref,
-                                                                                genders_per_sys,
-                                                                                self.sets_of_prons_dets + self.sets_of_occupations + self.sets_of_gender_terms)
-        return genders_ref,genders_per_sys
+            if doc[token_k].dep_== "nsubj":
+                set_tokens = [token.text for token in doc]
+                gender,set = self.find_gender_from_dataset(set_tokens, token_k)
+                if not set and self.has_gender(doc[token_k]):
+                    gender = self.find_gender_from_morph(doc[token_k])
+                if gender:
+                    tokens.append([doc[token_k], gender, set])
+        return tokens    
+    
+    def match_identify_terms_combination(self,set_tokens_ref, set_tokens_per_sys, genders_ref, genders_per_sys):
+        for [token,gender,set]in set_tokens_ref:
+            if self.has_match_with_dataset(set, set_tokens_per_sys) or self.has_match_with_library(token, set_tokens_per_sys):
+                genders_ref.append(gender)
+                for sys_id, set_tokens_sys in set_tokens_per_sys.items():
+                    for [token_sys, gender_sys, set_sys] in set_tokens_sys:
+                        if self.is_match_with_dataset(set,set_sys) or self.is_match_with_library(token,token_sys):
+                            genders_per_sys[sys_id].append(gender_sys)
+                            set_tokens_per_sys[sys_id].remove([token_sys,gender_sys,set_sys])
+                            break
+        return genders_ref, genders_per_sys
+    
+    def find_extract_genders_identify_terms_combination(self, ref_seg:str, seg_per_sys:Dict[str,str], genders_ref:List[str], 
+                                                         genders_per_sys: Dict[str,List[str]]):     
+        set_tokens_ref = self.find_identify_terms_combination(ref_seg)
+        set_tokens_per_sys = {sys_id:self.find_identify_terms_combination(seg_per_sys[sys_id]) for sys_id in list(genders_per_sys.keys())}
+        genders_ref, genders_per_sys = self.match_identify_terms_combination(set_tokens_ref, set_tokens_per_sys, genders_ref, genders_per_sys)
+        return genders_ref, genders_per_sys
+    

@@ -725,8 +725,8 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
     
 def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int, List[str]], gender_sys_seg: Dict[int, List[str]], ids: List[int], saving_dir:str = None):
     n = len(gender_refs_seg)
-    if ids == []:
-        ids = list(random.sample(range(n),n)).sort()
+    if not ids: 
+        ids = random.sample(range(n),n)
     num = 10
     bias_segments = list()
     table = list()

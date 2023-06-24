@@ -11,7 +11,6 @@ class BiasEvaluation(metaclass=abc.ABCMeta):
     available_languages = list()
     groups = list()
     metrics = list()
-    options_bias_evaluation = ["with dataset","with library","with datasets and library"]
 
     def __init__(self, language: str):
         if not self.language_support(language):

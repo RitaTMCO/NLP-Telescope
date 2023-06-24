@@ -56,7 +56,8 @@ class MultipleBiasResults():
         groups_ref_per_seg: Dict[int,List[str]],
         groups: List[str],
         systems_bias_results: Dict[str,BiasResult], # {id_of_systems:BiasResults}
-        metrics: List[str]
+        metrics: List[str],
+        time: float
     ) -> None:
         for bias_results in systems_bias_results.values():
             assert bias_results.ref == ref
@@ -77,6 +78,7 @@ class MultipleBiasResults():
                                                             )
             for metric in self.metrics
         }
+        self.time=time
 
     def display_bias_segments_of_one_system(self,collection_testsets:CollectionTestsets,system_name:str, ids:List[int], saving_dir:str = None):
         sys_id = collection_testsets.system_name_id(system_name)
@@ -119,8 +121,11 @@ class MultipleBiasResults():
 
     def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets):
         dataframe = MultipleMetricResults.results_to_dataframe(list(self.multiple_metrics_results_per_metris.values()),collection_testsets.systems_names)
-        export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
         st.dataframe(dataframe)
+        export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
+
+        st.text("Bias Evaluation Time: " + str(self.time))
+        st.text("Number of Identity Terms Found: " + str(len(self.groups_ref)))
 
         st.subheader("Confusion Matrices")
         system_name = st.selectbox(
@@ -160,7 +165,7 @@ class MultipleBiasResults():
         def callback():
             st.session_state[click] +=  1
         _, middle, _ = st.columns(3)
-        if(middle.button("Show Segments with bias", on_click=callback)):
+        if(middle.button("Show Random Segments with bias", on_click=callback)):
 
             if st.session_state[click] == 1:
                 dataframe = self.display_bias_segments_of_one_system(collection_testsets,system_name, [i for i in range(len(self.ref))])
@@ -172,6 +177,8 @@ class MultipleBiasResults():
                 export_dataframe(label="Export table with segments", name="bias_segments.csv", dataframe=dataframe)
             else:
                 st.warning("There are no segments with bias.")
+        
+
 
 
 
