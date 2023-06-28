@@ -335,4 +335,4 @@ if collection_testsets:
         for evaluation in bias_evaluations:
             st.header(":blue[" + evaluation + " Bias Evaluation:]")
             multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
-            multiple_bias_results.plots_bias_results_web_interface(collection_testsets)
+            multiple_bias_results.plots_bias_results_web_interface(collection_testsets,ref_filename,option_bias_evaluation)

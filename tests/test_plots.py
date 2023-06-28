@@ -207,7 +207,8 @@ class TestPlots(unittest.TestCase):
         os.remove(DATA_PATH + "/Sys B-Sys C_multiple-segment-comparison.html")
         os.remove(DATA_PATH + "/Sys C-Sys A_multiple-segment-comparison.html")
         os.remove(DATA_PATH + "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/multiple-bucket-analysis.png")
+        os.remove(DATA_PATH + "/COMET-multiple-bucket-analysis.png")
+        os.remove(DATA_PATH + "/BERTScore-multiple-bucket-analysis.png")
         os.remove(DATA_PATH + "/confusion-matrix-Sys_A.png")
         os.remove(DATA_PATH + "/Sys_B-label-a.png")
         os.remove(DATA_PATH + "/Sys_C-label-b.png")
@@ -263,11 +264,11 @@ class TestPlots(unittest.TestCase):
 
     def test_bucket_multiple_comparison_comet(self):        
         plot_bucket_multiple_comparison(self.multiple_result_comet, list(self.systems_names.values()), DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "multiple-bucket-analysis.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "COMET-multiple-bucket-analysis.png")))
 
     def test_bucket_multiple_comparison_bertscore(self):        
         plot_bucket_multiple_comparison(self.multiple_result_bertscore, list(self.systems_names.values()), DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "multiple-bucket-analysis.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "BERTScore-multiple-bucket-analysis.png")))
     
     def test_confusion_matrix_of_system(self):
         confusion_matrix_of_system(self.testset_class.ref, self.testset_class.systems_output["Sys 1"], self.labels, 

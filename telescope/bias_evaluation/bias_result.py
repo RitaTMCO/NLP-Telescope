@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+import pandas as pd
 
 from typing import List, Dict
 from telescope.collection_testsets import CollectionTestsets
@@ -7,6 +8,7 @@ from telescope.metrics.metric import MetricResult, MultipleMetricResults
 from telescope.plotting import ( 
     confusion_matrix_of_system, 
     confusion_matrix_focused_on_one_label,
+    rates_table,
     number_of_correct_labels_of_each_system,
     number_of_incorrect_labels_of_each_system,
     analysis_labels,
@@ -24,6 +26,8 @@ class BiasResult():
         groups_ref_per_seg: Dict[int,List[str]],
         groups_system: List[str],
         groups_sys_per_seg: Dict[int,List[str]],
+        text_groups_ref_per_seg: Dict[int, List[dict]],
+        text_groups_sys_per_seg: Dict[int, List[dict]],
         metrics_results_per_metric: Dict[str, MetricResult] # {name_metric:MetricResult}
     ) -> None:
         self.groups = groups
@@ -34,6 +38,8 @@ class BiasResult():
         self.groups_ref_per_seg = groups_ref_per_seg
         self.groups_system = groups_system
         self.groups_sys_per_seg = groups_sys_per_seg
+        self.text_groups_ref_per_seg = text_groups_ref_per_seg
+        self.text_groups_sys_per_seg = text_groups_sys_per_seg
         self.metrics_results_per_metric = metrics_results_per_metric
 
     def display_confusion_matrix_of_system(self,system_name:str, saving_dir:str=None) -> None:
@@ -42,9 +48,13 @@ class BiasResult():
     def display_confusion_matrix_of_one_group(self,system_name:str,group:str,saving_dir:str=None) -> None:
         if group in self.groups:
             confusion_matrix_focused_on_one_label(self.groups_ref, self.groups_system, group,self.groups, system_name, saving_dir)
-    
+
+    def display_rates(self,saving_dir:str = None):
+        return rates_table(self.groups,self.groups_ref,self.groups_system,saving_dir)
+
     def display_bias_segments_of_system(self,ids:List[int], saving_dir:str = None):
-        return bias_segments(self.ref, self.system_output, self.groups_ref_per_seg, self.groups_sys_per_seg, ids, saving_dir)
+        return bias_segments(self.ref, self.system_output, self.groups_ref_per_seg, self.groups_sys_per_seg, 
+                             self.text_groups_ref_per_seg, self.text_groups_sys_per_seg, ids, saving_dir)
 
 
 # each reference have one MultipleBiasResult
@@ -56,6 +66,7 @@ class MultipleBiasResults():
         groups_ref_per_seg: Dict[int,List[str]],
         groups: List[str],
         systems_bias_results: Dict[str,BiasResult], # {id_of_systems:BiasResults}
+        text_groups_ref_per_seg: Dict[int, List[Dict[str,str]]],
         metrics: List[str],
         time: float
     ) -> None:
@@ -69,7 +80,9 @@ class MultipleBiasResults():
         self.groups_ref_per_seg = groups_ref_per_seg
         self.groups = groups
         self.systems_bias_results = systems_bias_results
+        self.text_groups_ref_per_seg = text_groups_ref_per_seg
         self.metrics = metrics
+        self.time=time
         self.multiple_metrics_results_per_metris = { metric.name: MultipleMetricResults(
                                                                 {
                                                                     sys_id: bias_result.metrics_results_per_metric[metric.name] 
@@ -78,7 +91,6 @@ class MultipleBiasResults():
                                                             )
             for metric in self.metrics
         }
-        self.time=time
 
     def display_bias_segments_of_one_system(self,collection_testsets:CollectionTestsets,system_name:str, ids:List[int], saving_dir:str = None):
         sys_id = collection_testsets.system_name_id(system_name)
@@ -95,6 +107,11 @@ class MultipleBiasResults():
         sys_id = collection_testsets.system_name_id(system_name)
         bias_result = self.systems_bias_results[sys_id]
         bias_result.display_confusion_matrix_of_one_group(system_name, group, saving_dir)
+    
+    def display_rates_of_one_system(self,collection_testsets:CollectionTestsets, system_name:str, saving_dir:str=None):
+        sys_id = collection_testsets.system_name_id(system_name)
+        bias_result = self.systems_bias_results[sys_id]
+        return bias_result.display_rates(saving_dir)
     
     def display_number_of_correct_labels_of_each_system(self,collection_testsets:CollectionTestsets, saving_dir:str=None):
         systems_names = []
@@ -117,15 +134,32 @@ class MultipleBiasResults():
         for _, multiple_metrics_results in self.multiple_metrics_results_per_metris.items():
             analysis_labels(multiple_metrics_results,systems_names,self.groups, saving_dir)
 
+    def display_bias_evaluations_informations(self, saving_dir:str=None):
+        table = { 
+            "Bias Evaluation Time": [self.time],
+            "Number of Identity Terms Found": [len(self.groups_ref)]
+        }
+        df = pd.DataFrame.from_dict(table)
+        if saving_dir:
+            df.to_csv(saving_dir + "/bias_evaluations_information.csv")
+        return df
 
 
-    def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets):
+
+    def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets, ref_name:str, option_bias):
+        directory = os.getenv('HOME')
+        if option_bias:
+            path = directory + "/nlp-telescope/images/"  + ref_name + "/bias_evaluation/" + option_bias + "/"
+        else:
+            path = directory + "/nlp-telescope/images/"  + ref_name + "/bias_evaluation/"
+    
+        df = self.display_bias_evaluations_informations()
+        st.dataframe(df)
+        export_dataframe(label="Bias Evaluations Informations", name="bias_evaluation_informations.csv", dataframe=df)
+    
         dataframe = MultipleMetricResults.results_to_dataframe(list(self.multiple_metrics_results_per_metris.values()),collection_testsets.systems_names)
         st.dataframe(dataframe)
         export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
-
-        st.text("Bias Evaluation Time: " + str(self.time))
-        st.text("Number of Identity Terms Found: " + str(len(self.groups_ref)))
 
         st.subheader("Confusion Matrices")
         system_name = st.selectbox(
@@ -134,13 +168,26 @@ class MultipleBiasResults():
             index=0,
             key="cm")
         self.display_confusion_matrix_of_one_system(collection_testsets,system_name)
-
+        
         group = st.selectbox(
             "**Select the Protected Group**",
             self.groups,
             index=0)
-
         self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,system_name,group)
+
+        if st.button('Download all Confusion Matrices of all Systems'):
+            for sys_name in collection_testsets.names_of_systems():
+                path_dir = path + sys_name.replace(" ", "_") + "/"
+                if not os.path.exists(path_dir):
+                    os.makedirs(path_dir)  
+                self.display_confusion_matrix_of_one_system(collection_testsets,sys_name,path_dir)
+                for grop in self.groups:
+                    self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,sys_name,grop,path_dir)
+
+
+        rates = self.display_rates_of_one_system(collection_testsets, system_name)
+        st.dataframe(rates)
+        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_bias_rates.csv", dataframe=rates)
 
         st.subheader("Analysis Of Each Label")
         self.display_analysis_labels(collection_testsets)
@@ -151,6 +198,14 @@ class MultipleBiasResults():
         st.subheader("Number of times each group was identified incorrectly")            
         self.display_number_of_incorrect_labels_of_each_system(collection_testsets)
 
+        if st.button('Download all Plots'):
+            if not os.path.exists(path):
+                os.makedirs(path)  
+            self.display_analysis_labels(collection_testsets,path)
+            self.display_number_of_correct_labels_of_each_system(collection_testsets,path)
+            self.display_number_of_incorrect_labels_of_each_system(collection_testsets,path)
+
+
         st.subheader("Segements with Bias")
         click = 0
         system_name = st.selectbox(
@@ -159,7 +214,8 @@ class MultipleBiasResults():
                 index=0,
                 key="bias")
         
-        click = "click_" + system_name
+        sys_id = collection_testsets.system_name_id(system_name)
+        click = "click_" + system_name + sys_id
         if click not in st.session_state:
             st.session_state[click] =  0
         def callback():
@@ -174,16 +230,13 @@ class MultipleBiasResults():
 
             if dataframe is not None:
                 st.dataframe(dataframe)
-                export_dataframe(label="Export table with segments", name="bias_segments.csv", dataframe=dataframe)
+                export_dataframe(label="Export table with segments", name=system_name.replace(" ", "_") + "_bias_segments.csv", dataframe=dataframe)
             else:
                 st.warning("There are no segments with bias.")
-        
-
-
-
 
     
     def plots_bias_results_cli_interface(self, collection_testsets:CollectionTestsets, saving_dir:str):
+        self.display_bias_evaluations_informations(saving_dir)
         self.display_analysis_labels(collection_testsets, saving_dir)        
         self.display_number_of_correct_labels_of_each_system(collection_testsets,saving_dir)       
         self.display_number_of_incorrect_labels_of_each_system(collection_testsets,saving_dir)
@@ -196,6 +249,7 @@ class MultipleBiasResults():
                 os.makedirs(output_file)  
             self.display_confusion_matrix_of_one_system(collection_testsets,system_name,output_file)
             self.display_bias_segments_of_one_system(collection_testsets,system_name, ids, output_file)
+            self.display_rates_of_one_system(collection_testsets, system_name, output_file)
 
             group_file = output_file + "/" + "singular_confusion_matrix/"
             if not os.path.exists(group_file):

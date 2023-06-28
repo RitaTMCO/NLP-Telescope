@@ -31,6 +31,7 @@ from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRIC
 from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.tasks import AVAILABLE_NLG_TASKS, AVAILABLE_CLASSIFICATION_TASKS
 from telescope.bias_evaluation import AVAILABLE_BIAS_EVALUATIONS
+from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.tasks.classification import Classification
 from telescope.metrics.result import MultipleMetricResults
 from telescope.testset import PairwiseTestset
@@ -537,6 +538,14 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     multiple=True,
     help="Bias Evaluation. This option can be multiple. Bias Evaluation Available: Gender Bias Evaluation for Machine Translation",
 )
+@click.option(
+    "--option_gender_bias_evaluation",
+    type=click.Choice(GenderBiasEvaluation.options_bias_evaluation),
+    required=False,
+    multiple=False,
+    default="with datasets and library",
+    help="Options for Gender Bias Evaluation.",
+)
 def n_compare_nlg(
     source: click.File,
     system_output: Tuple[click.File],
@@ -556,6 +565,7 @@ def n_compare_nlg(
     sample_ratio: float,
     systems_names: click.File,
     bias_evaluations: Union[Tuple[str], str],
+    option_gender_bias_evaluation: str
 ):  
     collection = available_nlg_tasks[task].input_cli_interface(source,systems_names,system_output,reference,language)
     
@@ -574,7 +584,7 @@ def n_compare_nlg(
 
     if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
         bias_evalutaions_results = {bias_eval: { 
-            ref_name: available_bias_evaluation[bias_eval](language).evaluation(collection.testsets[ref_name], "with datasets and library")
+            ref_name: available_bias_evaluation[bias_eval](language).evaluation(collection.testsets[ref_name], option_gender_bias_evaluation)
                 for ref_name in collection.refs_names
                 }
             for bias_eval in bias_evaluations
@@ -627,11 +637,14 @@ def n_compare_nlg(
             available_nlg_tasks[task].plots_cli_interface(seg_metric, results, collection, ref_filename, metrics_results_dir, x_id, y_id)
 
             if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
-                bias_results_dir = saving_dir + "bias_results/"
+                bias_results_dir = saving_dir + "bias_results/" 
                 if not os.path.exists(bias_results_dir):
                     os.makedirs(bias_results_dir)
                 for bias_eval in bias_evaluations:
-                    sub_bias_results_dir = bias_results_dir + bias_eval.lower() + "/"
+                    if bias_eval.lower() == "gender":
+                        sub_bias_results_dir = bias_results_dir + bias_eval.lower() + "/" + option_gender_bias_evaluation + "/"
+                    else:
+                        sub_bias_results_dir = bias_results_dir + bias_eval.lower() + "/"
                     if not os.path.exists(sub_bias_results_dir):
                         os.makedirs(sub_bias_results_dir)
                     bias_results_df[bias_eval].to_csv(sub_bias_results_dir + "bias_results.csv")

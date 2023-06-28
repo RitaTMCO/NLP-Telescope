@@ -1,8 +1,6 @@
 import click
 import os
 import streamlit as st
-import pandas as pd
-import numpy as np
 
 from typing import Tuple
 from telescope.tasks.task import Task
@@ -42,6 +40,10 @@ class Classification(Task):
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str) -> None:
         """Web Interfave to display the plots"""
 
+        directory = os.getenv('HOME')
+        path = directory + "/nlp-telescope/images/"  + ref_filename + "/" + cls.name + "/" 
+
+
         ref_id = collection_testsets.refs_indexes[ref_filename]
         testset = collection_testsets.testsets[ref_filename]
         labels = collection_testsets.labels
@@ -72,10 +74,24 @@ class Classification(Task):
         )
         confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[system_name],label,labels,system_name)
 
+        if st.button('Download all Confusion Matrices of all Systems'):
+            for sys_name in collection_testsets.names_of_systems():
+                path_dir = path + sys_name.replace(" ", "_") + "/"
+                if not os.path.exists(path_dir):
+                    os.makedirs(path_dir)  
+                sys = collection_testsets.system_name_id(sys_name)
+                confusion_matrix_of_system(testset.ref,testset.systems_output[sys],labels,sys_name,path_dir)
+                for l in labels:
+                    confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[sys_name],l,labels,sys_name, path_dir)
+
 
         #-------------- |Analysis Of Each Label| --------------------
         st.header(":blue[Analysis Of Each Label]")
         analysis_labels(results[metric], collection_testsets.names_of_systems(), labels)
+        if st.button('Download the plot'):
+            if not os.path.exists(path):
+                os.makedirs(path)  
+            analysis_labels(results[metric], collection_testsets.names_of_systems(), labels, path)
 
         
         #-------------- |Examples| --------------------

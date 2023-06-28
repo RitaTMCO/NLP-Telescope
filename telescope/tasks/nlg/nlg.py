@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, NLGTestsets
@@ -29,16 +30,28 @@ class NLG(Task):
                             metrics:list, available_metrics:dict, num_samples: int, sample_ratio: float) -> None:
         """Web Interfave to display the plots"""
 
+
+        directory = os.getenv('HOME')
+        path = directory + "/nlp-telescope/images/"  + ref_filename + "/" + cls.name + "/" 
+
         # -------------- |Error-type analysis| ------------------
         if metric == "COMET" or metric == "BERTScore":
             st.header(":blue[Error-type analysis:]")
             plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems())
+            if st.button('Download the Error-type analysis'):
+                if not os.path.exists(path):
+                    os.makedirs(path)  
+                plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(),path)
         
         # -------------- |Segment-level scores histogram| -----------
         if len(collection_testsets.testsets[ref_filename]) > 1:
             try:
                 st.header(":blue[Segment-level scores histogram:]")
                 plot_multiple_distributions(results[metric], collection_testsets.names_of_systems())
+                if st.button('Download the Segment-level scores histogram'):
+                    if not os.path.exists(path):
+                        os.makedirs(path)  
+                    plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(),path)
             except np.linalg.LinAlgError as err:    
                 st.write(err)
             
@@ -73,6 +86,10 @@ class NLG(Task):
             #Segment-level comparison
             st.subheader("Segment-level comparison:")
             plot_multiple_segment_comparison(results[metric],system_x,system_y,cls.segment_result_source)
+            if st.button('Download the Segment-level comparison'):
+                if not os.path.exists(path):
+                    os.makedirs(path)  
+                plot_multiple_segment_comparison(results[metric],system_x,system_y,cls.segment_result_source, path)
 
             #Bootstrap Resampling
             _, middle, _ = st.columns(3)

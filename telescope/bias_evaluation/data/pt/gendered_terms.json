@@ -1,4 +1,9 @@
-[
+[   
+    {
+        "ae":"neutral",
+        "à":"female",
+        "ao":"male"
+    },
     { 
         "nobre":"neutral",
         "dama":"female",

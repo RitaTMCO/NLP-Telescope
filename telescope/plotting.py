@@ -523,10 +523,10 @@ def plot_bucket_multiple_comparison(
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/multiple-bucket-analysis.png")
+        plot.savefig(saving_dir + "/" + multiple_result.metric + "-multiple-bucket-analysis.png")
 
     if multiple_result.metric == "COMET":
-        if runtime.exists():
+        if runtime.exists() and saving_dir == None:
             col1, col2, col3 = st.columns(3)
             with col1:
                 red_bucket = st.slider(
@@ -566,7 +566,7 @@ def plot_bucket_multiple_comparison(
             )
 
     elif multiple_result.metric == "BERTScore":
-        if runtime.exists():
+        if runtime.exists() and saving_dir == None:
 
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -613,7 +613,7 @@ def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_nam
             os.makedirs(saving_dir)
         fig.write_html(saving_dir + "/multiple-scores-distribution.html")
 
-    if runtime.exists():
+    if runtime.exists() and saving_dir == None:
         st.plotly_chart(fig)
 
 
@@ -659,7 +659,7 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
             format="html"
         )
 
-    if runtime.exists():
+    if runtime.exists() and saving_dir == None:
         st.altair_chart(c, use_container_width=True)
 
 
@@ -674,7 +674,7 @@ def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[st
             os.makedirs(saving_dir)
         plt.savefig(saving_dir + "/confusion-matrix-" + system_name.replace(" ", "_") + ".png")
 
-    if runtime.exists():
+    if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
     plt.close()
@@ -694,7 +694,7 @@ def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], labe
             os.makedirs(saving_dir)
         plt.savefig(saving_dir + "/" + system_name.replace(" ", "_") + "-label-" + label + ".png")
 
-    if runtime.exists():
+    if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
     plt.close()
@@ -723,7 +723,16 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
     else:
         return None
     
-def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int, List[str]], gender_sys_seg: Dict[int, List[str]], ids: List[int], saving_dir:str = None):
+def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int, List[str]], gender_sys_seg: Dict[int, List[str]], 
+                  text_groups_ref_per_seg: Dict[int, List[Dict[str,str]]],text_groups_sys_per_seg: Dict[int, List[Dict[str,str]]], 
+                  ids: List[int], saving_dir:str = None):
+        
+    def gender_terms(text_groups: List[Dict[str,str]]):
+        terms = ""
+        for token in text_groups:
+            terms += token["term"] + ":" + token["gender"] + ", "
+        return terms[:-2]
+
     n = len(gender_refs_seg)
     if not ids: 
         ids = random.sample(range(n),n)
@@ -734,16 +743,76 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
         if len(bias_segments) == num:
             break
         if (gender_refs_seg[i] != gender_sys_seg[i]) and ("line " + str(i+1) not in bias_segments):
+            terms_ref = gender_terms(text_groups_ref_per_seg[i])
+            terms_sys = gender_terms(text_groups_sys_per_seg[i])
             bias_segments.append("line " + str(i+1))
-            table.append([i+1, ref[i], output_sys[i]])
-    
+            table.append([i+1, ref[i], output_sys[i], terms_ref, terms_sys])
+
     if len(bias_segments) != 0:
-        df = pd.DataFrame(np.array(table), columns=["line", "reference", "system output"])
+        df = pd.DataFrame(np.array(table), columns=["line", 
+                                                    "reference", "system output", 
+                                                    "identity term and its gender in reference", "identity term and its gender in output"])
         if saving_dir is not None:
             df.to_csv(saving_dir + "/bias-segments.csv")
         return df.sort_index()
     else:
         return None
+
+def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None):
+    table = { 
+            "PPV" : [],
+            "FDR": [],
+            "FOR": [],
+            "NPV": [],
+            "TPR": [],
+            "FPR":[],
+            "FNR":[],
+            "TNR": []
+    }
+    matrix = multilabel_confusion_matrix(true, pred, labels=labels)
+    num = len(labels)
+    for i in range(num):
+        tn,fp,fn,tp = list(list(matrix[i][0]) + list(matrix[i][1]))
+        if sum([tp,fp]) == 0:
+            table["PPV"].append(0)
+            table["FDR"].append(0)
+        else:
+            table["PPV"].append(tp/sum([tp,fp]))
+            table["FDR"].append(fp/sum([tp,fp]))
+
+        if sum([tn,fn]) == 0:
+            table["FOR"].append(0)
+            table["NPV"].append(0)
+        else:
+            table["FOR"].append(fn/sum([tn,fn]))
+            table["NPV"].append(tn/sum([tn,fn]))
+            
+        if sum([tp,fn]) == 0:
+            table["TPR"].append(0)
+        else:
+            table["TPR"].append(tp/sum([tp,fn]))
+            
+        if sum([fp,tn]) == 0:
+            table["FPR"].append(0)
+        else:
+            table["FPR"].append(fp/sum([fp,tn]))
+            
+        if sum([fn,tp]) == 0:
+            table["FNR"].append(0)
+        else:
+            table["FNR"].append(fn/sum([fn,tp]))
+       
+        if sum([tn,fp]) == 0:
+            table["TNR"].append(0)
+        else:
+            table["TNR"].append(tn/sum([tn,fp]))
+
+    df = pd.DataFrame(table)
+    df.index = labels
+    if saving_dir is not None:
+        df.to_csv(saving_dir + "/rates.csv")
+    return df
+  
 
 def analysis_labels_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str):
     number_of_systems = len(systems_names)
@@ -807,7 +876,7 @@ def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str
     plt = analysis_labels_bucket(number_of_correct_labels, sys_names, labels, "Number of times each label was identified correctly")
     if saving_dir is not None:
         plt.savefig(saving_dir + "/number-of-correct-labels-of-each-system.png")
-    if runtime.exists():
+    if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
     plt.close()
@@ -828,7 +897,7 @@ def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[s
     plt = analysis_labels_bucket(number_of_incorrect_labels, sys_names, labels, "Number of times each label was identified incorrectly")
     if saving_dir is not None:
         plt.savefig(saving_dir + "/number-of-incorrect-labels-of-each-system.png")
-    if runtime.exists():
+    if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
     plt.close()
@@ -845,7 +914,7 @@ def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:
     plt = analysis_labels_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
     if saving_dir is not None:
         plt.savefig(saving_dir + "/" + metric + "-analysis-labels-bucket.png")
-    if runtime.exists():
+    if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
     plt.close()
