@@ -676,10 +676,11 @@ def n_compare_nlg(
     multiple=True,
 )
 @click.option(
-    "--label",
+    "--labels",
     "-l",
     required=True,
-    multiple=True,
+    multiple=False,
+    type=click.File(),
     help="Existing labels"
 )
 @click.option(
@@ -726,14 +727,14 @@ def n_compare_classification(
     source: click.File,
     system_output: Tuple[click.File],
     reference: Tuple[click.File],
-    label: Union[Tuple[str], str],
+    labels: click.File,
     metric: Union[Tuple[str], str],
     filter: Union[Tuple[str], str],
     seg_metric: str,
     output_folder: str,
     systems_names: click.File
 ):  
-    collection = Classification.input_cli_interface(source,systems_names,system_output,reference,','.join(label))
+    collection = Classification.input_cli_interface(source,systems_names,system_output,reference,"", labels)
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 

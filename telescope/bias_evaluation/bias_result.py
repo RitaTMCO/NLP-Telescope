@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 
 from typing import List, Dict
+from telescope import PATH_DOWNLOADED_PLOTS
 from telescope.collection_testsets import CollectionTestsets
 from telescope.metrics.metric import MetricResult, MultipleMetricResults
 from telescope.plotting import ( 
@@ -147,11 +148,10 @@ class MultipleBiasResults():
 
 
     def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets, ref_name:str, option_bias):
-        directory = os.getenv('HOME')
         if option_bias:
-            path = directory + "/nlp-telescope/images/"  + ref_name + "/bias_evaluation/" + option_bias + "/"
+            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_name + "/bias_evaluation/" + option_bias + "/"
         else:
-            path = directory + "/nlp-telescope/images/"  + ref_name + "/bias_evaluation/"
+            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_name + "/bias_evaluation/"
     
         df = self.display_bias_evaluations_informations()
         st.dataframe(df)
@@ -167,6 +167,12 @@ class MultipleBiasResults():
             collection_testsets.names_of_systems(),
             index=0,
             key="cm")
+        
+        rates = self.display_rates_of_one_system(collection_testsets, system_name)
+        st.dataframe(rates)
+        _,middle,_ = st.columns(3)
+        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_bias_rates.csv", dataframe=rates, column=middle)
+
         self.display_confusion_matrix_of_one_system(collection_testsets,system_name)
         
         group = st.selectbox(
@@ -175,7 +181,11 @@ class MultipleBiasResults():
             index=0)
         self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,system_name,group)
 
-        if st.button('Download all Confusion Matrices of all Systems'):
+        st.text("\n")
+
+        _,middle,_ = st.columns(3)
+
+        if middle.button('Download all Confusion Matrices of all Systems'):
             for sys_name in collection_testsets.names_of_systems():
                 path_dir = path + sys_name.replace(" ", "_") + "/"
                 if not os.path.exists(path_dir):
@@ -183,11 +193,6 @@ class MultipleBiasResults():
                 self.display_confusion_matrix_of_one_system(collection_testsets,sys_name,path_dir)
                 for grop in self.groups:
                     self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,sys_name,grop,path_dir)
-
-
-        rates = self.display_rates_of_one_system(collection_testsets, system_name)
-        st.dataframe(rates)
-        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_bias_rates.csv", dataframe=rates)
 
         st.subheader("Analysis Of Each Label")
         self.display_analysis_labels(collection_testsets)
@@ -198,7 +203,11 @@ class MultipleBiasResults():
         st.subheader("Number of times each group was identified incorrectly")            
         self.display_number_of_incorrect_labels_of_each_system(collection_testsets)
 
-        if st.button('Download all Plots'):
+        st.text("\n")
+
+        _,middle,_ = st.columns(3)
+
+        if middle.button('Download the four plots above'):
             if not os.path.exists(path):
                 os.makedirs(path)  
             self.display_analysis_labels(collection_testsets,path)
@@ -206,7 +215,7 @@ class MultipleBiasResults():
             self.display_number_of_incorrect_labels_of_each_system(collection_testsets,path)
 
 
-        st.subheader("Segements with Bias")
+        st.subheader("Segments with Bias")
         click = 0
         system_name = st.selectbox(
             "**Select the System**",
@@ -215,7 +224,7 @@ class MultipleBiasResults():
                 key="bias")
         
         sys_id = collection_testsets.system_name_id(system_name)
-        click = "click_" + system_name + sys_id
+        click = "click_" + system_name + sys_id + "bias_evaluation"
         if click not in st.session_state:
             st.session_state[click] =  0
         def callback():
@@ -230,7 +239,8 @@ class MultipleBiasResults():
 
             if dataframe is not None:
                 st.dataframe(dataframe)
-                export_dataframe(label="Export table with segments", name=system_name.replace(" ", "_") + "_bias_segments.csv", dataframe=dataframe)
+                _,middle,_ = st.columns(3)
+                export_dataframe(label="Export table with segments", name=system_name.replace(" ", "_") + "_bias_segments.csv", dataframe=dataframe, column=middle)
             else:
                 st.warning("There are no segments with bias.")
 

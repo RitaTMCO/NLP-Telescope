@@ -14,14 +14,16 @@
 # limitations under the License.
 import streamlit as st
 import requests
+import os
 
 from PIL import Image
 
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleMetricResults
-from telescope.collection_testsets import CollectionTestsets
+from telescope.collection_testsets import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
-from telescope.plotting import export_dataframe
+from telescope.plotting import export_dataframe, analysis_metrics
+from telescope import PATH_DOWNLOADED_PLOTS
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
@@ -135,14 +137,14 @@ cache_max_entries = 30  # 1 hour cache time for each object
 
 # --------| Filters |-----------
 st.cache(
-    hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
+    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
     suppress_st_warning=True,
     show_spinner=False,
     allow_output_mutation=True,
     ttl=cache_time,
     max_entries=cache_max_entries,
 )
-def apply_filters(testset, filters, ref_name, source_language, target_language, labels):
+def apply_filters(testset, filters, ref_name, source_language, target_language):
     for filter in filters:
         with st.spinner(f"Applying {filter} filter for reference {ref_name}..." ):
             if filter == "length":
@@ -168,7 +170,7 @@ def hash_metrics(metrics):
     return " ".join([m.name for m in metrics])
 
 @st.cache(
-    hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
+    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
     show_spinner=False,
     allow_output_mutation=True,
     ttl=cache_time,
@@ -201,8 +203,7 @@ def run_all_metrics(collection, metrics, filters):
             corpus_size = len(testset)
             collection_testsets.testsets[ref_name] = apply_filters(testset,filters,ref_name,
                                                                 source_language,
-                                                                target_language,
-                                                                labels)
+                                                                target_language)
             st.success("Corpus reduced in {:.2f}%".format(
                 (1 - (len(collection_testsets.testsets[ref_name]) / corpus_size)) 
                     * 100) + " for reference " + ref_name)
@@ -222,7 +223,7 @@ def run_all_metrics(collection, metrics, filters):
 # --------| Bias Evaluation |-----------
 
 @st.cache(
-    hash_funcs={CollectionTestsets: CollectionTestsets.hash_func},
+    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
     show_spinner=False,
     allow_output_mutation=True,
     ttl=cache_time,
@@ -259,7 +260,6 @@ def rename_system(system_name,sys_id):
 # --------------------  APP  --------------------
 
 st.title("Welcome to NLP-Telescope! :telescope:")
-
 
 collection_testsets = available_tasks[task].input_web_interface()
 
@@ -311,13 +311,25 @@ if collection_testsets:
 
     st.write("---")
     st.title("Metric Analysis")
+    st.text("\n\n\n")
 
     metrics_results = metrics_results_per_ref[ref_filename]
 
     if len(metrics_results) > 0:
+        left,right = st.columns([0.3, 0.7])
+        left_2,right_2 = st.columns([0.3, 0.7])
+        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_filename + "/"  
+        
         dataframe = MultipleMetricResults.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
-        export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe)
-        st.dataframe(dataframe)
+        left.dataframe(dataframe)
+        analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names,column=right)
+
+        left_2,right_2 = st.columns([0.3, 0.7])
+        export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe, column=left_2)
+        if right_2.button('Download the analysis of each metric'):
+            if not os.path.exists(path):
+                os.makedirs(path)  
+            analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names, path)
     
     
     if metric in metrics_results:

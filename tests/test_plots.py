@@ -296,5 +296,5 @@ class TestPlots(unittest.TestCase):
     
     def test_incorrect_examples(self):
         num = int(len(self.testset_class.ref)/4) + 1
-        incorrect_examples(self.testset_class, "Sys 1", num, [], [], DATA_PATH)
+        incorrect_examples(self.testset_class, "Sys 1", num, [], [], [], DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.csv")))

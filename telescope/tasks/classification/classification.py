@@ -3,6 +3,7 @@ import os
 import streamlit as st
 
 from typing import Tuple
+from telescope import PATH_DOWNLOADED_PLOTS
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, ClassTestsets
 from telescope.metrics import AVAILABLE_CLASSIFICATION_METRICS
@@ -13,6 +14,7 @@ from telescope.plotting import (
     confusion_matrix_focused_on_one_label,
     analysis_labels,
     incorrect_examples,
+    rates_table,
     export_dataframe
 )
 
@@ -31,18 +33,15 @@ class Classification(Task):
 
     @staticmethod
     def input_cli_interface(source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str) -> CollectionTestsets:
+                      extra_info:str="",labels_file:click.File=None) -> CollectionTestsets:
         """CLI Interface to collect the necessary inputs to realization of the task evaluation."""
-        labels = extra_info
-        return  ClassTestsets.read_data_cli(source, system_names_file, systems_output, reference, labels)
+        return  ClassTestsets.read_data_cli(source, system_names_file, systems_output, reference, extra_info, labels_file)
     
     @classmethod
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str) -> None:
         """Web Interfave to display the plots"""
 
-        directory = os.getenv('HOME')
-        path = directory + "/nlp-telescope/images/"  + ref_filename + "/" + cls.name + "/" 
-
+        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_filename + "/" 
 
         ref_id = collection_testsets.refs_indexes[ref_filename]
         testset = collection_testsets.testsets[ref_filename]
@@ -57,9 +56,17 @@ class Classification(Task):
             names_of_systems,
             index=0
         )
+        system = collection_testsets.system_name_id(system_name)
+
+        # Rates
+        st.subheader("Rates")
+        df_rates = rates_table(labels,testset.ref,testset.systems_output[system])
+        st.dataframe(df_rates)
+        _,middle,_ = st.columns(3)
+        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_rates.csv", dataframe=df_rates,column=middle)
 
         # Overall Confusion Matrix
-        system = collection_testsets.system_name_id(system_name)
+
         st.subheader("Confusion Matrix of :blue[" + system_name + "]")
         confusion_matrix_of_system(testset.ref,testset.systems_output[system],labels,system_name)
 
@@ -74,7 +81,8 @@ class Classification(Task):
         )
         confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[system_name],label,labels,system_name)
 
-        if st.button('Download all Confusion Matrices of all Systems'):
+        _,middle,_ = st.columns(3)
+        if middle.button('Download all confusion matrices of all systems'):
             for sys_name in collection_testsets.names_of_systems():
                 path_dir = path + sys_name.replace(" ", "_") + "/"
                 if not os.path.exists(path_dir):
@@ -88,7 +96,9 @@ class Classification(Task):
         #-------------- |Analysis Of Each Label| --------------------
         st.header(":blue[Analysis Of Each Label]")
         analysis_labels(results[metric], collection_testsets.names_of_systems(), labels)
-        if st.button('Download the plot'):
+
+        _,middle,_ = st.columns(3)
+        if middle.button('Download the plot'):
             if not os.path.exists(path):
                 os.makedirs(path)  
             analysis_labels(results[metric], collection_testsets.names_of_systems(), labels, path)
@@ -105,10 +115,11 @@ class Classification(Task):
 
         system = collection_testsets.system_name_id(system_name)
 
-        num = 'num_' + system + "_" + ref_id
-        incorrect_ids = 'incorrect_ids_' + system + "_" + ref_id
-        table = 'tables_' + system + "_" + ref_id
-        num_incorrect_ids = 'num_incorrect_ids_' + system + "_" + ref_id
+        num = 'num_' + system_name + system + "_" + ref_id
+        incorrect_ids = 'incorrect_ids_' + system_name + system + "_" + ref_id
+        table = 'tables_' + system_name + system + "_" + ref_id
+        num_incorrect_ids = 'num_incorrect_ids_' + system_name + system + "_" + ref_id
+        click = "click_" + system_name + system + "bias_evaluation"
         
         if num not in st.session_state:
             if len(testset.ref) <= 55:
@@ -121,19 +132,26 @@ class Classification(Task):
             st.session_state[table] = []
         if num_incorrect_ids  not in st.session_state:
             st.session_state[num_incorrect_ids] = 0
+        if click not in st.session_state:
+            st.session_state[click] =  1
 
-        df = incorrect_examples(testset, system, st.session_state[num], st.session_state[incorrect_ids],st.session_state[table])
-        
-        export_dataframe(label="Export incorrect examples", name=system_name + "_incorrect-examples.csv", dataframe=df)
-
+        if st.session_state[click] == 1:
+            num_segments = len(collection_testsets.testsets[ref_filename])
+            df = incorrect_examples(testset, system, st.session_state[num], st.session_state[incorrect_ids],st.session_state[table], [i for i in range(num_segments)])
+        else:
+            df = incorrect_examples(testset, system, st.session_state[num], st.session_state[incorrect_ids],st.session_state[table])
+    
         if df is not None:
             st.dataframe(df)
+            export_dataframe(label="Export incorrect examples", name=system_name + "_incorrect-examples.csv", dataframe=df)
+            
             old_num_incorrect_ids = st.session_state[num_incorrect_ids]
             new_num_incorrect_ids = len(st.session_state[incorrect_ids])
 
             def callback():
                 st.session_state[num] +=  st.session_state[num] 
                 st.session_state[num_incorrect_ids] = new_num_incorrect_ids
+                st.session_state[click] +=  1
 
             if old_num_incorrect_ids != new_num_incorrect_ids:
                 _, middle, _ = st.columns(3)
@@ -160,9 +178,10 @@ class Classification(Task):
             if not os.path.exists(output_file):
                 os.makedirs(output_file)            
             confusion_matrix_of_system(testset.ref,testset.systems_output[sys_id],labels,sys_name,output_file)
+            rates_table(labels,testset.ref,testset.systems_output[sys_id],output_file)
 
             num = 15
-            incorrect_examples(testset,sys_id,num,[],[], output_file)
+            incorrect_examples(testset,sys_id,num,[],[],[], output_file)
 
             label_file = output_file + "/" + "singular_confusion_matrix"
             if not os.path.exists(label_file):

@@ -22,6 +22,7 @@ import pandas as pd
 import plotly.figure_factory as ff
 import streamlit as st
 import random
+import spacy
 
 from streamlit import runtime
 from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix, ConfusionMatrixDisplay
@@ -478,10 +479,7 @@ def update_multiple_buckets(
     return plt
 
 
-def plot_bucket_multiple_comparison(
-    multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None
-) -> None:
-
+def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None) -> None:
 
     systems_results_seg_scores = {
         system: metric_system.seg_scores
@@ -495,14 +493,10 @@ def plot_bucket_multiple_comparison(
     )
 
 
-    max_score = max(
-        [ max(seg_scores) 
-        for seg_scores in list(systems_results_seg_scores.values())
-        ]
-    )
-
-
     if multiple_result.metric == "COMET":
+        values = [0.1,0.3,0.7]
+        limits = [0.3,0.5,0.7]
+        step = 0.1
         plot = update_multiple_buckets(
             systems_results_seg_scores,
             systems_names,
@@ -510,41 +504,47 @@ def plot_bucket_multiple_comparison(
             0.3,
             0.7,
         )   
+        
     elif multiple_result.metric == "BERTScore":
+        values = [0.50,0.70,0.90]
+        limits = [0.50,0.70,0.90]
+        step = 0.05
         plot = update_multiple_buckets(
             systems_results_seg_scores,
             systems_names,
-            -0.75,
-            0.0,
-            0.75,
+            0.50,
+            0.70,
+            0.90,
         )  
+    
+    if min_score >= values[0]:
+        min_score = 0.0
 
 
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/" + multiple_result.metric + "-multiple-bucket-analysis.png")
-
-    if multiple_result.metric == "COMET":
-        if runtime.exists() and saving_dir == None:
-            col1, col2, col3 = st.columns(3)
-            with col1:
+        plot.savefig(saving_dir + "/" + multiple_result.metric + "-multiple-bucket-analysis.png", bbox_inches='tight')
+    
+    if runtime.exists() and saving_dir == None:
+        col1, col2, col3 = st.columns(3)
+        with col1:
                 red_bucket = st.slider(
-                    "Red bucket max treshold", min_score, 0.3, value=0.1, step=0.1, key="bucket1"
+                    "Red bucket max treshold", min_score, limits[0], value=values[0], step=step, key="bucket1"
                 )
 
-            with col2:
+        with col2:
                 yellow_bucket = st.slider(
-                    "Yellow bucket max treshold", red_bucket, 0.5, value=0.3, step=0.1, key="bucket2"
+                    "Yellow bucket max treshold", red_bucket, limits[1], value=values[1], step=step, key="bucket2"
                 )   
 
-            with col3:
+        with col3:
                 blue_bucket = st.slider(
-                    "Blue bucket max treshold", yellow_bucket, 0.8, value=0.7, step=0.1, key="bucket3"
+                    "Blue bucket max treshold", yellow_bucket, limits[2], value=values[2], step=step, key="bucket3"
              )
+        left, right = st.columns([0.3,0.7])
 
-            right, left = st.columns(2)
-            left.pyplot(
+        right.pyplot(
                 update_multiple_buckets(
                     systems_results_seg_scores,
                     systems_names,
@@ -553,61 +553,40 @@ def plot_bucket_multiple_comparison(
                     blue_bucket,
                 )
             )
-            plt.clf()
-            right.markdown(
-                """
-            The bucket analysis separates translations according to 4 different categories:
+
+        plt.clf()
+        plt.close()
+
+        left.markdown(
+                    """
+                    The bucket analysis separates segments according to 4 different categories:
             
-            - **Green bucket:** Translations without errors.
-            - **Blue bucket:** Translations with minor errors.
-            - **Yellow bucket:** Translations with major errors.
-            - **Red bucket:** Translations with critical errors.
-            """
-            )
+                    - **:green[Green bucket:]** Segments without errors.
+                    - **:blue[Blue bucket:]** Segments with minor errors.
+                    - **:orange[Yellow bucket:]** Segments with major errors.
+                    - **:red[Red bucket:]** Segments with critical errors.
+                    """
+        )
+        return left
 
-    elif multiple_result.metric == "BERTScore":
-        if runtime.exists() and saving_dir == None:
 
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                red_bucket = st.slider(
-                    "Red bucket max treshold", min_score, -0.5, value=-0.75, step=0.05, key="bucket1"
-                )
 
-            with col2:
-                yellow_bucket = st.slider(
-                    "Yellow bucket max treshold", red_bucket, 0.5, value=0.0, step=0.05, key="bucket2"
-                )
 
-            with col3:
-                blue_bucket = st.slider(
-                    "Blue bucket max treshold", yellow_bucket, max_score, value=0.75, step=0.05, key="bucket3"
-                )
-
-            st.pyplot(
-                update_multiple_buckets(
-                    systems_results_seg_scores,
-                    systems_names,
-                    red_bucket,
-                    yellow_bucket,
-                    blue_bucket,
-                )
-            )
-            plt.clf()
-            plt.close()
 
 def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None) -> None:
     scores_list = [
         metric_system.seg_scores 
         for metric_system in list(multiple_result.systems_metric_results.values())]
-
     scores = np.array(scores_list).T
     hist_data = [scores[:, i] for i in range(scores.shape[1])]
     fig = ff.create_distplot(
         hist_data,
         sys_names,
         bin_size=[0.1 for _ in range(scores.shape[1])],
-    )
+    ) 
+    fig.update_layout(xaxis_title="Score", yaxis_title="Probability Density")
+    fig.update_xaxes( title_standoff = 40)
+
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
@@ -667,15 +646,22 @@ def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[st
     matrix = confusion_matrix(true, pred, labels=labels)
     conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix,display_labels=labels)
     conf_mat.plot()
+
+    ratio = int((len(labels)/5)) * 3
+
+    _, ax = plt.subplots(figsize=(5 + ratio, 5 + ratio))
+    conf_mat.plot(ax=ax)
+
     plt.title("Confusion Matrix of " + system_name)
 
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/confusion-matrix-" + system_name.replace(" ", "_") + ".png")
+        plt.savefig(saving_dir + "/confusion-matrix-" + system_name.replace(" ", "_") + ".png", bbox_inches='tight')
 
     if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
+
     plt.clf()
     plt.close()
 
@@ -692,34 +678,38 @@ def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], labe
     if saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/" + system_name.replace(" ", "_") + "-label-" + label + ".png")
+        plt.savefig(saving_dir + "/" + system_name.replace(" ", "_") + "-label-" + label + ".png",bbox_inches='tight')
 
     if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
     plt.close()
 
-def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], 
+def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], ids:List[int]=[],
                        saving_dir:str = None):
     src = testset.src
     true = testset.ref
     pred = testset.systems_output[system]
 
     n = len(true)
-    ids = random.sample(range(n),n)
+    if not ids:
+        ids = random.sample(range(n),n)
+
+    lines = [int(id.split("\t")[-1]) for id in incorrect_ids]
     
     for i in ids:
         if len(incorrect_ids) == num:
             break
-        if (true[i] != pred[i]) and ("line " + str(i+1) not in incorrect_ids):
-            incorrect_ids.append("line " + str(i+1))
+        if (true[i] != pred[i]) and ("line" + "\t" + str(i+1) not in incorrect_ids):
+            incorrect_ids.append("line" + "\t" + str(i+1))
+            lines.append(i+1)
             table.append([src[i], true[i], pred[i]])
     
     if len(incorrect_ids) != 0:
-        df = pd.DataFrame(np.array(table), index=incorrect_ids, columns=["example", "true label", "predicted label"])
+        df = pd.DataFrame(np.array(table), index=lines, columns=["example", "true label", "predicted label"])
         if saving_dir is not None:
             df.to_csv(saving_dir + "/incorrect-examples.csv")
-        return df
+        return df.sort_index()
     else:
         return None
     
@@ -738,6 +728,7 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
         ids = random.sample(range(n),n)
     num = 10
     bias_segments = list()
+    lines = list()
     table = list()
     for i in ids:
         if len(bias_segments) == num:
@@ -746,11 +737,11 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
             terms_ref = gender_terms(text_groups_ref_per_seg[i])
             terms_sys = gender_terms(text_groups_sys_per_seg[i])
             bias_segments.append("line " + str(i+1))
-            table.append([i+1, ref[i], output_sys[i], terms_ref, terms_sys])
+            lines.append(i+1)
+            table.append([ref[i], output_sys[i], terms_ref, terms_sys])
 
     if len(bias_segments) != 0:
-        df = pd.DataFrame(np.array(table), columns=["line", 
-                                                    "reference", "system output", 
+        df = pd.DataFrame(np.array(table), index=lines, columns=["reference", "system output", 
                                                     "identity term and its gender in reference", "identity term and its gender in output"])
         if saving_dir is not None:
             df.to_csv(saving_dir + "/bias-segments.csv")
@@ -759,15 +750,8 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
         return None
 
 def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None):
-    table = { 
-            "PPV" : [],
-            "FDR": [],
-            "FOR": [],
-            "NPV": [],
-            "TPR": [],
-            "FPR":[],
-            "FNR":[],
-            "TNR": []
+    table = { "PPV" : [], "FDR": [], "FOR": [], "NPV": [],
+            "TPR": [], "FPR":[], "FNR":[], "TNR": []
     }
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
     num = len(labels)
@@ -814,7 +798,7 @@ def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=No
     return df
   
 
-def analysis_labels_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str):
+def analysis_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str):
     number_of_systems = len(systems_names)
     number_of_labels = len(labels)
     seg_scores_label = list(seg_scores_dict.values())
@@ -833,10 +817,11 @@ def analysis_labels_bucket(seg_scores_dict: Dict[str,List[float]], systems_names
     axs = [plt.bar(r, seg_scores_label[0], edgecolor="white", width=barWidth)]
 
     for i in range(1, number_of_labels):
-        bottom = sum(seg_scores_label[:i])
-        axs.append(plt.bar(r, seg_scores_label[i], bottom=bottom, edgecolor="white", 
-                        width=barWidth))
-
+        if all(seg_score >=0 for seg_score in seg_scores_label[i]):
+            bottom = sum([seg_score_label_i for seg_score_label_i in seg_scores_label[:i] if all(seg_score >=0 for seg_score in seg_score_label_i)])
+        else:
+            bottom =  sum([seg_score_label_i for seg_score_label_i in seg_scores_label[:i] if all(seg_score <0 for seg_score in seg_score_label_i)])
+        axs.append(plt.bar(r, seg_scores_label[i], bottom=bottom, edgecolor="white", width=barWidth))
 
     for i in range(number_of_systems):
         for ax in axs:
@@ -850,13 +835,14 @@ def analysis_labels_bucket(seg_scores_dict: Dict[str,List[float]], systems_names
             color=color,
             fontsize=font,
             )
-    
+
     plt.xticks(r, names,fontsize=18)
     plt.yticks(fontsize=22)
     plt.xlabel("Model",fontsize=22)
     plt.ylabel("Score",fontsize=22)
-    plt.legend(labels)
+    plt.legend(labels,fontsize = 'x-large',bbox_to_anchor=(1.02, 1))
     plt.title(title,fontsize=22,pad=25)
+    plt.axhline(linewidth=1, color='black')
 
     return plt
 
@@ -873,9 +859,9 @@ def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str
             if t == p:
                 number_of_correct_labels[t][sys_i] += 1
     
-    plt = analysis_labels_bucket(number_of_correct_labels, sys_names, labels, "Number of times each label was identified correctly")
+    plt = analysis_bucket(number_of_correct_labels, sys_names, labels, "Number of times each label was identified correctly")
     if saving_dir is not None:
-        plt.savefig(saving_dir + "/number-of-correct-labels-of-each-system.png")
+        plt.savefig(saving_dir + "/number-of-correct-labels-of-each-system.png", bbox_inches='tight')
     if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
@@ -894,9 +880,9 @@ def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[s
             if t != p:
                 number_of_incorrect_labels[t][sys_i] += 1
 
-    plt = analysis_labels_bucket(number_of_incorrect_labels, sys_names, labels, "Number of times each label was identified incorrectly")
+    plt = analysis_bucket(number_of_incorrect_labels, sys_names, labels, "Number of times each label was identified incorrectly")
     if saving_dir is not None:
-        plt.savefig(saving_dir + "/number-of-incorrect-labels-of-each-system.png")
+        plt.savefig(saving_dir + "/number-of-incorrect-labels-of-each-system.png",bbox_inches='tight')
     if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
     plt.clf()
@@ -911,7 +897,7 @@ def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:
                 for i, label in enumerate(labels)}
     metric = result.metric
 
-    plt = analysis_labels_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
+    plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
     if saving_dir is not None:
         plt.savefig(saving_dir + "/" + metric + "-analysis-labels-bucket.png")
     if runtime.exists() and saving_dir == None:
@@ -919,12 +905,86 @@ def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:
     plt.clf()
     plt.close()
 
+def analysis_metrics(multiple_metrics_results: List[MultipleMetricResults], systems_names:Dict[str, str], saving_dir: str = None, column=None):
+    metrics = [m_res.metric for m_res in multiple_metrics_results]
 
-def export_dataframe(label:str, name:str, dataframe:pd.DataFrame):
-    st.download_button(
-        label = label,
-        data=dataframe.to_csv().encode('utf-8'),
-        file_name=name,
-        mime='text/csv',
-        key ='export_' + name
-    )
+    scores_per_metric = {m_res.metric: np.array([m_res.systems_metric_results[sys_id].sys_score for sys_id in list(systems_names.keys())]) 
+            for m_res in multiple_metrics_results}
+
+    plt = analysis_bucket(scores_per_metric, list(systems_names.values()), metrics, "Analysis of each metric") 
+
+    if saving_dir is not None:
+        plt.savefig(saving_dir + "/analysis-metric-score.png", bbox_inches='tight')
+    if runtime.exists() and saving_dir == None:
+        if column == None:
+            st.pyplot(plt)
+        else:
+            column.pyplot(plt)
+    plt.clf()
+    plt.close()
+    
+
+
+def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str=None):
+    def remove_stop_words_and_punct(text:str,nlp):
+        final_text = ""
+        doc = nlp(text.lower())
+        for token in doc:
+            if not token.is_stop and not token.is_punct:
+                final_text += " " + token.text
+        return nlp(final_text)
+
+    if language == "en":
+        nlp = spacy.load("en_core_web_lg")
+    elif language == "pt":
+        nlp = spacy.load("pt_core_news_lg")
+    else:
+        return None
+
+    docs_src = [remove_stop_words_and_punct(seg,nlp) for seg in src]
+    docs_output = [remove_stop_words_and_punct(seg,nlp) for seg in output]
+    num_seg_src = len(docs_src)
+
+    table = []
+
+    if runtime.exists() and saving_dir == None:
+        min_values = st.slider(
+                    "Minimum value of similarity", 0.0, 1.0, value=0.7, step=0.05, key="similarity")
+
+    for seg_i in range(num_seg_src):
+        if len(table) == 10:
+            break
+        doc_src = docs_src[seg_i]
+        score = 0
+        for doc_out in docs_output:
+            score = doc_src.similarity(doc_out)
+            if score >= min_values and score <= 1.0:
+                table.append([seg_i+1,src[seg_i]])
+                break
+    
+    if len(table) != 0:
+        df = pd.DataFrame(np.array(table), columns=["line", "source segment"])
+        if saving_dir is not None:
+            df.to_csv(saving_dir + "/similar-source-sentences.csv")
+        return df
+    else:
+        return None
+    
+
+def export_dataframe(label:str, name:str, dataframe:pd.DataFrame, column=None):
+    if column != None:
+        column.download_button(
+            label = label,
+            data=dataframe.to_csv().encode('utf-8'),
+            file_name=name,
+            mime='text/csv',
+            key ='export_' + name
+        )
+    else:
+        st.download_button(
+            label = label,
+            data=dataframe.to_csv().encode('utf-8'),
+            file_name=name,
+            mime='text/csv',
+            key ='export_' + name
+        )

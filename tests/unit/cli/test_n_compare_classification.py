@@ -28,7 +28,7 @@ class TestCompareCli(unittest.TestCase):
     src = os.path.join(DATA_PATH, "class/src-c.txt")
     ref = os.path.join(DATA_PATH, "class/ref-c.txt")
     sys_names_file = os.path.join(DATA_PATH, "systems_names.txt")
-    labels = ["positive", "negative", "neutral"]
+    labels = os.path.join(DATA_PATH, "class/all_labels.txt")
     sys_names = ["Sys A", "Sys B", "Sys C"]
 
     def setUp(self):
@@ -47,11 +47,7 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
-            self.labels[0],
-            "-l",
-            self.labels[1],
-            "-l",
-            self.labels[2],
+            self.labels,
             "-m",
             "F1-score",
             "--seg_metric",
@@ -73,11 +69,7 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
-            self.labels[0],
-            "-l",
-            self.labels[1],
-            "-l",
-            self.labels[2],
+            self.labels,
             "-m",
             "F1-score",
             "--systems_names",
@@ -99,11 +91,7 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
-            self.labels[0],
-            "-l",
-            self.labels[1],
-            "-l",
-            self.labels[2],
+            self.labels,
             "-m",
             "F1-score",
             "-f",
@@ -127,11 +115,7 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
-            self.labels[0],
-            "-l",
-            self.labels[1],
-            "-l",
-            self.labels[2],
+            self.labels,
             "-m",
             "F1-score",
             "--seg_metric",
@@ -157,6 +141,10 @@ class TestCompareCli(unittest.TestCase):
                 )
             self.assertTrue(
                 os.path.isfile(os.path.join(DATA_PATH, 
+                    self.ref.replace("/","_")  + "/" + sys_name + "/rates.csv"))
+            )
+            self.assertTrue(
+                os.path.isfile(os.path.join(DATA_PATH, 
                     self.ref.replace("/","_")  + "/" + sys_name + "/confusion-matrix-" + sys_name.replace(" ", "_") + ".png"))
             )
             self.assertTrue(
@@ -180,6 +168,7 @@ class TestCompareCli(unittest.TestCase):
             if sys_name != "Sys C":
                 os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/incorrect-examples.csv")
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/confusion-matrix-" + sys_name.replace(" ", "_") + ".png")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/rates.csv")
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" )
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/results.csv")
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/Accuracy-analysis-labels-bucket.png")

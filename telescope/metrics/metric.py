@@ -162,12 +162,21 @@ class Metric(metaclass=abc.ABCMeta):
         """
 
         def update_wins(x_score: int, y_score: int, wins: Tuple[int]):
-            if y_score > x_score:
-                wins[1] += 1
-            elif y_score < x_score:
-                wins[0] += 1
+            if multiple_result.metric != "TER":
+                if y_score > x_score:
+                    wins[1] += 1
+                elif y_score < x_score:
+                    wins[0] += 1
+                else:
+                    wins[2] += 1
             else:
-                wins[2] += 1
+                if y_score > x_score:
+                    wins[0] += 1
+                elif y_score < x_score:
+                    wins[1] += 1
+                else:
+                    wins[2] += 1
+
             return wins
 
         def recompute_sys_scores(multiple_result: MultipleMetricResults) -> (float, float):

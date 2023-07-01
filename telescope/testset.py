@@ -41,7 +41,7 @@ class Testset:
         return len(self.ref)
 
     def __getitem__(self, i) -> Tuple[str]:
-        return self.src[i], self.mt[i], self.ref[i]
+        return self.src[i], self.ref[i], self.mt[i]
 
     def apply_filter(self, filter):
         to_keep = filter.apply_filter()
@@ -164,8 +164,13 @@ class MultipleTestset(Testset):
         return tuple([self.src[i]] + [self.ref[i]]+ [output[i] 
             for output in list(self.systems_output.values())])
 
+    @staticmethod
+    def hash_func(testset):
+        return " ".join(testset.filenames)
+
     def apply_filter(self, filter):
         to_keep = filter.apply_filter()
-        self.src = [self.src[idx] for idx in to_keep]
+        if len(self.src) == len(self.ref):
+            self.src = [self.src[idx] for idx in to_keep]
         self.ref = [self.ref[idx] for idx in to_keep]
         self.systems_output = {name: [output[idx] for idx in to_keep] for name,output in self.systems_output.items()}

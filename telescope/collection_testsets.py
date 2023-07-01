@@ -25,7 +25,7 @@ class CollectionTestsets:
         systems_ids: Dict[str, str], #id of each system. {filename:sys_id} 
         systems_names: Dict[str, str], #name of each system. {sys_id:name} 
         filenames: List[str], # all filenames
-        testsets: Dict[str, Testset] # set of testsets. Each testset refers to one reference. {reference_filename:testset}
+        testsets: Dict[str, Testset], # set of testsets. Each testset refers to one reference. {reference_filename:testset}
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
@@ -57,10 +57,6 @@ class CollectionTestsets:
         return text
 
     @staticmethod
-    def hash_func(collection):
-        return " ".join(collection.filenames)
-
-    @staticmethod
     def validate_files(src,refs,systems_names,outputs) -> None:
         refs_name = list(refs.keys())
         refs_list = list(refs.values())
@@ -89,7 +85,7 @@ class CollectionTestsets:
         source_file, sources, _, references, _, _, systems_ids, _, outputs = files
         testsets = {}
         for ref_filename, ref in references.items():
-            filenames = list(source_file.name) + list(ref_filename) + list(systems_ids.keys())
+            filenames = [source_file.name] + [ref_filename] + list(systems_ids.keys())
             testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
         return testsets
     
@@ -144,7 +140,7 @@ class CollectionTestsets:
 
     @classmethod
     def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str): 
+                      extra_info:str="", labels_file:click.File=None): 
     
         systems_ids, systems_names, outputs = {}, {}, {}
         
@@ -185,6 +181,9 @@ class CollectionTestsets:
                 refs_indexes[ref.name] = ref_id
 
         src = [l.strip() for l in source.readlines()]
+
+        if labels_file:
+            extra_info = [l.strip() for l in labels_file.readlines()]
 
         cls.validate_files(src,references,systems_names,outputs)
 
@@ -385,34 +384,33 @@ class ClassTestsets(CollectionTestsets):
         systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, MultipleTestset],
-        labels: str
+        labels: List[str]
     ) -> None:
         super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, testsets)
-        self.labels = list(set(labels.split(",")))
+        self.labels = labels
     
     @staticmethod
     def upload_labels() -> List[str]:
-        labels = st.text_input(
-            "Please input the existing labels separated by commas (e.g. 'positive,negative,neutral'):",
-            "",
-        )
-        return labels
+        labels_file = st.file_uploader("Upload the file with the existing labels separated by line", accept_multiple_files=False)
+        return labels_file
     
     @classmethod
     def read_data(cls):
         files = cls.upload_files()
         source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs = files
-        labels = cls.upload_labels()
+        labels_file = cls.upload_labels()
 
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (labels != "")):
-
+            and (labels_file is not None)):
+            
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)
 
             testsets = cls.create_testsets(files)
+
+            labels = read_lines(labels_file)
 
             return cls(source_file.name, references.keys(), refs_indexes, systems_ids, systems_names,
                 [source_file.name] +  list(references.keys()) + list(systems_ids.values()),

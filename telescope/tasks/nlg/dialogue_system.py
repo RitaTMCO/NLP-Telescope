@@ -12,6 +12,7 @@ class DialogueSystem(NLG):
     metrics = AVAILABLE_DIALOGUE_METRICS
     filters = AVAILABLE_DIALOGUE_FILTERS
     bias_evaluations = AVAILABLE_DIALOGUE_BIAS_EVALUATIONS
+    sentences_similarity = True
 
     @staticmethod
     def input_web_interface() -> CollectionTestsets:
@@ -21,7 +22,7 @@ class DialogueSystem(NLG):
     
     @staticmethod
     def input_cli_interface(source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str) -> CollectionTestsets:
+                      extra_info:str="",labels_file:click.File=None) -> CollectionTestsets:
         """CLI Interface to collect the necessary inputs to realization of the task evaluation."""
         target_language = extra_info
         return  DialogueTestsets.read_data_cli(source, system_names_file, systems_output, reference, "X-" + target_language)
