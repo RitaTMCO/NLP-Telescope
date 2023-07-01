@@ -1,0 +1,657 @@
+[
+    {
+        "": "neutral",
+        "cowgirl": "female",
+        "cowboy": "male"
+    },
+    {
+        "": "neutral",
+        "cowgirls": "female",
+        "cowboys": "male"
+    },
+    {
+        "camerapeple": "neutral",
+        "camerawomen": "female",
+        "cameramen": "male"
+    },
+    {
+        "cameraperson": "neutral",
+        "camerawoman": "female",
+        "cameraman": "male"
+    },
+    {
+        "": "neutral",
+        "busgirl": "female",
+        "busboy": "male"
+    },
+    {
+        "": "neutral",
+        "busgirls": "female",
+        "busboys": "male"
+    },
+    {
+        "": "neutral",
+        "bellgirl": "female",
+        "bellboy": "male"
+    },
+    {
+        "": "neutral",
+        "bellgirls": "female",
+        "bellboys": "male"
+    },
+    {
+        "barperson": "neutral",
+        "barwoman": "female",
+        "barman": "male"
+    },
+    {
+        "barpeople": "neutral",
+        "barwomen": "female",
+        "barmen": "male"
+    },
+    {
+        "": "neutral",
+        "seamstress": "female",
+        "tailor": "male"
+    },
+    {
+        "": "neutral",
+        "seamstress'": "female",
+        "tailors": "male"
+    },
+    {
+        "": "neutral",
+        "governess": "female",
+        "governor": "male"
+    },
+    {
+        "": "neutral",
+        "governesses": "female",
+        "governors": "male"
+    },
+    {
+        "": "neutral",
+        "adultress": "female",
+        "adultor": "male"
+    },
+    {
+        "": "neutral",
+        "adultresses": "female",
+        "adultors": "male"
+    },
+    {
+        "": "neutral",
+        "godess": "female",
+        "god": "male"
+    },
+    {
+        "": "neutral",
+        "godesses": "female",
+        "gods": "male"
+    },
+    {
+        "": "neutral",
+        "hostess": "female",
+        "host": "male"
+    },
+    {
+        "": "neutral",
+        "hostesses": "female",
+        "hosts": "male"
+    },
+    {
+        "": "neutral",
+        "abbess": "female",
+        "abbot": "male"
+    },
+    {
+        "": "neutral",
+        "abbesses": "female",
+        "abbots": "male"
+    },
+    {
+        "": "neutral",
+        "spinster": "female",
+        "bachelor": "male"
+    },
+    {
+        "": "neutral",
+        "spinsters": "female",
+        "bachelors": "male"
+    },
+    {
+        "": "neutral",
+        "baroness": "female",
+        "baron": "male"
+    },
+    {
+        "": "neutral",
+        "baronesses": "female",
+        "barons": "male"
+    },
+    {
+        "": "neutral",
+        "belle": "female",
+        "beau": "male"
+    },
+    {
+        "": "neutral",
+        "belles": "female",
+        "beaus": "male"
+    },
+    {
+        "": "neutral",
+        "bride": "female",
+        "bridegroom": "male"
+    },
+    {
+        "": "neutral",
+        "brides": "female",
+        "bridegrooms": "male"
+    },
+    {
+        "": "neutral",
+        "duchess": "female",
+        "duke": "male"
+    },
+    {
+        "": "neutral",
+        "duchesses": "female",
+        "dukes": "male"
+    },
+    {
+        "": "neutral",
+        "empress": "female",
+        "emperor": "male"
+    },
+    {
+        "": "neutral",
+        "empresses": "female",
+        "emperors": "male"
+    },
+    {
+        "": "neutral",
+        "enchantress": "female",
+        "enchanter": "male"
+    },
+    {
+        "": "neutral",
+        "fiancee": "female",
+        "fiance": "male"
+    },
+    {
+        "": "neutral",
+        "fiancees": "female",
+        "fiances": "male"
+    },
+    {
+        "": "neutral",
+        "nun": "female",
+        "priest": "male"
+    },
+    {
+        "": "neutral",
+        "nuns": "female",
+        "priests": "male"
+    },
+    {
+        "grandparent": "neutral",
+        "grandmother": "female",
+        "grandfather": "male"
+    },
+    {
+        "grandparents": "neutral",
+        "grandmothers": "female",
+        "grandfathers": "male"
+    },
+    {
+        "": "neutral",
+        "headmistress": "female",
+        "headmaster": "male"
+    },
+    {
+        "": "neutral",
+        "headmistresses": "female",
+        "headmasters": "male"
+    },
+    {
+        "": "neutral",
+        "heroine": "female",
+        "hero": "male"
+    },
+    {
+        "": "neutral",
+        "heroines": "female",
+        "heros": "male"
+    },
+    {
+        "": "neutral",
+        "lass": "female",
+        "lad": "male"
+    },
+    {
+        "": "neutral",
+        "lasses": "female",
+        "lads": "male"
+    },
+    {
+        "": "neutral",
+        "landlady": "female",
+        "landlord": "male"
+    },
+    {
+        "": "neutral",
+        "landladies": "female",
+        "landlords": "male"
+    },
+    {
+        "": "neutral",
+        "maidservant": "female",
+        "manservant": "male"
+    },
+    {
+        "": "neutral",
+        "maidservants": "female",
+        "manservants": "male"
+    },
+    {
+        "": "neutral",
+        "marchioness": "female",
+        "marquis": "male"
+    },
+    {
+        "": "neutral",
+        "masseuse": "female",
+        "masseur": "male"
+    },
+    {
+        "": "neutral",
+        "masseuses": "female",
+        "masseurs": "male"
+    },
+    {
+        "": "neutral",
+        "mistress": "female",
+        "master": "male"
+    },
+    {
+        "": "neutral",
+        "mistresses": "female",
+        "masters": "male"
+    },
+    {
+        "": "neutral",
+        "nun": "female",
+        "monk": "male"
+    },
+    {
+        "": "neutral",
+        "nuns": "female",
+        "monks": "male"
+    },
+    {
+        "": "neutral",
+        "niece": "female",
+        "nephew": "male"
+    },
+    {
+        "": "neutral",
+        "nieces": "female",
+        "nephews": "male"
+    },
+    {
+        "": "neutral",
+        "priestess": "female",
+        "priest": "male"
+    },
+    {
+        "": "neutral",
+        "priestesses": "female",
+        "priests": "male"
+    },
+    {
+        "": "neutral",
+        "sorceress": "female",
+        "sorcerer": "male"
+    },
+    {
+        "": "neutral",
+        "sorceresses": "female",
+        "sorcerers": "male"
+    },
+    {
+        "stepparent": "neutral",
+        "stepmother": "female",
+        "stepfather": "male"
+    },
+    {
+        "stepparents": "neutral",
+        "stepmothers": "female",
+        "stepfathers": "male"
+    },
+    {
+        "stepchild": "neutral",
+        "stepdaughter": "female",
+        "stepson": "male"
+    },
+    {
+        "stepchildren": "neutral",
+        "stepdaughters": "female",
+        "stepsons": "male"
+    },
+    {
+        "": "neutral",
+        "stewardess": "female",
+        "steward": "male"
+    },
+    {
+        "": "neutral",
+        "stewardesses": "female",
+        "stewards": "male"
+    },
+    {
+        "": "neutral",
+        "waitress": "female",
+        "waiter": "male"
+    },
+    {
+        "": "neutral",
+        "waitresses": "female",
+        "waiters": "male"
+    },
+    {
+        "": "neutral",
+        "widow": "female",
+        "widower": "male"
+    },
+    {
+        "": "neutral",
+        "widows": "female",
+        "widowers": "male"
+    },
+    {
+        "": "neutral",
+        "witch": "female",
+        "wizard": "male"
+    },
+    {
+        "": "neutral",
+        "witches": "female",
+        "wizards": "male"
+    },
+    {
+        "": "neutral",
+        "actress": "female",
+        "actor": "male"
+    },
+    {
+        "": "neutral",
+        "actresses": "female",
+        "actors": "male"
+    },
+    {
+        "airperson": "neutral",
+        "airwoman": "female",
+        "airman": "male"
+    },
+    {
+        "airpeople": "neutral",
+        "airwomen": "female",
+        "airmen": "male"
+    },
+    {
+        "businessperson": "neutral",
+        "businesswoman": "female",
+        "businessman": "male"
+    },
+    {
+        "businesspeople": "neutral",
+        "businesswomen": "female",
+        "businessmen": "male"
+    },
+    {
+        "chairperson": "neutral",
+        "chairwoman": "female",
+        "chairman": "male"
+    },
+    {
+        "chairpeople": "neutral",
+        "chairwomen": "female",
+        "chairmen": "male"
+    },
+    {
+        "chair": "neutral",
+        "chairwoman": "female",
+        "chairman": "male"
+    },
+    {
+        "chairs": "neutral",
+        "chairwomen": "female",
+        "chairmen": "male"
+    },
+    {
+        "parent": "neutral",
+        "mom": "female",
+        "dad": "male"
+    },
+    {
+        "parents": "neutral",
+        "moms": "female",
+        "dads": "male"
+    },
+    {
+        "": "neutral",
+        "mommy": "female",
+        "daddy": "male"
+    },
+    {
+        "": "neutral",
+        "mommies": "female",
+        "daddies": "male"
+    },
+    {
+        "": "neutral",
+        "chick": "female",
+        "dude": "male"
+    },
+    {
+        "": "neutral",
+        "chicks": "female",
+        "dudes": "male"
+    },
+    {
+        "": "neutral",
+        "gal": "female",
+        "guy": "male"
+    },
+    {
+        "": "neutral",
+        "gals": "female",
+        "guys": "male"
+    },
+    {
+        "": "neutral",
+        "girl": "female",
+        "boy": "male"
+    },
+    {
+        "": "neutral",
+        "girls": "female",
+        "boys": "male"
+    },
+    {
+        "grandchild": "neutral",
+        "granddaughter": "female",
+        "grandson": "male"
+    },
+    {
+        "grandchildren": "neutral",
+        "granddaughters": "female",
+        "grandsons": "male"
+    },
+    {
+        "": "neutral",
+        "bride": "female",
+        "groom": "male"
+    },
+    {
+        "": "neutral",
+        "brides": "female",
+        "grooms": "male"
+    },
+    {
+        "": "neutral",
+        "girl": "female",
+        "guy": "male"
+    },
+    {
+        "": "neutral",
+        "girls": "female",
+        "guys": "male"
+    },
+    {
+        "": "neutral",
+        "ladies": "female",
+        "gentlemen": "male"
+    },
+    {
+        "": "neutral",
+        "lady": "female",
+        "gentleman": "male"
+    },
+    {
+        "": "neutral",
+        "lady": "female",
+        "lord": "male"
+    },
+    {
+        "": "neutral",
+        "ladies": "female",
+        "lords": "male"
+    },
+    {
+        "": "neutral",
+        "female": "female",
+        "male": "male"
+    },
+    {
+        "": "neutral",
+        "females": "female",
+        "males": "male"
+    },
+    {
+        "": "neutral",
+        "miss": "female",
+        "sir": "male"
+    },
+    {
+        "parent": "neutral",
+        "father": "female",
+        "mother": "male"
+    },
+    {
+        "parents": "neutral",
+        "fathers": "female",
+        "mothers": "male"
+    },
+    {
+        "mx.": "neutral",
+        "mrs.": "female",
+        "mr.": "male"
+    },
+    {
+        "mx.": "neutral",
+        "ms.": "female",
+        "mr.": "male"
+    },
+    {
+        "policeperson": "neutral",
+        "policewoman": "female",
+        "policeman": "male"
+    },
+    {
+        "": "neutral",
+        "princess": "female",
+        "prince": "male"
+    },
+    {
+        "": "neutral",
+        "princesses": "female",
+        "princes": "male"
+    },
+    {
+        "": "neutral",
+        "queen": "female",
+        "king": "male"
+    },
+    {
+        "": "neutral",
+        "queens": "female",
+        "kings": "male"
+    },
+    {
+        "": "neutral",
+        "ma'am": "female",
+        "sir": "male"
+    },
+    {
+        "sibling": "neutral",
+        "sister": "female",
+        "brother": "male"
+    },
+    {
+        "siblings": "neutral",
+        "sisters": "female",
+        "brothers": "male"
+    },
+    {
+        "child": "neutral",
+        "daughter": "female",
+        "son": "male"
+    },
+    {
+        "children": "neutral",
+        "daughters": "female",
+        "sons": "male"
+    },
+    {
+        "spokesperson": "neutral",
+        "spokeswoman": "female",
+        "spokesman": "male"
+    },
+    {
+        "spokespeople": "neutral",
+        "spokeswomen": "female",
+        "spokesmen": "male"
+    },
+    {
+        "": "neutral",
+        "aunt": "female",
+        "uncle": "male"
+    },
+    {
+        "": "neutral",
+        "aunts": "female",
+        "uncles": "male"
+    },
+    {
+        "partner": "neutral",
+        "wife": "female",
+        "husband": "male"
+    },
+    {
+        "partners": "neutral",
+        "wives": "female",
+        "husbands": "male"
+    },
+    {
+        "person": "neutral",
+        "woman": "female",
+        "man": "male"
+    },
+    {
+        "people": "neutral",
+        "women": "female",
+        "men": "male"
+    }
+]

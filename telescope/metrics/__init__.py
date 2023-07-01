@@ -1,3 +1,5 @@
+import yaml
+
 from .sacrebleu import sacreBLEU
 from .chrf import chrF
 from .zero_edit import ZeroEdit
@@ -20,6 +22,9 @@ from .f1_score import F1Score
 
 from .result import MetricResult, PairwiseResult, BootstrapResult
 
+from telescope import read_yaml_file
+
+metrics_yaml = metrics_yaml = read_yaml_file("metrics.yaml")
 
 AVAILABLE_METRICS = [
     COMET,
@@ -40,15 +45,16 @@ AVAILABLE_METRICS = [
     F1Score
 ]
 
-AVAILABLE_NLG_METRICS = [
-    BERTScore,
-    #BLEURT,
-]
+names_availabels_metrics = {metric.name:metric for metric in AVAILABLE_METRICS}
 
-AVAILABLE_MT_METRICS = [COMET,sacreBLEU,chrF,TER,GLEU,ZeroEdit] + AVAILABLE_NLG_METRICS
+AVAILABLE_NLP_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["NLP metrics"]]
 
-AVAILABLE_SUMMARIZATION_METRICS = [ROUGEOne, ROUGETwo, ROUGEL] + AVAILABLE_NLG_METRICS
+AVAILABLE_NLG_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["NLG metrics"]] + AVAILABLE_NLP_METRICS
 
-AVAILABLE_DIALOGUE_METRICS = [sacreBLEU, ROUGEOne, ROUGETwo, ROUGEL] + AVAILABLE_NLG_METRICS
+AVAILABLE_MT_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Machine Translation metrics"]]  + AVAILABLE_NLG_METRICS
 
-AVAILABLE_CLASSIFICATION_METRICS = [Accuracy,Precision,Recall,F1Score]
+AVAILABLE_SUMMARIZATION_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Summarization metrics"]] + AVAILABLE_NLG_METRICS
+
+AVAILABLE_DIALOGUE_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Dialogue System metrics"]] + AVAILABLE_NLG_METRICS
+
+AVAILABLE_CLASSIFICATION_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Classification metrics"]] + AVAILABLE_NLP_METRICS

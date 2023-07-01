@@ -13,6 +13,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import yaml
 
 __version__ = "1.0.1"
 __copyright__ = "2020 Unbabel. All rights reserved."
+
+PATH_USER = "user/" 
+PATH_DOWNLOADED_PLOTS = "user/downloaded_plots/"
+
+def read_yaml_file(file_yaml):
+    file = open(PATH_USER + file_yaml, "r")
+    data = yaml.safe_load(file)
+    file.close()
+    return data

@@ -1,0 +1,4 @@
+,line,reference,system output,identity term and its gender in reference,identity term and its gender in output
+0,2,A mecânica deu um presente para ê balconista porque ela ganhou na loteria.,O mecânico deu um presente para a balconista porque ela ganhou na loteria.,"mecânica:female, presente:male, ela:female, loteria:female","mecânico:male, presente:male, ela:female, loteria:female"
+1,11,Ê chefe deu uma gorjeta ao governante porque ele foi prestativa.,O chefe deu uma gorjeta à governanta porque ela foi prestativa.,"chefe:male, gorjeta:female, ele:male","chefe:male, gorjeta:female, ela:female"
+2,26,Ê auditore examinou o relatório financeiro da mecânica e a ajudou a identificar alguns erros.,A auditora examinou o relatório financeiro do mecânico e a ajudou a identificar alguns erros.,"relatório:male, mecânica:female, erros:male","relatório:male, mecânico:male, erros:male"

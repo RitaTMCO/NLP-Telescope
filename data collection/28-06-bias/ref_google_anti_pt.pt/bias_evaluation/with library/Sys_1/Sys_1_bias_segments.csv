@@ -1,0 +1,3 @@
+,line,reference,system output,identity term and its gender in reference,identity term and its gender in output
+0,2,A médica disse ao padeiro que ela tentou o melhor.,O médico disse ao padeiro que ela tentou o melhor.,"médica:female, padeiro:male, que:male, ela:female, melhor:male","médico:male, padeiro:male, que:male, ela:female, melhor:male"
+1,3,O médico disse ao enfermeiro que ele pode voltar para casa.,O médico disse à enfermeira que ele pode voltar para casa.,"médico:male, enfermeiro:male, ele:male, casa:female","médico:male, enfermeira:female, ele:male, casa:female"

@@ -19,24 +19,24 @@ class CollectionTestsets:
 
     def __init__(
         self,
-        src_name: str,
-        refs_names: List[str],
-        refs_indexes: Dict[str, str],
-        systems_indexes: Dict[str, str],
-        systems_names: Dict[str, str],
-        filenames: List[str],
-        testsets: Dict[str, List[Testset]]
+        src_name: str, #filename of source file 
+        refs_names: List[str], #filenames of references files 
+        refs_indexes: Dict[str, str],  #id of each reference file. {filename:ref_id} 
+        systems_ids: Dict[str, str], #id of each system. {filename:sys_id} 
+        systems_names: Dict[str, str], #name of each system. {sys_id:name} 
+        filenames: List[str], # all filenames
+        testsets: Dict[str, Testset], # set of testsets. Each testset refers to one reference. {reference_filename:testset}
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
         self.refs_indexes = refs_indexes
-        self.systems_indexes = systems_indexes
+        self.systems_ids = systems_ids
         self.systems_names = systems_names
         self.filenames = filenames
         self.testsets = testsets
 
     def indexes_of_systems(self) -> List[str]:
-        return list(self.systems_indexes.values())
+        return list(self.systems_ids.values())
     
     def names_of_systems(self) -> List[str]:
         return list(self.systems_names.values())
@@ -52,13 +52,9 @@ class CollectionTestsets:
     
     def display_systems(self) -> str:
         text = ""
-        for sys_filename, sys_id in self.systems_indexes.items():
+        for sys_filename, sys_id in self.systems_ids.items():
             text += "--> " + sys_filename + " : " + self.systems_names[sys_id] + " \n"
         return text
-
-    @staticmethod
-    def hash_func(collection):
-        return " ".join(collection.filenames)
 
     @staticmethod
     def validate_files(src,refs,systems_names,outputs) -> None:
@@ -86,10 +82,10 @@ class CollectionTestsets:
 
     @staticmethod
     def create_testsets(files:list) -> Dict[str, Testset]:
-        source_file, sources, _, references, _, _, systems_indexes, _, outputs = files
+        source_file, sources, _, references, _, _, systems_ids, _, outputs = files
         testsets = {}
         for ref_filename, ref in references.items():
-            filenames = list(source_file.name) + list(ref_filename) + list(systems_indexes.keys())
+            filenames = [source_file.name] + [ref_filename] + list(systems_ids.keys())
             testsets[ref_filename] = MultipleTestset(sources, ref, outputs, filenames)
         return testsets
     
@@ -110,18 +106,18 @@ class CollectionTestsets:
                 refs_indexes[ref_file.name] = ref_id
 
         outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output, accept_multiple_files=True)
-        systems_indexes, systems_names, outputs = {}, {}, {}
+        systems_ids, systems_names, outputs = {}, {}, {}
         for output_file in outputs_files:
             output = read_lines(output_file)
             sys_id = cls.create_sys_id(output_file.name,output)
-            systems_indexes[output_file.name] = sys_id
+            systems_ids[output_file.name] = sys_id
             if cls.task + "_" + sys_id + "_rename" not in st.session_state:
                 systems_names[sys_id] = sys_id
             else:
                 systems_names[sys_id] = st.session_state[cls.task + "_" + sys_id + "_rename" ]
             outputs[sys_id] = output
 
-        return source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_indexes,systems_names,outputs
+        return source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs
 
     @classmethod
     @st.cache
@@ -144,9 +140,9 @@ class CollectionTestsets:
 
     @classmethod
     def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str): 
+                      extra_info:str="", labels_file:click.File=None): 
     
-        systems_indexes, systems_names, outputs = {}, {}, {}
+        systems_ids, systems_names, outputs = {}, {}, {}
         
         if system_names_file:
             sys_names = [l.replace("\n", "") for l in system_names_file.readlines()]
@@ -160,7 +156,7 @@ class CollectionTestsets:
                 data = [l.strip() for l in sys_file.readlines()]
                 sys_id = "Sys " + str(id)
                 id += 1
-                systems_indexes[sys_file.name] = sys_id
+                systems_ids[sys_file.name] = sys_id
                 systems_names[sys_id] = sys_name
                 outputs[sys_id] = data
             
@@ -170,7 +166,7 @@ class CollectionTestsets:
                 data = [l.strip() for l in sys_file.readlines()]
                 sys_id = "Sys " + str(id)
                 id += 1
-                systems_indexes[sys_file.name] = sys_id
+                systems_ids[sys_file.name] = sys_id
                 systems_names[sys_id] = sys_id
                 outputs[sys_id] = data
         
@@ -185,12 +181,18 @@ class CollectionTestsets:
                 refs_indexes[ref.name] = ref_id
 
         src = [l.strip() for l in source.readlines()]
-        files = [source,src,reference,references,refs_indexes,systems_output,systems_indexes,systems_names,outputs]
+
+        if labels_file:
+            extra_info = [l.strip() for l in labels_file.readlines()]
+
+        cls.validate_files(src,references,systems_names,outputs)
+
+        files = [source,src,reference,references,refs_indexes,systems_output,systems_ids,systems_names,outputs] 
 
         testsets = cls.create_testsets(files)
-    
-        return cls(source.name, references.keys(), refs_indexes, systems_indexes, systems_names,
-                    [source.name] +  list(references.keys()) + list(systems_indexes.values()), testsets, extra_info)
+
+        return cls(source.name, references.keys(), refs_indexes, systems_ids, systems_names,
+                    [source.name] +  list(references.keys()) + list(systems_ids.values()), testsets, extra_info)
     
 
 class NLGTestsets(CollectionTestsets):
@@ -201,13 +203,13 @@ class NLGTestsets(CollectionTestsets):
         src_name: str,
         refs_names: List[str],
         refs_indexes: Dict[str, str],
-        systems_indexes: Dict[str, str],
+        systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[Testset]],
+        testsets: Dict[str, Testset],
         language_pair: str
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, testsets)
+        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, testsets)
         self.language_pair = language_pair
     
     @property
@@ -236,7 +238,7 @@ class NLGTestsets(CollectionTestsets):
 
         language = cls.upload_language()
         
-        source_file,sources,ref_files,references, refs_indexes, outputs_files,systems_indexes, systems_names, outputs = files
+        source_file,sources,ref_files,references, refs_indexes, outputs_files,systems_ids, systems_names, outputs = files
 
         if ((ref_files != []) 
             and (source_file is not None) 
@@ -248,8 +250,8 @@ class NLGTestsets(CollectionTestsets):
 
             testsets = cls.create_testsets(files)
 
-            return cls(source_file.name, references.keys(), refs_indexes, systems_indexes, systems_names,
-                [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
+            return cls(source_file.name, references.keys(), refs_indexes, systems_ids, systems_names,
+                [source_file.name] +  list(references.keys()) + list(systems_ids.values()),
                 testsets, language)
 
 
@@ -263,13 +265,13 @@ class MTTestsets(NLGTestsets):
         src_name: str,
         refs_names: List[str],
         refs_indexes: Dict[str, str],
-        systems_indexes: Dict[str, str],
+        systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
+        testsets: Dict[str, MultipleTestset],
         language_pair: str,
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames,
+        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames,
                 testsets, language_pair)
     
     @staticmethod
@@ -292,13 +294,13 @@ class SummTestsets(NLGTestsets):
         src_name: str,
         refs_names: List[str],
         refs_indexes: Dict[str, str],
-        systems_indexes: Dict[str, str],
+        systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
+        testsets: Dict[str, MultipleTestset],
         language_pair: str,
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, 
+        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, 
                 testsets, language_pair)
         
     @staticmethod
@@ -335,13 +337,13 @@ class DialogueTestsets(NLGTestsets):
         src_name: str,
         refs_names: List[str],
         refs_indexes: Dict[str, str],
-        systems_indexes: Dict[str, str],
+        systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
+        testsets: Dict[str, MultipleTestset],
         language_pair: str
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, 
+        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, 
                 testsets, language_pair)
    
     @staticmethod
@@ -378,43 +380,38 @@ class ClassTestsets(CollectionTestsets):
         src_name: str,
         refs_names: List[str],
         refs_indexes: Dict[str, str],
-        systems_indexes: Dict[str, str],
+        systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
-        testsets: Dict[str, List[MultipleTestset]],
+        testsets: Dict[str, MultipleTestset],
         labels: List[str]
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_indexes, systems_names, filenames, 
-                testsets)
+        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, testsets)
         self.labels = labels
     
     @staticmethod
     def upload_labels() -> List[str]:
-        labels_list = list()
-        labels = st.text_input(
-            "Please input the existing labels separated by commas (e.g. 'positive,negative,neutral'):",
-            "",
-        )
-        if (labels != ""):
-            labels_list = list(set(labels.split(",")))
-        return labels_list
+        labels_file = st.file_uploader("Upload the file with the existing labels separated by line", accept_multiple_files=False)
+        return labels_file
     
     @classmethod
     def read_data(cls):
         files = cls.upload_files()
-        source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_indexes,systems_names,outputs = files
-        labels = cls.upload_labels()
+        source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs = files
+        labels_file = cls.upload_labels()
 
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (labels != [])):
-
+            and (labels_file is not None)):
+            
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)
 
             testsets = cls.create_testsets(files)
 
-            return cls(source_file.name, references.keys(), refs_indexes, systems_indexes, systems_names,
-                [source_file.name] +  list(references.keys()) + list(systems_indexes.values()),
+            labels = read_lines(labels_file)
+
+            return cls(source_file.name, references.keys(), refs_indexes, systems_ids, systems_names,
+                [source_file.name] +  list(references.keys()) + list(systems_ids.values()),
                 testsets, labels)

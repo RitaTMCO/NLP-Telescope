@@ -18,19 +18,23 @@ MT-Telescope command line interface (CLI)
 Main commands:
     - score     Used to download Machine Translation metrics.
 """
-from typing import List, Union, Tuple
+
 import os
 import click
-import json
 import pandas as pd
 
+from typing import List, Union, Tuple
+from copy import deepcopy
+
+from telescope.collection_testsets import NLGTestsets
 from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, AVAILABLE_MT_METRICS, PairwiseResult
 from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
-from telescope.tasks import AVAILABLE_NLG
-from telescope.metrics.result import MultipleResult
-from telescope.testset import PairwiseTestset, MultipleTestset
-from telescope.collection_testsets import NLGTestsets, ClassTestsets
-from telescope.plot import ClassificationPlot, NLGPlot
+from telescope.tasks import AVAILABLE_NLG_TASKS, AVAILABLE_CLASSIFICATION_TASKS
+from telescope.bias_evaluation import AVAILABLE_BIAS_EVALUATIONS
+from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
+from telescope.tasks.classification import Classification
+from telescope.metrics.result import MultipleMetricResults
+from telescope.testset import PairwiseTestset
 from telescope.plotting import (
     plot_segment_comparison,
     plot_pairwise_distributions,
@@ -40,10 +44,12 @@ from telescope.plotting import (
 available_metrics = {m.name: m for m in AVAILABLE_METRICS}
 available_mt_metrics = {m.name: m for m in AVAILABLE_MT_METRICS}
 available_class_metrics = {m.name: m for m in AVAILABLE_CLASSIFICATION_METRICS}
+
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
 available_class_filters = {f.name: f for f in AVAILABLE_CLASSIFICATION_FILTERS}
-available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG}
+available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
 
+available_bias_evaluation = {b.name: b for b in AVAILABLE_BIAS_EVALUATIONS}
 
 def readlines(ctx, param, file: click.File) -> List[str]:
     return [l.strip() for l in file.readlines()]
@@ -372,17 +378,14 @@ def apply_filter(collection,filter,length_min_val,length_max_val):
             (1 - (len(collection.testsets[ref_name]) / corpus_size)) * 100) + " for reference " + ref_name,
                 fg="green" )
 
-def display_table(collection, ref_filename, systems_names, results):
-    results_dicts = MultipleResult.results_to_dict(list(results.values()), systems_names)
-
-    click.secho('Reference: ' + ref_filename, fg="yellow")
+def display_table(systems_names, results):
+    results_dicts = MultipleMetricResults.results_to_dict(list(results.values()), systems_names)
 
     for met, systems in results_dicts.items():
         click.secho("metric: " + str(met), fg="yellow")
         click.secho("\t" + "systems:", fg="yellow")
         for sys_name, sys_score in systems.items():
             click.secho("\t" + str(sys_name) + ": " + str(sys_score), fg="yellow")
-
     return pd.DataFrame.from_dict(results_dicts)
 
 def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,num_splits,sample_ratio):
@@ -527,6 +530,22 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     type=click.File(),
     help="File that contains the names of the systems per line.",
 )
+@click.option(
+    "--bias_evaluations",
+    "-b",
+    type=click.Choice(list(available_bias_evaluation.keys())),
+    required=False,
+    multiple=True,
+    help="Bias Evaluation. This option can be multiple. Bias Evaluation Available: Gender Bias Evaluation for Machine Translation",
+)
+@click.option(
+    "--option_gender_bias_evaluation",
+    type=click.Choice(GenderBiasEvaluation.options_bias_evaluation),
+    required=False,
+    multiple=False,
+    default="with datasets and library",
+    help="Options for Gender Bias Evaluation.",
+)
 def n_compare_nlg(
     source: click.File,
     system_output: Tuple[click.File],
@@ -540,23 +559,41 @@ def n_compare_nlg(
     seg_metric: str,
     output_folder: str,
     bootstrap: bool,
-    num_splits: int,
-    sample_ratio: float,
     system_x: click.File,
     system_y: click.File,
-    systems_names: click.File
+    num_splits: int,
+    sample_ratio: float,
+    systems_names: click.File,
+    bias_evaluations: Union[Tuple[str], str],
+    option_gender_bias_evaluation: str
 ):  
-    collection = NLGTestsets.read_data_cli(source,systems_names,system_output,reference,"X-" + language)
+    collection = available_nlg_tasks[task].input_cli_interface(source,systems_names,system_output,reference,language)
+    
+    systems_ids = collection.systems_ids
+    systems_names =  collection.systems_names
+    language = collection.language_pair.split("-")[1]
+    if (system_x and system_x.name in systems_ids) and (system_y and system_y.name in systems_ids):
+        x_id = systems_ids[system_x.name]
+        y_id = systems_ids[system_y.name]
+    else:
+        x_id = collection.indexes_of_systems()[0]
+        y_id = collection.indexes_of_systems()[1]
+
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
+
+    if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
+        bias_evalutaions_results = {bias_eval: { 
+            ref_name: available_bias_evaluation[bias_eval](language).evaluation(collection.testsets[ref_name], option_gender_bias_evaluation)
+                for ref_name in collection.refs_names
+                }
+            for bias_eval in bias_evaluations
+        }
 
     if filter:
         apply_filter(collection,filter,length_min_val,length_max_val)   
 
     metric = seg_metric_in_metrics(seg_metric,metric)
-    systems_index = collection.systems_indexes
-    systems_names =  collection.systems_names
-    language = collection.language_pair.split("-")[1]
 
     for ref_filename in collection.refs_names:
         testset = collection.testsets[ref_filename]
@@ -564,36 +601,54 @@ def n_compare_nlg(
             m: available_metrics[m](language=language).multiple_comparison(testset) 
             for m in metric }
 
-        results_df = display_table(collection,ref_filename,systems_names,results)
+        click.secho('\n\nReference: ' + ref_filename, fg="yellow")
 
-        if bootstrap and len(systems_index.values()) > 1: 
-            if system_x.name in systems_index and system_y.name in systems_index:
-                x_id = systems_index[system_x.name]
-                y_id = systems_index[system_y.name]
-        
-            else:
-                x_id = collection.indexes_of_systems()[0]
-                y_id = collection.indexes_of_systems()[1]
-
+        click.secho('\nMetric Results', fg="yellow") 
+        results_df = display_table(systems_names,results)
+        if bootstrap and len(systems_ids.values()) > 1: 
             bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x_id,y_id,num_splits,sample_ratio)
         
+        if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
+            click.secho('\nBias Results', fg="yellow")
+            bias_results_df = {}
+            for bias_eval in bias_evaluations:
+                click.secho("> "  + bias_eval + ' Bias Results', fg="yellow")
+                bias_results = bias_evalutaions_results[bias_eval][ref_filename].multiple_metrics_results_per_metris
+                bias_results_df[bias_eval] = display_table(systems_names,bias_results)
+        
+
+        #----- Saving Plots -----
         if output_folder != "":
             if not output_folder.endswith("/"):
                 output_folder += "/"    
             saving_dir = output_folder + ref_filename.replace("/","_") + "/"
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
-
-            results_df.to_csv(saving_dir + "/results.csv")
-
-            if bootstrap and len(systems_index.values()) > 1:
+            
+            metrics_results_dir = saving_dir + "metrics_results/"
+            if not os.path.exists(metrics_results_dir):
+                os.makedirs(metrics_results_dir)
+            results_df.to_csv(metrics_results_dir + "results.csv")
+            if bootstrap and len(systems_ids.values()) > 1:
                 x_name = systems_names[x_id]
                 y_name = systems_names[y_id]
                 filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.csv"
                 bootstrap_df.to_csv(filename)
+            available_nlg_tasks[task].plots_cli_interface(seg_metric, results, collection, ref_filename, metrics_results_dir, x_id, y_id)
 
-            plot = NLGPlot(seg_metric,metric,available_metrics,results,collection,ref_filename,task,num_splits,sample_ratio)
-            plot.display_plots_cli(saving_dir,system_x,system_y)
+            if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
+                bias_results_dir = saving_dir + "bias_results/" 
+                if not os.path.exists(bias_results_dir):
+                    os.makedirs(bias_results_dir)
+                for bias_eval in bias_evaluations:
+                    if bias_eval.lower() == "gender":
+                        sub_bias_results_dir = bias_results_dir + bias_eval.lower() + "/" + option_gender_bias_evaluation + "/"
+                    else:
+                        sub_bias_results_dir = bias_results_dir + bias_eval.lower() + "/"
+                    if not os.path.exists(sub_bias_results_dir):
+                        os.makedirs(sub_bias_results_dir)
+                    bias_results_df[bias_eval].to_csv(sub_bias_results_dir + "bias_results.csv")
+                    bias_evalutaions_results[bias_eval][ref_filename].plots_bias_results_cli_interface(collection,sub_bias_results_dir)
 
 
 @telescope.command()
@@ -621,10 +676,11 @@ def n_compare_nlg(
     multiple=True,
 )
 @click.option(
-    "--label",
+    "--labels",
     "-l",
     required=True,
-    multiple=True,
+    multiple=False,
+    type=click.File(),
     help="Existing labels"
 )
 @click.option(
@@ -671,14 +727,14 @@ def n_compare_classification(
     source: click.File,
     system_output: Tuple[click.File],
     reference: Tuple[click.File],
-    label: Union[Tuple[str], str],
+    labels: click.File,
     metric: Union[Tuple[str], str],
     filter: Union[Tuple[str], str],
     seg_metric: str,
     output_folder: str,
     systems_names: click.File
 ):  
-    collection = ClassTestsets.read_data_cli(source,systems_names,system_output,reference,list(label))
+    collection = Classification.input_cli_interface(source,systems_names,system_output,reference,"", labels)
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
@@ -687,7 +743,6 @@ def n_compare_classification(
 
     metric = seg_metric_in_metrics(seg_metric,metric)
 
-    systems_index = collection.systems_indexes
     systems_names = collection.systems_names
 
     labels = collection.labels
@@ -698,7 +753,7 @@ def n_compare_classification(
             for m in metric 
         }
 
-        results_df = display_table(collection,ref_filename,systems_names,results)
+        results_df = display_table(systems_names,results)
 
         if output_folder != "":
             if not output_folder.endswith("/"):
@@ -708,7 +763,5 @@ def n_compare_classification(
                 os.makedirs(saving_dir)
 
             results_df.to_csv(saving_dir + "/results.csv")
-            
-            plot = ClassificationPlot(seg_metric,metric,available_class_metrics,results,collection, ref_filename, "classification")
-            
-            plot.display_plots_cli(saving_dir)
+
+            Classification.plots_cli_interface(seg_metric,results,collection,ref_filename,saving_dir)

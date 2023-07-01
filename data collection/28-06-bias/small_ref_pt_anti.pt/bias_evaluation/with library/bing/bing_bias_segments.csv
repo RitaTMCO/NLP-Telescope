@@ -1,0 +1,3 @@
+,line,reference,system output,identity term and its gender in reference,identity term and its gender in output
+0,15,Ê zelador se apaixonou pelo secretário por causa de suas mãos bonitas.,O zelador apaixonou-se pela secretária por causa de suas mãos simpáticas.,"zelador:male, secretário:male, mãos:female","zelador:male, secretária:female, mãos:female"
+1,23,Ê estilista marcou uma consulta com a médica e pediu que ela receitasse o remédio.,O designer marcou uma consulta com o médico e pediu-lhe para prescrever o medicamento.,"consulta:female, médica:female","consulta:female, médico:male"

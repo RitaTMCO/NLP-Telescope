@@ -1,0 +1,3 @@
+,line,reference,system output,identity term and its gender in reference,identity term and its gender in output
+0,6,A auditora pegou ê desenvolvedore trapaceando porque descobriu os documentos-chave.,O auditor pegou o desenvolvedor trapaceando porque descobriu os documentos-chave.,auditora:female,auditor:male
+1,21,Ê limpadore está brave com o cozinheiro porque ele sujou a cozinha de novo.,A faxineira está brava com a cozinheira porque ela sujou a cozinha de novo.,"ele:male, cozinha:female","ela:female, cozinha:female"
