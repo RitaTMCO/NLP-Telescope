@@ -20,7 +20,8 @@ from PIL import Image
 
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleMetricResults
-from telescope.collection_testsets import MultipleTestset
+from telescope.collection_testsets import CollectionTestsets
+from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.plotting import export_dataframe, analysis_metrics
 from telescope import PATH_DOWNLOADED_PLOTS
@@ -58,6 +59,13 @@ metric = st.sidebar.selectbox(
     list(m.name for m in available_metrics.values() if m.segment_level),
     index=0,
 )
+
+#---------- |Universal Metrics| ------------ 
+
+available_universal_metrics = {u.name: u for u in available_tasks[task].universal_metrics}
+if available_universal_metrics:
+    universal_metric = st.sidebar.selectbox("Select Univeral Metric:", list(available_universal_metrics.keys()))  
+
 
 #---------- |Filters| ------------
 available_filters = {f.name: f for f in available_tasks[task].filters}
@@ -126,7 +134,6 @@ if available_bias_evaluations:
             index=0,
             disabled = ("Gender" not in bias_evaluations)
         ) 
-
 
      
 # --------------------- Streamlit APP Caching functions! --------------------------
@@ -220,6 +227,24 @@ def run_all_metrics(collection, metrics, filters):
         }
 
 
+# --------| Universal Metric |--------
+
+@st.cache(allow_output_mutation=True) 
+def run_universal_metric_per_ref(universal_metric, metrics_results,ref_filename): 
+    with st.spinner(f"Running universal metric {universal_metric} for reference {ref_filename}..."):
+        universal_metric = available_universal_metrics[universal_metric](multiple_metrics_results=metrics_results)
+        return universal_metric.universal_score()
+
+def run_universal_metric(collection, universal_metric, metrics_results_per_ref):
+    refs_names = collection.refs_names
+
+    return {
+        ref_name: run_universal_metric_per_ref(universal_metric, metrics_results_per_ref[ref_name], ref_name)
+        for ref_name in refs_names
+        }
+
+
+
 # --------| Bias Evaluation |-----------
 
 @st.cache(
@@ -272,6 +297,8 @@ if collection_testsets:
     if available_tasks[task].bias_evaluations and bias_evaluations:
         bias_results_per_evaluation = run_all_bias_evalutaions(collection_testsets)
     metrics_results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
+    if available_tasks[task].universal_metrics:
+        universal_metric_per_ref = run_universal_metric(collection_testsets, universal_metric, metrics_results_per_ref)
 
     # ----------------------------| Informations About The Systems |-------------------------------
 
@@ -305,6 +332,15 @@ if collection_testsets:
         index=0,
     )
     st.text("Reference: " + ref_filename)
+
+    # ----------------------------| Ranking Models |-------------------------------
+
+    if available_tasks[task].universal_metrics:
+        st.write("---")
+        st.title("Ranking Models")
+        st.text("\n\n\n")
+        universal_results = universal_metric_per_ref[ref_filename]
+        universal_results.plots_web_interface(collection_testsets, ref_filename)
 
 
     # ----------------------------| Metric Analysis and Plots |-------------------------------

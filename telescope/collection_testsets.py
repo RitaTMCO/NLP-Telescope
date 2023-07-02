@@ -34,6 +34,10 @@ class CollectionTestsets:
         self.systems_names = systems_names
         self.filenames = filenames
         self.testsets = testsets
+    
+    @staticmethod
+    def hash_func(collection):
+        return " ".join(collection.filenames)
 
     def indexes_of_systems(self) -> List[str]:
         return list(self.systems_ids.values())

@@ -9,6 +9,7 @@ from telescope.collection_testsets import CollectionTestsets, ClassTestsets
 from telescope.metrics import AVAILABLE_CLASSIFICATION_METRICS
 from telescope.filters import AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.bias_evaluation import AVAILABLE_CLASSIFICATION_BIAS_EVALUATIONS
+from telescope.universal_metrics import AVAILABLE_CLASSIFICATION_UNIVERSAL_METRICS
 from telescope.plotting import (
     confusion_matrix_of_system,
     confusion_matrix_focused_on_one_label,
@@ -24,6 +25,7 @@ class Classification(Task):
     metrics = AVAILABLE_CLASSIFICATION_METRICS
     filters = AVAILABLE_CLASSIFICATION_FILTERS
     bias_evaluations = AVAILABLE_CLASSIFICATION_BIAS_EVALUATIONS
+    universal_metrics = AVAILABLE_CLASSIFICATION_UNIVERSAL_METRICS
 
     @staticmethod
     def input_web_interface() -> CollectionTestsets:

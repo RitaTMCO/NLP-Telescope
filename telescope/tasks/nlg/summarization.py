@@ -7,12 +7,14 @@ from telescope.collection_testsets import CollectionTestsets, SummTestsets
 from telescope.metrics import AVAILABLE_SUMMARIZATION_METRICS
 from telescope.filters import AVAILABLE_SUMMARIZATION_FILTERS
 from telescope.bias_evaluation import AVAILABLE_SUMMARIZATION_BIAS_EVALUATIONS
+from telescope.universal_metrics import AVAILABLE_SUMMARIZATION_UNIVERSAL_METRICS
 
 class Summarization(NLG):
     name = "summarization"
     metrics = AVAILABLE_SUMMARIZATION_METRICS
     filters = AVAILABLE_SUMMARIZATION_FILTERS
     bias_evaluations = AVAILABLE_SUMMARIZATION_BIAS_EVALUATIONS
+    universal_metrics = AVAILABLE_SUMMARIZATION_UNIVERSAL_METRICS
     sentences_similarity = True
 
     @staticmethod

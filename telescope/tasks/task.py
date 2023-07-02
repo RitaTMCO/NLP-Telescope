@@ -5,6 +5,7 @@ from telescope.collection_testsets import CollectionTestsets
 from telescope.metrics import AVAILABLE_NLP_METRICS
 from telescope.filters import AVAILABLE_NLP_FILTERS
 from telescope.bias_evaluation import AVAILABLE_NLP_BIAS_EVALUATIONS
+from telescope.universal_metrics import AVAILABLE_NLP_UNIVERSAL_METRICS
 from typing import Tuple
 
 class Task(metaclass=abc.ABCMeta):
@@ -12,6 +13,7 @@ class Task(metaclass=abc.ABCMeta):
     metris = AVAILABLE_NLP_METRICS 
     filters = AVAILABLE_NLP_FILTERS
     bias_evaluations = AVAILABLE_NLP_BIAS_EVALUATIONS
+    universal_metrics = AVAILABLE_NLP_UNIVERSAL_METRICS
     bootstrap = False
 
     @staticmethod

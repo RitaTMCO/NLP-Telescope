@@ -1,5 +1,3 @@
-import yaml
-
 from .ner import NERFilter
 from .length import LengthFilter
 from .duplicates import DuplicatesFilter

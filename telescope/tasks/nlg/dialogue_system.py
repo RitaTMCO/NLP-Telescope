@@ -6,12 +6,14 @@ from telescope.collection_testsets import CollectionTestsets, DialogueTestsets
 from telescope.metrics import AVAILABLE_DIALOGUE_METRICS
 from telescope.filters import AVAILABLE_DIALOGUE_FILTERS
 from telescope.bias_evaluation import AVAILABLE_DIALOGUE_BIAS_EVALUATIONS
+from telescope.universal_metrics import AVAILABLE_DIALOGUE_UNIVERSAL_METRICS
 
 class DialogueSystem(NLG):
     name = "dialogue-system"
     metrics = AVAILABLE_DIALOGUE_METRICS
     filters = AVAILABLE_DIALOGUE_FILTERS
     bias_evaluations = AVAILABLE_DIALOGUE_BIAS_EVALUATIONS
+    universal_metrics = AVAILABLE_DIALOGUE_UNIVERSAL_METRICS
     sentences_similarity = True
 
     @staticmethod

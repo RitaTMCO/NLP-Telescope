@@ -9,6 +9,7 @@ from telescope.collection_testsets import CollectionTestsets, NLGTestsets
 from telescope.metrics import AVAILABLE_NLG_METRICS
 from telescope.filters import AVAILABLE_NLG_FILTERS
 from telescope.bias_evaluation import AVAILABLE_NLG_BIAS_EVALUATIONS
+from telescope.universal_metrics import AVAILABLE_NLG_UNIVERSAL_METRICS
 from telescope.plotting import (
     plot_bootstraping_result,
     plot_bucket_multiple_comparison,
@@ -23,6 +24,7 @@ class NLG(Task):
     metrics = AVAILABLE_NLG_METRICS 
     filters = AVAILABLE_NLG_FILTERS
     bias_evaluations = AVAILABLE_NLG_BIAS_EVALUATIONS
+    universal_metrics = AVAILABLE_NLG_UNIVERSAL_METRICS
     bootstrap = True
     segment_result_source = False
     sentences_similarity = False

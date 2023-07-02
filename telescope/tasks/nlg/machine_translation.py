@@ -6,13 +6,14 @@ from telescope.collection_testsets import CollectionTestsets, MTTestsets
 from telescope.metrics import AVAILABLE_MT_METRICS
 from telescope.filters import AVAILABLE_MT_FILTERS
 from telescope.bias_evaluation import AVAILABLE_MT_BIAS_EVALUATIONS
+from telescope.universal_metrics import AVAILABLE_MT_UNIVERSAL_METRICS
 
 class MachineTranslation(NLG):
     name = "machine-translation"
     metrics = AVAILABLE_MT_METRICS
     filters = AVAILABLE_MT_FILTERS
     bias_evaluations = AVAILABLE_MT_BIAS_EVALUATIONS
-
+    universal_metrics = AVAILABLE_MT_UNIVERSAL_METRICS
     segment_result_source = True
 
     @staticmethod

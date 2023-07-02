@@ -1,0 +1,23 @@
+All universal metrics:
+    - average
+    - median
+    - weighted-mean
+    - pairwise-comparison
+    - social-choice-theory
+
+NLP universal metrics: 
+    - average
+    - median
+    - weighted-mean
+    - pairwise-comparison
+    - social-choice-theory
+
+NLG universal metrics: []
+      
+Machine Translation universal metrics: []
+
+Summarization universal metrics: []
+
+Dialogue System universal metrics: []
+
+Classification universal metrics: []
