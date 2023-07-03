@@ -20,7 +20,6 @@ from PIL import Image
 
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleMetricResults
-from telescope.collection_testsets import CollectionTestsets
 from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.plotting import export_dataframe, analysis_metrics

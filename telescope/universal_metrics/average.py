@@ -1,4 +1,3 @@
-import abc
 from typing import List,Dict
 from telescope.testset import MultipleTestset
 from telescope.universal_metrics.universal_metric import UniversalMetric
