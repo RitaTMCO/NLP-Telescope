@@ -46,6 +46,12 @@ AVAILABLE_METRICS = [
 ]
 
 names_availabels_metrics = {metric.name:metric for metric in AVAILABLE_METRICS}
+metrics_weight = {}
+for metric_w in metrics_yaml["Weights"]:
+    metric = list(metric_w.keys())[0]
+    weight = list(metric_w.values())[0]
+    metrics_weight[metric] = weight
+
 
 AVAILABLE_NLP_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["NLP metrics"]]
 

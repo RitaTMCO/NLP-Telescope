@@ -43,3 +43,20 @@ Classification metrics:
       - Precision
       - Recall
       - F1-score
+
+Weights:
+      - COMET: 1.0
+      - BLEU : 1.0
+      - chrF: 1.0
+      - ZeroEdit: 1.0
+      - BERTScore: 1.0
+      - TER: -1.0
+      - GLEU: 1.0
+      - ROUGE-1: 1.0
+      - ROUGE-2: 1.0
+      - ROUGE-L: 1.0
+      - Accuracy: 1.0
+      - Precision: 1.0
+      - Recall: 1.0
+      - F1-score: 1.0
+

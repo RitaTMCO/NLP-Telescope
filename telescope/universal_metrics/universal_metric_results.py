@@ -47,7 +47,6 @@ class MultipleUniversalMetricResult():
         for sys_id, universal_metric_result in self.systems_universal_metrics_results.items():
             st.text([sys_id, universal_metric_result.universal_score, universal_metric_result.universal_metric, universal_metric_result.metrics])
             st.text("\n")
-            
     
     def plots_cli_interface(self, collection_testsets:CollectionTestsets, saving_dir:str):
         print(self.universal_metric)

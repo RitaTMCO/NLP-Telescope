@@ -11,7 +11,7 @@ class UniversalMetric(metaclass=abc.ABCMeta):
 
     def __init__(self, multiple_metrics_results: Dict[str, MultipleMetricResults]):
         self.multiple_metrics_results = multiple_metrics_results
-    
+
     def ranking_systems(self, systems_universal_scores:Dict[str,float]):
          return {sys_id:systems_universal_scores[sys_id] for sys_id in sorted(systems_universal_scores, key=systems_universal_scores.get, reverse=True)}
         

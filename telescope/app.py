@@ -15,6 +15,7 @@
 import streamlit as st
 import requests
 import os
+import time
 
 from PIL import Image
 
@@ -52,7 +53,7 @@ metrics = st.sidebar.multiselect(
     list(available_metrics.keys()),
     default=list(available_metrics.keys())[0],
 )
-
+rank = st.sidebar.checkbox('Ranking systems')
 metric = st.sidebar.selectbox(
     "Select the segment-level metric you wish to run:",
     list(m.name for m in available_metrics.values() if m.segment_level),
@@ -61,10 +62,8 @@ metric = st.sidebar.selectbox(
 
 #---------- |Universal Metrics| ------------ 
 
-available_universal_metrics = {u.name: u for u in available_tasks[task].universal_metrics}
-if available_universal_metrics:
-    universal_metric = st.sidebar.selectbox("Select Univeral Metric:", list(available_universal_metrics.keys()))  
-
+if rank:
+    available_universal_metrics = {u.name: u for u in available_tasks[task].universal_metrics}
 
 #---------- |Filters| ------------
 available_filters = {f.name: f for f in available_tasks[task].filters}
@@ -235,20 +234,9 @@ def run_all_metrics(collection, metrics, filters):
     ttl=cache_time,
     max_entries=cache_max_entries,
 )
-def run_universal_metric_per_ref(testset, universal_metric, metrics_results,ref_filename): 
-    with st.spinner(f"Running universal metric {universal_metric} for reference {ref_filename}..."):
-        universal_metric = available_universal_metrics[universal_metric](multiple_metrics_results=metrics_results)
-        return universal_metric.universal_score(testset)
-
-def run_universal_metric(collection, universal_metric, metrics_results_per_ref):
-    refs_names = collection.refs_names
-    testsets = collection.testsets
-
-    return {
-        ref_name: run_universal_metric_per_ref(testsets[ref_name], universal_metric, metrics_results_per_ref[ref_name], ref_name)
-        for ref_name in refs_names
-        }
-
+def run_universal_metric(testset, universal_metric, metrics_results):
+    universal_metric = available_universal_metrics[universal_metric](metrics_results)
+    return universal_metric.universal_score(testset)
 
 
 # --------| Bias Evaluation |-----------
@@ -303,8 +291,7 @@ if collection_testsets:
     if available_tasks[task].bias_evaluations and bias_evaluations:
         bias_results_per_evaluation = run_all_bias_evalutaions(collection_testsets)
     metrics_results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
-    if available_tasks[task].universal_metrics:
-        universal_metric_per_ref = run_universal_metric(collection_testsets, universal_metric, metrics_results_per_ref)
+
 
     # ----------------------------| Informations About The Systems |-------------------------------
 
@@ -341,11 +328,13 @@ if collection_testsets:
 
     # ----------------------------| Ranking Models |-------------------------------
 
-    if available_tasks[task].universal_metrics:
+    if available_tasks[task].universal_metrics and rank:
         st.write("---")
         st.title("Ranking Models")
         st.text("\n\n\n")
-        universal_results = universal_metric_per_ref[ref_filename]
+    
+        universal_metric = st.selectbox("Select Univeral Metric:", list(available_universal_metrics.keys()))  
+        universal_results = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename])
         universal_results.plots_web_interface(collection_testsets, ref_filename)
 
 
