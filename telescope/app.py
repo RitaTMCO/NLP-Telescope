@@ -229,17 +229,24 @@ def run_all_metrics(collection, metrics, filters):
 
 # --------| Universal Metric |--------
 
-@st.cache(allow_output_mutation=True) 
-def run_universal_metric_per_ref(universal_metric, metrics_results,ref_filename): 
+@st.cache(
+    hash_funcs={MultipleTestset: MultipleTestset.hash_func},
+    show_spinner=False,
+    allow_output_mutation=True,
+    ttl=cache_time,
+    max_entries=cache_max_entries,
+)
+def run_universal_metric_per_ref(testset, universal_metric, metrics_results,ref_filename): 
     with st.spinner(f"Running universal metric {universal_metric} for reference {ref_filename}..."):
         universal_metric = available_universal_metrics[universal_metric](multiple_metrics_results=metrics_results)
-        return universal_metric.universal_score()
+        return universal_metric.universal_score(testset)
 
 def run_universal_metric(collection, universal_metric, metrics_results_per_ref):
     refs_names = collection.refs_names
+    testsets = collection.testsets
 
     return {
-        ref_name: run_universal_metric_per_ref(universal_metric, metrics_results_per_ref[ref_name], ref_name)
+        ref_name: run_universal_metric_per_ref(testsets[ref_name], universal_metric, metrics_results_per_ref[ref_name], ref_name)
         for ref_name in refs_names
         }
 

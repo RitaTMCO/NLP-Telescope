@@ -955,6 +955,8 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
         if len(table) == 10:
             break
         doc_src = docs_src[seg_i]
+        if not doc_src:
+            continue 
         score = 0
         for doc_out in docs_output:
             score = doc_src.similarity(doc_out)
