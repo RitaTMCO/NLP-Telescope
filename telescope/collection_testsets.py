@@ -214,7 +214,7 @@ class NLGTestsets(CollectionTestsets):
         language_pair: str
     ) -> None:
         super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, testsets)
-        self.language_pair = language_pair
+        self.language_pair = language_pair.lower()
     
     @property
     def source_language(self):
