@@ -5,16 +5,16 @@ All universal metrics:
     - pairwise-comparison
     - social-choice-theory
 
-NLP universal metrics: 
+NLP universal metrics: []
+
+NLG universal metrics: []
+      
+Machine Translation universal metrics: 
     - average
     - median
     - weighted-mean
     - pairwise-comparison
     - social-choice-theory
-
-NLG universal metrics: []
-      
-Machine Translation universal metrics: []
 
 Summarization universal metrics: []
 

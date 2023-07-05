@@ -1,11 +1,12 @@
-import os
+import click
 import streamlit as st
+import numpy as np
 import pandas as pd
 
 from typing import List, Dict
 from telescope import PATH_DOWNLOADED_PLOTS
 from telescope.collection_testsets import CollectionTestsets
-from telescope.metrics.metric import Metric, MetricResult, MultipleMetricResults
+from telescope.metrics.metric import Metric
 from telescope.plotting import export_dataframe
 
 class UniversalMetricResult():
@@ -15,12 +16,16 @@ class UniversalMetricResult():
         system_output: List[str],
         metrics: List[Metric],
         universal_metric: str,
-        universal_score: float
+        title:str,
+        rank: int,
+        universal_score: float,
     ) -> None:
         self.ref = ref
         self.system_output = system_output
         self.metrics = metrics
         self.universal_metric = universal_metric
+        self.title = title
+        self.rank = rank
         self.universal_score = universal_score
 
 class MultipleUniversalMetricResult():
@@ -31,22 +36,38 @@ class MultipleUniversalMetricResult():
         ref_x = list(systems_universal_metrics_results.values())[0].ref
         metrics_x = list(systems_universal_metrics_results.values())[0].metrics
         universal_metric_x = list(systems_universal_metrics_results.values())[0].universal_metric
+        title_x = list(systems_universal_metrics_results.values())[0].title
 
         for universal_metric_results in list(systems_universal_metrics_results.values()):
             assert universal_metric_results.ref == ref_x
             assert universal_metric_results.metrics == metrics_x
             assert universal_metric_results.universal_metric == universal_metric_x
+            assert universal_metric_results.title == title_x
         
         self.ref = ref_x
         self.metrics = metrics_x
         self.universal_metric = universal_metric_x
+        self.title = title_x
         self.systems_universal_metrics_results = systems_universal_metrics_results
-    
-    def plots_web_interface(self, collection_testsets:CollectionTestsets, ref_name:str):
-        st.header(self.universal_metric)
+
+    def results_to_dataframe(self,systems_names:Dict[str, str]) -> pd.DataFrame:
+        summary = []
+        ranks = []
         for sys_id, universal_metric_result in self.systems_universal_metrics_results.items():
-            st.text([sys_id, universal_metric_result.universal_score, universal_metric_result.universal_metric, universal_metric_result.metrics])
-            st.text("\n")
+            summary.append([systems_names[sys_id], universal_metric_result.universal_score])
+            ranks.append("rank " + str(universal_metric_result.rank))
+
+        df = pd.DataFrame(np.array(summary), index=ranks, columns=["System", "Score"])
+        return df
     
-    def plots_cli_interface(self, collection_testsets:CollectionTestsets, saving_dir:str):
-        print(self.universal_metric)
+    def plots_web_interface(self, collection_testsets:CollectionTestsets):
+        st.subheader(self.title)
+        df = self.results_to_dataframe(collection_testsets.systems_names)
+        st.dataframe(df)
+        export_dataframe(label="Export ranks of systems", name="ranks_systems.csv", dataframe=df)
+    
+    def plots_cli_interface(self, collection_testsets:CollectionTestsets):
+        click.secho("\nModels Rankings:", fg="yellow")
+        df = self.results_to_dataframe(collection_testsets.systems_names)
+        click.secho(str(df), fg="yellow")
+        return df

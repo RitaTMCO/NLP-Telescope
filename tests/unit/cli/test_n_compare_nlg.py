@@ -211,13 +211,43 @@ class TestCompareCli(unittest.TestCase):
             "chrF",
             "--seg_metric",
             "GLEU",
-            "-b"
-            "Gender"
+            "-b",
+            "Gender",
+            "--option_gender_bias_evaluation",
+            "with library"
         ]
         result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
 
-    def test_with_output_comet_and_gender_bias_evaluation(self):
+    def test_with_ranking(self):
+        args = [
+            "-t",
+            self.task,
+            "-s",
+            self.src,
+            "-c",
+            self.system_a,
+            "-c",
+            self.system_b,
+            "-c",
+            self.system_g,
+            "-r",
+            self.ref_b,
+            "-r",
+            self.ref_c,
+            "-l",
+            "en",
+            "-m",
+            "chrF",
+            "--seg_metric",
+            "GLEU",
+            "-u",
+            "pairwise-comparison"
+        ]
+        result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
+        self.assertEqual(result.exit_code, 0)
+
+    def test_with_output_comet_gender_bias_evaluation_and_ranking(self):
         args = [
             "-t",
             self.task,
@@ -260,6 +290,8 @@ class TestCompareCli(unittest.TestCase):
             "Gender",
             "--option_gender_bias_evaluation",
             "with dataset",
+            "-u",
+            "social-choice-theory",
             "--output_folder",
             DATA_PATH
         ]
@@ -267,6 +299,7 @@ class TestCompareCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
 
         for ref in self.refs:
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/ranks_systems.csv")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/COMET-multiple-bucket-analysis.png")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/multiple-scores-distribution.html")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys B-Sys C_multiple-segment-comparison.html")))
@@ -309,6 +342,7 @@ class TestCompareCli(unittest.TestCase):
             os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-incorrect-labels-of-each-system.png")
             os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_results.csv")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys B-Sys C_bootstrap_results.csv")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/ranks_systems.csv")
             for sys_name in ["Sys A", "Sys B", "Sys C"]:
                 dir = ref.replace("/","_")  + "/bias_results/gender/with dataset/" + sys_name
                 os.remove(DATA_PATH + "/" + dir + "/confusion-matrix-" + sys_name.replace(" ","_") + ".png")
@@ -359,6 +393,8 @@ class TestCompareCli(unittest.TestCase):
             10,
             "--sample_ratio",
             0.3,
+            "-u",
+            "weighted-mean",
             "--output_folder",
             DATA_PATH
         ]
@@ -366,6 +402,7 @@ class TestCompareCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
 
         for ref in self.refs:
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/ranks_systems.csv")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/BERTScore-multiple-bucket-analysis.png")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/multiple-scores-distribution.html")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys 2-Sys 3_multiple-segment-comparison.html")))
@@ -376,5 +413,6 @@ class TestCompareCli(unittest.TestCase):
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/BERTScore-multiple-bucket-analysis.png")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/results.csv")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys 2-Sys 3_bootstrap_results.csv")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/ranks_systems.csv")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_"))

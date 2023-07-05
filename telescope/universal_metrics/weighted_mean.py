@@ -1,17 +1,15 @@
-import streamlit as st
-from typing import List,Dict
+from typing import Dict
 from telescope.metrics import metrics_weight
 from telescope.testset import MultipleTestset
 from telescope.universal_metrics.universal_metric import UniversalMetric
-from telescope.universal_metrics.universal_metric_results import UniversalMetricResult, MultipleUniversalMetricResult
 
 class WeightedMean(UniversalMetric):
 
     name = "weighted-mean"
+    title = "Weighted Mean"
     metrics_weight = metrics_weight
 
-    def universal_score(self,testset:MultipleTestset) -> MultipleUniversalMetricResult:
-        ref = testset.ref
+    def universal_score(self,testset:MultipleTestset) -> Dict[str,float]:
         systems_outputs = testset.systems_output
         systems_ids = list(systems_outputs.keys())
         metrics = list(self.multiple_metrics_results.keys())
@@ -23,8 +21,5 @@ class WeightedMean(UniversalMetric):
                 weighted_scores[sys_id] += metric_result.sys_score * float(metrics_weight[metric_result.metric])
                 
         weighted_scores = {sys_id:score/num_metrics for sys_id,score in weighted_scores.items()}
-        weighted_scores = self.ranking_systems(weighted_scores)
-        sys_id_results = {sys_id:UniversalMetricResult(ref,systems_outputs[sys_id],metrics, self.name, weighted_score) 
-                                              for sys_id,weighted_score in weighted_scores.items()}
         
-        return MultipleUniversalMetricResult(sys_id_results)
+        return weighted_scores

@@ -30,6 +30,7 @@ from telescope.collection_testsets import NLGTestsets
 from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, AVAILABLE_MT_METRICS, PairwiseResult
 from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.tasks import AVAILABLE_NLG_TASKS, AVAILABLE_CLASSIFICATION_TASKS
+from telescope.universal_metrics import AVAILABLE_UNIVERSAL_METRICS
 from telescope.bias_evaluation import AVAILABLE_BIAS_EVALUATIONS
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.tasks.classification import Classification
@@ -50,6 +51,8 @@ available_class_filters = {f.name: f for f in AVAILABLE_CLASSIFICATION_FILTERS}
 available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
 
 available_bias_evaluation = {b.name: b for b in AVAILABLE_BIAS_EVALUATIONS}
+
+available_universal_metrics = {u.name: u for u in AVAILABLE_UNIVERSAL_METRICS}
 
 def readlines(ctx, param, file: click.File) -> List[str]:
     return [l.strip() for l in file.readlines()]
@@ -546,6 +549,14 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     default="with datasets and library",
     help="Options for Gender Bias Evaluation.",
 )
+@click.option(
+    "--universal_metric",
+    "-u",
+    type=click.Choice(list(available_universal_metrics.keys())),
+    required=False,
+    multiple=False,
+    help="Models Rankings from Universal Metric. Only available for the MT task",
+)
 def n_compare_nlg(
     source: click.File,
     system_output: Tuple[click.File],
@@ -565,7 +576,8 @@ def n_compare_nlg(
     sample_ratio: float,
     systems_names: click.File,
     bias_evaluations: Union[Tuple[str], str],
-    option_gender_bias_evaluation: str
+    option_gender_bias_evaluation: str,
+    universal_metric: str
 ):  
     collection = available_nlg_tasks[task].input_cli_interface(source,systems_names,system_output,reference,language)
     
@@ -608,6 +620,14 @@ def n_compare_nlg(
         if bootstrap and len(systems_ids.values()) > 1: 
             bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x_id,y_id,num_splits,sample_ratio)
         
+        if universal_metric:
+            if universal_metric == "pairwise-comparison":
+                universal_me = available_universal_metrics[universal_metric](results,x_id,y_id)
+            else:
+                universal_me = available_universal_metrics[universal_metric](results)
+            universal_result = universal_me.universal_score_calculation_and_ranking(testset)
+            universal_result_df = universal_result.plots_cli_interface(collection)
+
         if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
             click.secho('\nBias Results', fg="yellow")
             bias_results_df = {}
@@ -624,7 +644,8 @@ def n_compare_nlg(
             saving_dir = output_folder + ref_filename.replace("/","_") + "/"
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
-            
+            universal_result_df.to_csv(saving_dir + "ranks_systems.csv")
+
             metrics_results_dir = saving_dir + "metrics_results/"
             if not os.path.exists(metrics_results_dir):
                 os.makedirs(metrics_results_dir)

@@ -53,17 +53,15 @@ metrics = st.sidebar.multiselect(
     list(available_metrics.keys()),
     default=list(available_metrics.keys())[0],
 )
-rank = st.sidebar.checkbox('Ranking systems')
+if available_tasks[task].universal_metrics:
+    rank = st.sidebar.checkbox('Models Rankings')
+    available_universal_metrics = {u.name: u for u in available_tasks[task].universal_metrics}
+    
 metric = st.sidebar.selectbox(
     "Select the segment-level metric you wish to run:",
     list(m.name for m in available_metrics.values() if m.segment_level),
     index=0,
 )
-
-#---------- |Universal Metrics| ------------ 
-
-if rank:
-    available_universal_metrics = {u.name: u for u in available_tasks[task].universal_metrics}
 
 #---------- |Filters| ------------
 available_filters = {f.name: f for f in available_tasks[task].filters}
@@ -213,7 +211,7 @@ def run_all_metrics(collection, metrics, filters):
                 (1 - (len(collection_testsets.testsets[ref_name]) / corpus_size)) 
                     * 100) + " for reference " + ref_name)
 
-    if len(collection_testsets.testsets[ref_name]) == 0:
+    if any(len(collection_testsets.testsets[ref_name]) == 0 for ref_name in refs_names):
         return {}
     return {
         ref_name: {metric: run_metric(
@@ -241,7 +239,7 @@ def run_universal_metric(testset, universal_metric, metrics_results, extra_info)
         universal_metric = available_universal_metrics[universal_metric](metrics_results,extra_info[0],extra_info[1])
     else:
         universal_metric = available_universal_metrics[universal_metric](metrics_results)
-    return universal_metric.universal_score(testset)
+    return universal_metric.universal_score_calculation_and_ranking(testset)
 
 
 # --------| Bias Evaluation |-----------
@@ -335,11 +333,11 @@ if collection_testsets:
 
     if available_tasks[task].universal_metrics and rank and len(collection_testsets.systems_names) > 1 and metrics_results_per_ref:
         st.write("---")
-        st.title("Ranking Models")
+        st.title("Models Rankings")
         st.text("\n\n\n")
 
         universal_results = None
-        universal_metric = st.selectbox("Select Univeral Metric:", list(available_universal_metrics.keys())) 
+        universal_metric = st.selectbox("**:blue[Select Univeral Metric:]**", list(available_universal_metrics.keys())) 
         if universal_metric == "pairwise-comparison":
             left, right = st.columns(2)
             system_x_name = left.selectbox(
@@ -366,8 +364,7 @@ if collection_testsets:
             universal_results = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename], [])
 
         if universal_results:
-            universal_results.plots_web_interface(collection_testsets, ref_filename)
-
+            universal_results.plots_web_interface(collection_testsets)
 
     # ----------------------------| Metric Analysis and Plots |-------------------------------
 
