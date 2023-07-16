@@ -750,18 +750,18 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
         return None
 
 def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None):
-    table = { "PPV" : [], "FDR": [], "FOR": [], "NPV": [],
-            "TPR": [], "FPR":[], "FNR":[], "TNR": []
+    table = { "Precison" : [], "FDR": [], "FOR": [], "NPV": [],
+            "Recall": [], "FPR":[], "FNR":[], "TNR": []
     }
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
     num = len(labels)
     for i in range(num):
         tn,fp,fn,tp = list(list(matrix[i][0]) + list(matrix[i][1]))
         if sum([tp,fp]) == 0:
-            table["PPV"].append(0)
+            table["Precison"].append(0)
             table["FDR"].append(0)
         else:
-            table["PPV"].append(tp/sum([tp,fp]))
+            table["Precison"].append(tp/sum([tp,fp]))
             table["FDR"].append(fp/sum([tp,fp]))
 
         if sum([tn,fn]) == 0:
@@ -772,9 +772,9 @@ def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=No
             table["NPV"].append(tn/sum([tn,fn]))
             
         if sum([tp,fn]) == 0:
-            table["TPR"].append(0)
+            table["Recall"].append(0)
         else:
-            table["TPR"].append(tp/sum([tp,fn]))
+            table["Recall"].append(tp/sum([tp,fn]))
             
         if sum([fp,tn]) == 0:
             table["FPR"].append(0)
@@ -890,20 +890,22 @@ def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[s
 
 
 def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None):
-    seg_scores_list = [result_sys.seg_scores 
+    seg_scores_list = [list(result_sys.seg_scores)
                 for result_sys in list(result.systems_metric_results.values())]
     
-    seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
-                for i, label in enumerate(labels)}
-    metric = result.metric
+    if any(seg_scores_list):
+    
+        seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
+                    for i, label in enumerate(labels)}
+        metric = result.metric
 
-    plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
-    if saving_dir is not None:
-        plt.savefig(saving_dir + "/" + metric + "-analysis-labels-bucket.png")
-    if runtime.exists() and saving_dir == None:
-        st.pyplot(plt)
-    plt.clf()
-    plt.close()
+        plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
+        if saving_dir is not None:
+            plt.savefig(saving_dir + "/" + metric + "-analysis-labels-bucket.png")
+        if runtime.exists() and saving_dir == None:
+            st.pyplot(plt)
+        plt.clf()
+        plt.close()
 
 def analysis_metrics(multiple_metrics_results: List[MultipleMetricResults], systems_names:Dict[str, str], saving_dir: str = None, column=None):
     metrics = [m_res.metric for m_res in multiple_metrics_results]

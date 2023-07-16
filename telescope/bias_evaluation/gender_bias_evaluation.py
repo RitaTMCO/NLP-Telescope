@@ -8,14 +8,12 @@ from spacy.tokens import Token
 from telescope.bias_evaluation.bias_result import BiasResult, MultipleBiasResults
 from telescope.bias_evaluation.bias_evaluation import BiasEvaluation
 from telescope.testset import MultipleTestset
-from telescope.metrics import Accuracy, F1Score
 from telescope.metrics.metric import Metric
 
 class GenderBiasEvaluation(BiasEvaluation):
     name = "Gender"
     available_languages = ["en", "pt"]
     groups = ["neutral", "female", "male"]
-    metrics =  [Accuracy, F1Score]
 
     directory = 'telescope/bias_evaluation/data/'
     nltk_languages = {"en":"english", "pt":"portuguese"}

@@ -44,6 +44,11 @@ Classification metrics:
       - Recall
       - F1-score
 
+Evaluation Bias metrics:
+      - Demographic-Parity
+      - Accuracy
+      - F1-score
+
 Weights:
       - COMET: 1.0
       - BLEU : 1.0

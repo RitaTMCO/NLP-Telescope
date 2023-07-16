@@ -20,6 +20,8 @@ from .precision import Precision
 from .recall import Recall
 from .f1_score import F1Score
 
+from .demographic_parity import DemographicParity
+
 from .result import MetricResult, PairwiseResult, BootstrapResult
 
 from telescope import read_yaml_file
@@ -42,7 +44,8 @@ AVAILABLE_METRICS = [
     Accuracy,
     Precision,
     Recall,
-    F1Score
+    F1Score,
+    DemographicParity,
 ]
 
 names_availabels_metrics = {metric.name:metric for metric in AVAILABLE_METRICS}
@@ -64,3 +67,5 @@ AVAILABLE_SUMMARIZATION_METRICS = [names_availabels_metrics[metric_name] for met
 AVAILABLE_DIALOGUE_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Dialogue System metrics"]] + AVAILABLE_NLG_METRICS
 
 AVAILABLE_CLASSIFICATION_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Classification metrics"]] + AVAILABLE_NLP_METRICS
+
+AVAILABLE_EVALUATION_BIAS_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Evaluation Bias metrics"]] 
