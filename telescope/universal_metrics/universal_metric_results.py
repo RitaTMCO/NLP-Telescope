@@ -64,7 +64,7 @@ class MultipleUniversalMetricResult():
         st.subheader(self.title)
         df = self.results_to_dataframe(collection_testsets.systems_names)
         st.dataframe(df)
-        export_dataframe(label="Export ranks of systems", name="ranks_systems.csv", dataframe=df)
+        export_dataframe(label="Export ranks of systems", name= self.universal_metric + "_ranks_systems.csv", dataframe=df)
     
     def plots_cli_interface(self, collection_testsets:CollectionTestsets):
         click.secho("\nModels Rankings:", fg="yellow")

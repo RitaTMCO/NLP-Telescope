@@ -15,8 +15,6 @@
 import streamlit as st
 import requests
 import os
-import time
-
 from PIL import Image
 
 from telescope.tasks import AVAILABLE_TASKS
@@ -85,7 +83,7 @@ if "length" in available_filters:
             "through it's density funcion. This slider is used to specify the confidence interval P(a < X < b)"
         ),
     )
-    if length_interval != (0, 100):
+    if length_interval != (0, 100) and "length" not in filters:
         filters = (
             filters
             + [
@@ -135,11 +133,11 @@ if available_bias_evaluations:
 # --------------------- Streamlit APP Caching functions! --------------------------
 
 cache_time = 60 * 60  # 1 hour cache time for each object
-cache_max_entries = 30  # 1 hour cache time for each object
+cache_max_entries = 200  # 1 hour cache time for each object
 
 
 # --------| Filters |-----------
-st.cache(
+@st.cache(
     hash_funcs={MultipleTestset: MultipleTestset.hash_func},
     suppress_st_warning=True,
     show_spinner=False,
@@ -307,10 +305,10 @@ if collection_testsets:
         list(collection_testsets.systems_ids.keys()),
         index=0)
     sys_id = collection_testsets.systems_ids[system_filename]
-    system_name = st.text_input('Enter the system name', collection_testsets.systems_names[sys_id])
+    system_name = st.text_input('Enter the system name')
     if (collection_testsets.systems_names[sys_id] != system_name and collection_testsets.already_exists(system_name)):
         st.warning("This system name already exists")
-    else:
+    elif system_name:
         st.session_state[task + "_" + sys_id + "_rename"] = system_name
         collection_testsets.systems_names[sys_id] = st.session_state[task + "_" + sys_id + "_rename"]
 

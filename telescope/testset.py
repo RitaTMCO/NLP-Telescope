@@ -166,7 +166,7 @@ class MultipleTestset(Testset):
 
     @staticmethod
     def hash_func(testset):
-        return " ".join(testset.filenames)
+        return " ".join(testset.filenames) + " " + " ".join(testset.systems_output.keys())
 
     def apply_filter(self, filter):
         to_keep = filter.apply_filter()

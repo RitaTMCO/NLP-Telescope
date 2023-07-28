@@ -43,6 +43,8 @@ scikit-learn = ">=1.2.2"
 evaluate = ">=0.4.0"
 nltk = ">3.8.0"
 spacy = "=3.2.5"
+fairlearn = ">=0.8.0" 
+optuna = ">=3.2.0"
 
 [tool.poetry.dev-dependencies]
 coverage = "^5.5"
