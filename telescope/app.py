@@ -132,7 +132,7 @@ if available_bias_evaluations:
      
 # --------------------- Streamlit APP Caching functions! --------------------------
 
-cache_time = 60 * 60  # 1 hour cache time for each object
+cache_time = 5 * 60 * 60  # 1 hour cache time for each object
 cache_max_entries = 200  # 1 hour cache time for each object
 
 

@@ -34,6 +34,14 @@ T2_COLOR = "#56C3FF"
 T3_COLOR = "#FFD966"
 T4_COLOR = "#DB6646"
 
+def buckets_ratio(number_of_systems:int):
+
+    ratio_font = int((number_of_systems)/4)
+    ratio_r = int((number_of_systems)%4)
+    ratio_bar = int((number_of_systems)/2)
+    ratio = int((number_of_systems)/2) + ratio_r + ratio_font + ratio_bar
+    return ratio_font, ratio_r, ratio_bar, ratio
+
 
 def update_buckets(
     x_scores: List[float],
@@ -381,9 +389,8 @@ def update_multiple_buckets(
         major_err.update({system:n_major_err})
         crit_err.update({system:n_crit_err})
 
-    ratio = int((number_of_systems)/2)
-
-    r = [i* (number_of_systems) for i in range(number_of_systems)]
+    ratio_font, ratio_r, ratio_bar, ratio = buckets_ratio(number_of_systems)
+    r = [(i+ ratio_r)* number_of_systems for i in range(number_of_systems)]
 
     plt.figure(figsize=(12+ratio,10+ratio))
     
@@ -401,8 +408,8 @@ def update_multiple_buckets(
     T1Bars = raw_data["T1Bars"]
 
     # plot
-    barWidth = 0.85 + ratio
-    font=20
+    barWidth = 0.85 + ratio_bar
+    font = 20 + ratio_font
     color = "black"
     names = tuple(systems_names)
     plt.clf()
@@ -472,12 +479,11 @@ def update_multiple_buckets(
         )
 
     # Custom x axis
-    plt.xticks(r, names,fontsize=18)
-    plt.yticks(fontsize=22)
-    plt.xlabel("Model",fontsize=22)
+    plt.xticks(r, names,fontsize=18 + ratio_font)
+    plt.yticks(fontsize=22 + ratio_font)
+    plt.xlabel("Model",fontsize=22 + ratio_font)
 
     return plt
-
 
 def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None) -> None:
 
@@ -573,27 +579,32 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
 
 
-def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None) -> None:
+def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None, test:str=False) -> bool:
     scores_list = [
         metric_system.seg_scores 
         for metric_system in list(multiple_result.systems_metric_results.values())]
     scores = np.array(scores_list).T
     hist_data = [scores[:, i] for i in range(scores.shape[1])]
-    fig = ff.create_distplot(
-        hist_data,
-        sys_names,
-        bin_size=[0.1 for _ in range(scores.shape[1])],
-    ) 
-    fig.update_layout(xaxis_title="Score", yaxis_title="Probability Density")
-    fig.update_xaxes( title_standoff = 40)
+    try:
+        fig = ff.create_distplot(
+            hist_data,
+            sys_names,
+            bin_size=[0.1 for _ in range(scores.shape[1])],
+        ) 
 
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        fig.write_html(saving_dir + "/multiple-scores-distribution.html")
+        fig.update_layout(xaxis_title="Score", yaxis_title="Probability Density")
+        fig.update_xaxes( title_standoff = 40)
 
-    if runtime.exists() and saving_dir == None:
-        st.plotly_chart(fig)
+        if saving_dir is not None and not test:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
+            fig.write_html(saving_dir + "/multiple-scores-distribution.html")
+
+        if runtime.exists() and saving_dir == None and not test:
+            st.plotly_chart(fig)
+        return True
+    except np.linalg.LinAlgError:
+        return False
 
 
 def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, system_x: List[str], system_y:List[str], source: bool = False, 
@@ -804,11 +815,11 @@ def analysis_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[
     seg_scores_label = list(seg_scores_dict.values())
     names = tuple(systems_names)
 
-    ratio = int((number_of_systems)/2)
-    r = [i* (number_of_systems) for i in range(number_of_systems)]
+    ratio_font, ratio_r, ratio_bar, ratio = buckets_ratio(number_of_systems)
+    r = [(i+ ratio_r) * number_of_systems for i in range(number_of_systems)]
 
-    barWidth = 0.85 + ratio
-    font=20
+    barWidth = 0.85 + ratio_bar
+    font= 20 + ratio_font
     color = "black"
 
     plt.figure(figsize=(12+ratio,10+ratio))
@@ -836,12 +847,12 @@ def analysis_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[
             fontsize=font,
             )
 
-    plt.xticks(r, names,fontsize=18)
-    plt.yticks(fontsize=22)
-    plt.xlabel("Model",fontsize=22)
-    plt.ylabel("Score",fontsize=22)
-    plt.legend(labels,fontsize = 'x-large',bbox_to_anchor=(1.02, 1))
-    plt.title(title,fontsize=22,pad=25)
+    plt.xticks(r, names,fontsize=18 + ratio_font)
+    plt.yticks(fontsize=22 + ratio_font)
+    plt.xlabel("Model",fontsize=22 + ratio_font)
+    plt.ylabel("Score",fontsize=22 + ratio_font)
+    plt.legend(labels,fontsize = 15 + ratio_font,bbox_to_anchor=(1.02, 1))
+    plt.title(title,fontsize=22+ ratio_font,pad=25)
     plt.axhline(linewidth=1, color='black')
 
     return plt

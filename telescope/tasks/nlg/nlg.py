@@ -68,20 +68,18 @@ class NLG(Task):
                 plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(),path)
         
         # -------------- | Distribution of segment-level scores| -----------
-        if len(collection_testsets.testsets[ref_filename]) > 1:
-            try:
-                st.text("\n")
-                st.header(":blue[Distribution of segment-level scores:]")
-                st.markdown("This displot shows the distribution of segment-level scores. It is composed of histogram, kernel density estimation curve and rug plot.")
+        if len(collection_testsets.testsets[ref_filename]) > 1 and plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
 
-                plot_multiple_distributions(results[metric], collection_testsets.names_of_systems())
-                _, middle, _ = st.columns(3)
-                if middle.button('Download the distribution of segment-level scores'):
-                    if not os.path.exists(path):
-                        os.makedirs(path)  
-                    plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(),path)
-            except np.linalg.LinAlgError as err:    
-                st.write(err)
+            st.text("\n")
+            st.header(":blue[Distribution of segment-level scores:]")
+            st.markdown("This displot shows the distribution of segment-level scores. It is composed of histogram, kernel density estimation curve and rug plot.")
+
+            plot_multiple_distributions(results[metric], collection_testsets.names_of_systems())
+            _, middle, _ = st.columns(3)
+            if middle.button('Download the distribution of segment-level scores'):
+                if not os.path.exists(path):
+                    os.makedirs(path)  
+                plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(),path)
             
         
         # -------------- |Pairwise comparison| -----------------
@@ -162,7 +160,7 @@ class NLG(Task):
         if metric == "COMET" or metric == "BERTScore":
             plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(), saving_dir)
         
-        if len(collection_testsets.testsets[ref_filename]) > 1:
+        if len(collection_testsets.testsets[ref_filename]) > 1 and plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
             plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), saving_dir)
         
         if len(collection_testsets.systems_ids.values()) > 1: 
