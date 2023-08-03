@@ -43,7 +43,7 @@ class Classification(Task):
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str) -> None:
         """Web Interfave to display the plots"""
 
-        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_filename + "/" 
+        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/" 
 
         ref_id = collection_testsets.refs_indexes[ref_filename]
         testset = collection_testsets.testsets[ref_filename]
@@ -65,7 +65,7 @@ class Classification(Task):
         df_rates = rates_table(labels,testset.ref,testset.systems_output[system])
         st.dataframe(df_rates)
         _,middle,_ = st.columns(3)
-        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_rates.csv", dataframe=df_rates,column=middle)
+        export_dataframe(label="Export rates",path=path, name= system_name.replace(" ", "_") + "_rates.csv", dataframe=df_rates,column=middle)
 
         # Overall Confusion Matrix
 
@@ -145,7 +145,7 @@ class Classification(Task):
     
         if df is not None:
             st.dataframe(df)
-            export_dataframe(label="Export incorrect examples", name=system_name + "_incorrect-examples.csv", dataframe=df)
+            export_dataframe(label="Export incorrect examples", path=path, name= system_name + "_incorrect-examples.csv", dataframe=df)
             
             old_num_incorrect_ids = st.session_state[num_incorrect_ids]
             new_num_incorrect_ids = len(st.session_state[incorrect_ids])

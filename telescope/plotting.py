@@ -15,6 +15,7 @@
 import os
 from typing import List, Dict
 
+import time
 import altair as alt
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,6 +34,8 @@ T1_COLOR = "#9ACD32"
 T2_COLOR = "#56C3FF"
 T3_COLOR = "#FFD966"
 T4_COLOR = "#DB6646"
+
+ROTATION = 90
 
 def buckets_ratio(number_of_systems:int):
 
@@ -479,7 +482,7 @@ def update_multiple_buckets(
         )
 
     # Custom x axis
-    plt.xticks(r, names,fontsize=18 + ratio_font)
+    plt.xticks(r, names,fontsize=18 + ratio_font,rotation = ROTATION)
     plt.yticks(fontsize=22 + ratio_font)
     plt.xlabel("Model",fontsize=22 + ratio_font)
 
@@ -847,7 +850,7 @@ def analysis_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[
             fontsize=font,
             )
 
-    plt.xticks(r, names,fontsize=18 + ratio_font)
+    plt.xticks(r, names,fontsize=18 + ratio_font,rotation = ROTATION)
     plt.yticks(fontsize=22 + ratio_font)
     plt.xlabel("Model",fontsize=22 + ratio_font)
     plt.ylabel("Score",fontsize=22 + ratio_font)
@@ -961,8 +964,8 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
     table = []
 
     if runtime.exists() and saving_dir == None:
-        min_values = st.slider(
-                    "Minimum value of similarity", 0.0, 1.0, value=0.7, step=0.05, key="similarity")
+        min_value,max_value = st.slider(
+                    "Minimum value of similarity", 0.0, 1.0, value=(0.0, 1.0), step=0.05, key="similarity")
 
     for seg_i in range(num_seg_src):
         if len(table) == 10:
@@ -973,7 +976,7 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
         score = 0
         for doc_out in docs_output:
             score = doc_src.similarity(doc_out)
-            if score >= min_values and score <= 1.0:
+            if score >= min_value and score <= max_value:
                 table.append([seg_i+1,src[seg_i]])
                 break
     
@@ -981,25 +984,18 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
         df = pd.DataFrame(np.array(table), columns=["line", "source segment"])
         if saving_dir is not None:
             df.to_csv(saving_dir + "/similar-source-sentences.csv")
-        return df
+        return df,min_value,max_value
     else:
-        return None
+        return None,0,0
     
 
-def export_dataframe(label:str, name:str, dataframe:pd.DataFrame, column=None):
+def export_dataframe(label:str, path:str, name:str, dataframe:pd.DataFrame, column=None):
+    key ="export-" + name
     if column != None:
-        column.download_button(
-            label = label,
-            data=dataframe.to_csv().encode('utf-8'),
-            file_name=name,
-            mime='text/csv',
-            key ='export_' + name
-        )
+        column.button(label, key=key)
     else:
-        st.download_button(
-            label = label,
-            data=dataframe.to_csv().encode('utf-8'),
-            file_name=name,
-            mime='text/csv',
-            key ='export_' + name
-        )
+        st.button(label,key=key)
+    if st.session_state.get(key):
+        if not os.path.exists(path):
+            os.makedirs(path)  
+        dataframe.to_csv(path + "/" + name)

@@ -11,11 +11,13 @@ from typing import Dict, List
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 class SystemsScores:
-    def __init__(self, human_scores:Dict[str,float], metrics_scores:Dict[str,Dict[str,float]], metrics: List[str]) ->None:
+    def __init__(self, human_scores:Dict[str,float], metrics_scores:Dict[str,Dict[str,float]], metrics: List[str], human_scores_file:str , metrics_scores_file:str) ->None:
         self.human_scores = {}
         self.metrics_scores = {}
         self.metrics = metrics
         self.systems_names = []
+        self.human_scores_file = human_scores_file
+        self.metrics_scores_file = metrics_scores_file
         for sys_name, human_score in human_scores.items():
             if sys_name in metrics_scores.keys():
                 self.human_scores[sys_name] = human_score
@@ -100,11 +102,16 @@ class StudyWeights:
         print(self.weights)
 
     def write_file(self, path:str) -> None:
-        data = self.weights
+        data = {}
+        data["weights_metrics"] = self.weights
         data["system_names"] = self.systems_scores.systems_names
         data["number_of_trials"] = self.trials
         data["seed"] = self.seed
-        f = open(path + "/metrics_weights.txt", "w")
+        data["human_scores_file"] = self.systems_scores.human_scores_file
+        data["human_scores"] = self.systems_scores.human_scores
+        data["metrics_scores_file"] = self.systems_scores.metrics_scores_file
+        data["metrics_scores"] = self.systems_scores.metrics_scores
+        f = open(path + "/metrics_weights.json", "w")
         json.dump(data,f,indent=4)
         f.close()
 
@@ -145,11 +152,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     seed_everything(args.seed_everything)
-
+    
     human_scores = SystemsScores.read_human_scores(args.human_scores_file)
     metrics_scores, metrics = SystemsScores.read_metrics_scores(args.metrics_scores_file)
-    systems_scores = SystemsScores(human_scores,metrics_scores,metrics)
+    systems_scores = SystemsScores(human_scores,metrics_scores,metrics,args.human_scores_file,args.metrics_scores_file)
 
-    study = StudyWeights(systems_scores,args.seed_everything,args.trials)
-    study.optimize_weights()
-    study.write_file(args.output_path)
+    if systems_scores.has_systems():
+        study = StudyWeights(systems_scores,args.seed_everything,args.trials)
+        study.optimize_weights()
+        if args.output_path:
+            study.write_file(args.output_path)

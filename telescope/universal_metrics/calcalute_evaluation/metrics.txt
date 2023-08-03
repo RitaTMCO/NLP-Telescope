@@ -1,7 +1,0 @@
-COMET
-BLEU
-chrF
-ZeroEdit
-TER
-GLEU
-BERTScore

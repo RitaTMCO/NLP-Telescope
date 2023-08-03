@@ -24,13 +24,11 @@ import click
 import pandas as pd
 
 from typing import List, Union, Tuple
-from copy import deepcopy
 
-from telescope.collection_testsets import NLGTestsets
 from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, AVAILABLE_MT_METRICS, PairwiseResult
 from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.tasks import AVAILABLE_NLG_TASKS, AVAILABLE_CLASSIFICATION_TASKS
-from telescope.universal_metrics import AVAILABLE_UNIVERSAL_METRICS
+from telescope.universal_metrics import AVAILABLE_UNIVERSAL_METRICS_NAMES
 from telescope.bias_evaluation import AVAILABLE_BIAS_EVALUATIONS
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.tasks.classification import Classification
@@ -48,11 +46,14 @@ available_class_metrics = {m.name: m for m in AVAILABLE_CLASSIFICATION_METRICS}
 
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
 available_class_filters = {f.name: f for f in AVAILABLE_CLASSIFICATION_FILTERS}
+
 available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
+available_class_tasks = {t.name: t for t in AVAILABLE_CLASSIFICATION_TASKS}
 
 available_bias_evaluation = {b.name: b for b in AVAILABLE_BIAS_EVALUATIONS}
 
-available_universal_metrics = {u.name: u for u in AVAILABLE_UNIVERSAL_METRICS}
+available_universal_metrics = AVAILABLE_UNIVERSAL_METRICS_NAMES
+
 
 def readlines(ctx, param, file: click.File) -> List[str]:
     return [l.strip() for l in file.readlines()]
@@ -584,12 +585,18 @@ def n_compare_nlg(
     systems_ids = collection.systems_ids
     systems_names =  collection.systems_names
     language = collection.language_pair.split("-")[1]
-    if (system_x and system_x.name in systems_ids) and (system_y and system_y.name in systems_ids):
-        x_id = systems_ids[system_x.name]
-        y_id = systems_ids[system_y.name]
-    else:
-        x_id = collection.indexes_of_systems()[0]
-        y_id = collection.indexes_of_systems()[1]
+    num_systems = len(systems_ids)
+
+    x_id = None
+    y_id = None
+    
+    if len(systems_ids) > 1:
+        if (system_x and system_x.name in systems_ids) and (system_y and system_y.name in systems_ids):
+            x_id = systems_ids[system_x.name]
+            y_id = systems_ids[system_y.name]
+        else:
+            x_id = collection.indexes_of_systems()[0]
+            y_id = collection.indexes_of_systems()[1]
 
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
@@ -617,10 +624,10 @@ def n_compare_nlg(
 
         click.secho('\nMetric Results', fg="yellow") 
         results_df = display_table(systems_names,results)
-        if bootstrap and len(systems_ids.values()) > 1: 
+        if bootstrap and num_systems > 1: 
             bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x_id,y_id,num_splits,sample_ratio)
         
-        if universal_metric:
+        if universal_metric and num_systems > 1: 
             if universal_metric == "pairwise-comparison":
                 universal_me = available_universal_metrics[universal_metric](results,x_id,y_id)
             else:
@@ -650,7 +657,7 @@ def n_compare_nlg(
             if not os.path.exists(metrics_results_dir):
                 os.makedirs(metrics_results_dir)
             results_df.to_csv(metrics_results_dir + "results.csv")
-            if bootstrap and len(systems_ids.values()) > 1:
+            if bootstrap and num_systems > 1:
                 x_name = systems_names[x_id]
                 y_name = systems_names[y_id]
                 filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.csv"

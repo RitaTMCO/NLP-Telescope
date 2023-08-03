@@ -19,7 +19,7 @@ __version__ = "1.0.1"
 __copyright__ = "2020 Unbabel. All rights reserved."
 
 PATH_USER = "user/" 
-PATH_DOWNLOADED_PLOTS = "user/downloaded_plots/"
+PATH_DOWNLOADED_PLOTS = "user/downloaded_data/"
 
 def read_yaml_file(file_yaml):
     file = open(PATH_USER + file_yaml, "r")

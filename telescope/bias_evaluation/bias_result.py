@@ -149,17 +149,17 @@ class MultipleBiasResults():
 
     def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets, ref_name:str, option_bias):
         if option_bias:
-            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_name + "/bias_evaluation/" + option_bias + "/"
+            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_name + "/bias_evaluation/" + option_bias + "/"
         else:
-            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_name + "/bias_evaluation/"
+            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_name + "/bias_evaluation/"
     
         df = self.display_bias_evaluations_informations()
         st.dataframe(df)
-        export_dataframe(label="Bias Evaluations Informations", name="bias_evaluation_informations.csv", dataframe=df)
+        export_dataframe(label="Bias Evaluations Informations", path=path, name= "bias_evaluation_informations.csv", dataframe=df)
     
         dataframe = MultipleMetricResults.results_to_dataframe(list(self.multiple_metrics_results_per_metris.values()),collection_testsets.systems_names)
         st.dataframe(dataframe)
-        export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
+        export_dataframe(label="Export table with score", path=path, name= "bias_results.csv", dataframe=dataframe)
 
         st.subheader("Confusion Matrices")
         system_name = st.selectbox(
@@ -171,7 +171,7 @@ class MultipleBiasResults():
         rates = self.display_rates_of_one_system(collection_testsets, system_name)
         st.dataframe(rates)
         _,middle,_ = st.columns(3)
-        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_bias_rates.csv", dataframe=rates, column=middle)
+        export_dataframe(label="Export rates", path=path, name= system_name.replace(" ", "_") + "_bias_rates.csv", dataframe=rates, column=middle)
 
         self.display_confusion_matrix_of_one_system(collection_testsets,system_name)
         
@@ -224,12 +224,24 @@ class MultipleBiasResults():
                 key="bias")
         
         sys_id = collection_testsets.system_name_id(system_name)
+
+        name = system_name.replace(" ", "_") + "_bias_segments.csv"
+
         click = "click_" + system_name + sys_id + "bias_evaluation"
         if click not in st.session_state:
             st.session_state[click] =  0
+        if 'dataframe_bias' not in st.session_state:
+             st.session_state.dataframe_bias = None
+
         def callback():
             st.session_state[click] +=  1
         _, middle, _ = st.columns(3)
+
+        if st.session_state.get("export-" + name):
+            if not os.path.exists(path):
+                os.makedirs(path)  
+            st.session_state.dataframe_bias.to_csv(path + "/" + name)
+
         if(middle.button("Show Random Segments with bias", on_click=callback)):
 
             if st.session_state[click] == 1:
@@ -240,7 +252,8 @@ class MultipleBiasResults():
             if dataframe is not None:
                 st.dataframe(dataframe)
                 _,middle,_ = st.columns(3)
-                export_dataframe(label="Export table with segments", name=system_name.replace(" ", "_") + "_bias_segments.csv", dataframe=dataframe, column=middle)
+                st.session_state.dataframe_bias = dataframe
+                export_dataframe(label="Export table with segments", path=path, name= name, dataframe=dataframe, column=middle)
             else:
                 st.warning("There are no segments with bias.")
 

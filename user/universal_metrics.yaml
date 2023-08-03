@@ -1,7 +1,8 @@
 All universal metrics:
     - average
     - median
-    - weighted-mean
+    - weighted-mean-seed-12_-1_1
+    - weighted-mean-seed-12_0_1_TER
     - pairwise-comparison
     - social-choice-theory
 
@@ -12,7 +13,8 @@ NLG universal metrics: []
 Machine Translation universal metrics: 
     - average
     - median
-    - weighted-mean
+    - weighted-mean-seed-12_-1_1
+    - weighted-mean-seed-12_0_1_TER
     - pairwise-comparison
     - social-choice-theory
 
@@ -21,3 +23,21 @@ Summarization universal metrics: []
 Dialogue System universal metrics: []
 
 Classification universal metrics: []
+
+Weights:
+    - weighted-mean-seed-12_-1_1:
+                  - COMET: 0.9567358939058014
+                  - BERTScore: 0.5375533510888612
+                  - TER: 0.9632557198393267
+                  - GLEU: 0.6975662738182029
+                  - ZeroEdit: -0.2015369425140258
+                  - chrF: -0.8779585940253297
+                  - BLEU:  0.29060058768921415
+    - weighted-mean-seed-12_0_1_TER:
+                  - COMET: 0.0
+                  - BERTScore: 0.0
+                  - TER: 0.0
+                  - GLEU: 0.0
+                  - ZeroEdit: 0.0
+                  - chrF: 0.0
+                  - BLEU:  0.0

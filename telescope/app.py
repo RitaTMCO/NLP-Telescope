@@ -22,6 +22,7 @@ from telescope.metrics.result import MultipleMetricResults
 from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.plotting import export_dataframe, analysis_metrics
+from telescope.universal_metrics import WeightedMean
 from telescope import PATH_DOWNLOADED_PLOTS
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
@@ -53,7 +54,7 @@ metrics = st.sidebar.multiselect(
 )
 if available_tasks[task].universal_metrics:
     rank = st.sidebar.checkbox('Models Rankings')
-    available_universal_metrics = {u.name: u for u in available_tasks[task].universal_metrics}
+    available_universal_metrics = available_tasks[task].universal_metrics
     
 metric = st.sidebar.selectbox(
     "Select the segment-level metric you wish to run:",
@@ -132,8 +133,8 @@ if available_bias_evaluations:
      
 # --------------------- Streamlit APP Caching functions! --------------------------
 
-cache_time = 5 * 60 * 60  # 1 hour cache time for each object
-cache_max_entries = 200  # 1 hour cache time for each object
+cache_time = 10 * 60 * 60  # 10 hour cache time for each object
+cache_max_entries = 200  # 10 hour cache time for each object
 
 
 # --------| Filters |-----------
@@ -235,6 +236,8 @@ def run_all_metrics(collection, metrics, filters):
 def run_universal_metric(testset, universal_metric, metrics_results, extra_info):
     if universal_metric == "pairwise-comparison":
         universal_metric = available_universal_metrics[universal_metric](metrics_results,extra_info[0],extra_info[1])
+    elif available_universal_metrics[universal_metric] == WeightedMean:
+        universal_metric = available_universal_metrics[universal_metric](metrics_results,universal_metric)
     else:
         universal_metric = available_universal_metrics[universal_metric](metrics_results)
     return universal_metric.universal_score_calculation_and_ranking(testset)
@@ -362,7 +365,7 @@ if collection_testsets:
             universal_results = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename], [])
 
         if universal_results:
-            universal_results.plots_web_interface(collection_testsets)
+            universal_results.plots_web_interface(collection_testsets,ref_filename)
 
     # ----------------------------| Metric Analysis and Plots |-------------------------------
 
@@ -376,17 +379,18 @@ if collection_testsets:
         if len(metrics_results) > 0:
             left,right = st.columns([0.3, 0.7])
             left_2,right_2 = st.columns([0.3, 0.7])
-            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_filename + "/"  
+            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_filename + "/"  
         
             dataframe = MultipleMetricResults.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
             left.dataframe(dataframe)
             analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names,column=right)
 
-            left_2,right_2 = st.columns([0.3, 0.7])
-            export_dataframe(label="Export table with score", name="results.csv", dataframe=dataframe, column=left_2)
+            left_2,right_2 = st.columns([0.3, 0.7]) 
+            
+            if not os.path.exists(path):
+                os.makedirs(path)  
+            export_dataframe(label="Export table with score",path=path, name= "results.csv", dataframe=dataframe, column=left_2)
             if right_2.button('Download the analysis of each metric'):
-                if not os.path.exists(path):
-                    os.makedirs(path)  
                 analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names, path)
     
     

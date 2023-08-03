@@ -1,4 +1,5 @@
 result/
+user/downloaded_plots/*
 
 .vscode
 # Byte-compiled / optimized / DLL files

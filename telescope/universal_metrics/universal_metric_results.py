@@ -60,11 +60,12 @@ class MultipleUniversalMetricResult():
         df = pd.DataFrame(np.array(summary), index=ranks, columns=["System", "Score"])
         return df
     
-    def plots_web_interface(self, collection_testsets:CollectionTestsets):
+    def plots_web_interface(self, collection_testsets:CollectionTestsets,ref_filename:str):
         st.subheader(self.title)
+        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/" 
         df = self.results_to_dataframe(collection_testsets.systems_names)
         st.dataframe(df)
-        export_dataframe(label="Export ranks of systems", name= self.universal_metric + "_ranks_systems.csv", dataframe=df)
+        export_dataframe(label="Export ranks of systems", path=path, name= self.universal_metric + "_ranks_systems.csv", dataframe=df)
     
     def plots_cli_interface(self, collection_testsets:CollectionTestsets):
         click.secho("\nModels Rankings:", fg="yellow")

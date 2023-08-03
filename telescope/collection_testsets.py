@@ -122,6 +122,28 @@ class CollectionTestsets:
             outputs[sys_id] = output
 
         return source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs
+    
+    @classmethod
+    def upload_names(cls, systems_names:Dict[str,str]) -> list:
+        load_name = st.checkbox('Upload systems names')
+        name_file = None
+        if load_name:
+            name_file = st.file_uploader("Upload the file with systems names", accept_multiple_files=False)
+            if name_file != None:
+                list_new_names = []
+                names = read_lines(name_file)
+                for name in names:
+                    if name not in list_new_names:
+                        list_new_names.append(name)
+                        
+                if len(list_new_names) >= len(systems_names):
+                    i = 0
+                    for system_id, _ in systems_names.items():  
+                        if cls.task + "_" + system_id + "_rename" not in st.session_state:
+                            systems_names[system_id] = list_new_names[i]
+                        i += 1
+        return systems_names,load_name,name_file 
+   
 
     @classmethod
     @st.cache
@@ -244,10 +266,13 @@ class NLGTestsets(CollectionTestsets):
         
         source_file,sources,ref_files,references, refs_indexes, outputs_files,systems_ids, systems_names, outputs = files
 
+        systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
+
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (language != "")):
+            and (language != "")
+            and ( not load_name or (load_name and file_sys_names is not None))):
 
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)
@@ -404,10 +429,13 @@ class ClassTestsets(CollectionTestsets):
         source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs = files
         labels_file = cls.upload_labels()
 
+        systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
+
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (labels_file is not None)):
+            and (labels_file is not None)
+            and ( not load_name or (load_name and file_sys_names is not None))):
             
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)
