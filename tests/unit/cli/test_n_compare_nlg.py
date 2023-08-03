@@ -394,7 +394,7 @@ class TestCompareCli(unittest.TestCase):
             "--sample_ratio",
             0.3,
             "-u",
-            "weighted-mean",
+            "social-choice-theory",
             "--output_folder",
             DATA_PATH
         ]
