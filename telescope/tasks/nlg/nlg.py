@@ -2,9 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
-import time
 
-from telescope import PATH_DOWNLOADED_PLOTS
+from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, NLGTestsets
 from telescope.metrics import AVAILABLE_NLG_METRICS

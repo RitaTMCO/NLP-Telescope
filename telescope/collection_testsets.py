@@ -112,14 +112,15 @@ class CollectionTestsets:
         outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output, accept_multiple_files=True)
         systems_ids, systems_names, outputs = {}, {}, {}
         for output_file in outputs_files:
-            output = read_lines(output_file)
-            sys_id = cls.create_sys_id(output_file.name,output)
-            systems_ids[output_file.name] = sys_id
-            if cls.task + "_" + sys_id + "_rename" not in st.session_state:
-                systems_names[sys_id] = sys_id
-            else:
-                systems_names[sys_id] = st.session_state[cls.task + "_" + sys_id + "_rename" ]
-            outputs[sys_id] = output
+            if output_file.name not in systems_ids:
+                output = read_lines(output_file)
+                sys_id = cls.create_sys_id(output_file.name,output)
+                systems_ids[output_file.name] = sys_id
+                if cls.task + "_" + sys_id + "_rename" not in st.session_state:
+                    systems_names[sys_id] = sys_id
+                else:
+                    systems_names[sys_id] = st.session_state[cls.task + "_" + sys_id + "_rename" ]
+                outputs[sys_id] = output
 
         return source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs
     

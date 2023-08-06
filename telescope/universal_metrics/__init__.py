@@ -7,7 +7,7 @@ from .social_choice_theory import SocialChoiceTheory
 
 from .universal_metric_results import UniversalMetricResult
 
-from telescope import read_yaml_file
+from telescope.utils import read_yaml_file
 
 universal_metrics_yaml = read_yaml_file("universal_metrics.yaml")
 

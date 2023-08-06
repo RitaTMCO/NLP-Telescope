@@ -3,7 +3,7 @@ import os
 import streamlit as st
 
 from typing import Tuple
-from telescope import PATH_DOWNLOADED_PLOTS
+from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, ClassTestsets
 from telescope.metrics import AVAILABLE_CLASSIFICATION_METRICS

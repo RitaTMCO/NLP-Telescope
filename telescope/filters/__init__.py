@@ -3,7 +3,7 @@ from .ner import NERFilter
 from .length import LengthFilter
 from .duplicates import DuplicatesFilter
 
-from telescope import read_yaml_file
+from telescope.utils import read_yaml_file
 
 filters_yaml = read_yaml_file("filters.yaml")
 

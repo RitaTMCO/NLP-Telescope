@@ -722,6 +722,8 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
     if len(incorrect_ids) != 0:
         df = pd.DataFrame(np.array(table), index=lines, columns=["example", "true label", "predicted label"])
         if saving_dir is not None:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
             df.to_csv(saving_dir + "/incorrect-examples.csv")
         return df.sort_index()
     else:
@@ -758,6 +760,8 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
         df = pd.DataFrame(np.array(table), index=lines, columns=["reference", "system output", 
                                                     "identity term and its gender in reference", "identity term and its gender in output"])
         if saving_dir is not None:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
             df.to_csv(saving_dir + "/bias-segments.csv")
         return df.sort_index()
     else:
@@ -808,14 +812,16 @@ def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=No
     df = pd.DataFrame(table)
     df.index = labels
     if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
         df.to_csv(saving_dir + "/rates.csv")
     return df
   
 
-def analysis_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str):
+def analysis_bucket(scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str):
     number_of_systems = len(systems_names)
     number_of_labels = len(labels)
-    seg_scores_label = list(seg_scores_dict.values())
+    scores_label = list(scores_dict.values())
     names = tuple(systems_names)
 
     ratio_font, ratio_r, ratio_bar, ratio = buckets_ratio(number_of_systems)
@@ -825,18 +831,33 @@ def analysis_bucket(seg_scores_dict: Dict[str,List[float]], systems_names: List[
     font= 20 + ratio_font
     color = "black"
 
+    if number_of_labels <= 10:
+        colors_cmap = plt.get_cmap('tab10') 
+    elif number_of_labels <= 20:
+        colors_cmap = plt.get_cmap('tab20b') 
+    else:
+        colors_cmap = plt.get_cmap('rainbow') 
+
     plt.figure(figsize=(12+ratio,10+ratio))
     plt.clf()
 
-    axs = [plt.bar(r, seg_scores_label[0], edgecolor="white", width=barWidth)]
+
+
+    axs = [plt.bar(r, scores_label[0], edgecolor="white", width=barWidth, color=colors_cmap(0))]
 
     for i in range(1, number_of_labels):
-        if all(seg_score >=0 for seg_score in seg_scores_label[i]):
-            bottom = sum([seg_score_label_i for seg_score_label_i in seg_scores_label[:i] if all(seg_score >=0 for seg_score in seg_score_label_i)])
-        else:
-            bottom =  sum([seg_score_label_i for seg_score_label_i in seg_scores_label[:i] if all(seg_score <0 for seg_score in seg_score_label_i)])
-        axs.append(plt.bar(r, seg_scores_label[i], bottom=bottom, edgecolor="white", width=barWidth))
-
+        bottom = np.array([0.0 for _ in range(number_of_systems)])
+        for scores_per_system in scores_label[:i]:
+            scores = []
+            for j in range(number_of_systems):
+                if (scores_per_system[j] > 0 and scores_label[i][j] <= 0) or (scores_per_system[j] < 0 and scores_label[i][j] >= 0):
+                    scores.append(0.0)
+                else:
+                    scores.append(scores_per_system[j])
+ 
+            bottom += np.array(scores)
+        axs.append(plt.bar(r, scores_label[i], bottom=bottom, edgecolor="white", width=barWidth,color=colors_cmap(i/number_of_labels)))
+    
     for i in range(number_of_systems):
         for ax in axs:
             h = ax[i].get_height()
@@ -875,6 +896,8 @@ def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str
     
     plt = analysis_bucket(number_of_correct_labels, sys_names, labels, "Number of times each label was identified correctly")
     if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
         plt.savefig(saving_dir + "/number-of-correct-labels-of-each-system.png", bbox_inches='tight')
     if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
@@ -896,6 +919,8 @@ def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[s
 
     plt = analysis_bucket(number_of_incorrect_labels, sys_names, labels, "Number of times each label was identified incorrectly")
     if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
         plt.savefig(saving_dir + "/number-of-incorrect-labels-of-each-system.png",bbox_inches='tight')
     if runtime.exists() and saving_dir == None:
         st.pyplot(plt)
@@ -915,6 +940,8 @@ def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:
 
         plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" ) 
         if saving_dir is not None:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
             plt.savefig(saving_dir + "/" + metric + "-analysis-labels-bucket.png")
         if runtime.exists() and saving_dir == None:
             st.pyplot(plt)
@@ -930,6 +957,8 @@ def analysis_metrics(multiple_metrics_results: List[MultipleMetricResults], syst
     plt = analysis_bucket(scores_per_metric, list(systems_names.values()), metrics, "Analysis of each metric") 
 
     if saving_dir is not None:
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
         plt.savefig(saving_dir + "/analysis-metric-score.png", bbox_inches='tight')
     if runtime.exists() and saving_dir == None:
         if column == None:
@@ -941,7 +970,7 @@ def analysis_metrics(multiple_metrics_results: List[MultipleMetricResults], syst
     
 
 
-def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str=None):
+def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str=None, min_value:float=0.0,max_value:float=1.0):
     def remove_stop_words_and_punct(text:str,nlp):
         final_text = ""
         doc = nlp(text.lower())
@@ -965,7 +994,7 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
 
     if runtime.exists() and saving_dir == None:
         min_value,max_value = st.slider(
-                    "Minimum value of similarity", 0.0, 1.0, value=(0.0, 1.0), step=0.05, key="similarity")
+                    "Minimum and maximum similarity value", 0.0, 1.0, value=(0.0, 1.0), step=0.05, key="similarity")
 
     for seg_i in range(num_seg_src):
         if len(table) == 10:
@@ -983,7 +1012,9 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
     if len(table) != 0:
         df = pd.DataFrame(np.array(table), columns=["line", "source segment"])
         if saving_dir is not None:
-            df.to_csv(saving_dir + "/similar-source-sentences.csv")
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
+            df.to_csv(saving_dir + "/" + str(min_value) + "-" + str(max_value) + "_similar-source-sentences.csv")
         return df,min_value,max_value
     else:
         return None,0,0

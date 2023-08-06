@@ -3,7 +3,7 @@ from .machine_translation import MachineTranslation
 from .dialogue_system import DialogueSystem
 from .summarization import Summarization
 
-from telescope import read_yaml_file
+from telescope.utils import read_yaml_file
 
 AVAILABLE_TASKS = [
     MachineTranslation, 

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from typing import List, Dict
-from telescope import PATH_DOWNLOADED_PLOTS
+from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.collection_testsets import CollectionTestsets
 from telescope.metrics.metric import Metric
 from telescope.plotting import export_dataframe

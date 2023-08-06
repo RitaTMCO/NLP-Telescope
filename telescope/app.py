@@ -23,7 +23,7 @@ from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.plotting import export_dataframe, analysis_metrics
 from telescope.universal_metrics import WeightedMean
-from telescope import PATH_DOWNLOADED_PLOTS
+from telescope.utils import PATH_DOWNLOADED_PLOTS, create_downloaded_data_folder
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
@@ -34,6 +34,8 @@ def load_image(image_url):
 
 #logo = load_image("https://github.com/Unbabel/MT-Telescope/blob/master/data/mt-telescope-logo.jpg?raw=true")
 st.sidebar.image("data/nlp-telescope-logo.png")
+
+create_downloaded_data_folder()
 
 # --------------------  APP Settings --------------------
 
@@ -53,7 +55,7 @@ metrics = st.sidebar.multiselect(
     default=list(available_metrics.keys())[0],
 )
 if available_tasks[task].universal_metrics:
-    rank = st.sidebar.checkbox('Models Rankings')
+    rank = st.sidebar.checkbox('Rankings of Models')
     available_universal_metrics = available_tasks[task].universal_metrics
     
 metric = st.sidebar.selectbox(
@@ -386,9 +388,7 @@ if collection_testsets:
             analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names,column=right)
 
             left_2,right_2 = st.columns([0.3, 0.7]) 
-            
-            if not os.path.exists(path):
-                os.makedirs(path)  
+             
             export_dataframe(label="Export table with score",path=path, name= "results.csv", dataframe=dataframe, column=left_2)
             if right_2.button('Download the analysis of each metric'):
                 analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names, path)

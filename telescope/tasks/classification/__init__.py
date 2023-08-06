@@ -2,7 +2,7 @@ import sys
 
 from .classification import Classification
 
-from telescope import read_yaml_file
+from telescope.utils import read_yaml_file
 
 AVAILABLE_TASKS = [
     Classification

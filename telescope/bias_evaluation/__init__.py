@@ -4,7 +4,7 @@ from .gender_bias_evaluation import GenderBiasEvaluation
 
 from .bias_result import BiasResult
 
-from telescope import read_yaml_file
+from telescope.utils import read_yaml_file
 
 bias_evaluations_yaml = bias_evaluations_yaml = read_yaml_file("bias_evaluations.yaml")
 
