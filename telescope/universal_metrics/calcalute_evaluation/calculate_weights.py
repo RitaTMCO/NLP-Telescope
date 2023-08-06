@@ -44,10 +44,13 @@ class SystemsScores:
         metrics = list(metrics_scores[sys_names[0]].keys())
         return metrics_scores, metrics
     
-    def systems_one_metric_scores(self, metric:str):
+    def systems_one_metric_scores(self, metric:str,ter:bool):
         sys_metric_scores = []
         for sys_name in self.systems_names:
-            sys_metric_scores.append(self.metrics_scores[sys_name][metric])
+            if ter and metric == "TER":
+                sys_metric_scores.append(self.metrics_scores[sys_name][metric] * -1)
+            else:
+                sys_metric_scores.append(self.metrics_scores[sys_name][metric])
         return sys_metric_scores
     
     def systems_human_scores(self):
@@ -84,24 +87,27 @@ class StudyWeights:
                 tp += 1
         return tp/len(pairs) 
 
-    def objective(self,trial) -> float:
+    def objective(self,trial,ter) -> float:
         metrics = self.systems_scores.metrics
-        weights = [trial.suggest_float(m, -1, 1) for m in metrics]
+        if not ter:
+            weights = [trial.suggest_float(m, -1, 1) for m in metrics]
+        else:
+            weights = [trial.suggest_float(m, 0, 1) for m in metrics]
         weights = {m: w for m, w in zip(metrics, weights)}
         gold_scores = self.systems_scores.systems_human_scores()
         weighted_mean_scores_per_sys = list(np.array(
-            [weights[m] * np.array(self.systems_scores.systems_one_metric_scores(m)) for m in weights.keys()]
+            [weights[m] * np.array(self.systems_scores.systems_one_metric_scores(m,ter)) for m in weights.keys()]
         ).sum(axis=0))
         accuracy = self.system_accuracy(weighted_mean_scores_per_sys, gold_scores, self.systems_scores.systems_names)
         return accuracy
     
-    def optimize_weights(self) -> None:
+    def optimize_weights(self,ter:bool) -> None:
         study = optuna.create_study(sampler=optuna.samplers.TPESampler(seed=self.seed), direction="maximize")
-        study.optimize(lambda x: self.objective(x), n_trials=args.trials, show_progress_bar=True)
+        study.optimize(lambda x: self.objective(x,ter), n_trials=args.trials, show_progress_bar=True)
         self.weights = study.best_trial.params
         print(self.weights)
 
-    def write_file(self, path:str) -> None:
+    def write_file(self, path:str,ter:bool) -> None:
         data = {}
         data["weights_metrics"] = self.weights
         data["system_names"] = self.systems_scores.systems_names
@@ -111,7 +117,11 @@ class StudyWeights:
         data["human_scores"] = self.systems_scores.human_scores
         data["metrics_scores_file"] = self.systems_scores.metrics_scores_file
         data["metrics_scores"] = self.systems_scores.metrics_scores
-        f = open(path + "/metrics_weights.json", "w")
+        
+        extra = str(self.seed) + "_" + str(self.trials) + "_"
+        if ter:
+            extra += "ter_"
+        f = open(path + "/" + extra + "metrics_weights.json", "w")
         json.dump(data,f,indent=4)
         f.close()
 
@@ -144,6 +154,13 @@ if __name__ == "__main__":
         type=int
     )
     parser.add_argument(
+        "-t",
+        "--ter", 
+        help="TER Score is negative and Weights is between [0,1].", 
+        type=bool,
+        default=False
+    )
+    parser.add_argument(
         "-o",
         "--output_path", 
         help="Output Path.", 
@@ -159,6 +176,6 @@ if __name__ == "__main__":
 
     if systems_scores.has_systems():
         study = StudyWeights(systems_scores,args.seed_everything,args.trials)
-        study.optimize_weights()
+        study.optimize_weights(args.ter)
         if args.output_path:
-            study.write_file(args.output_path)
+            study.write_file(args.output_path,args.ter)
