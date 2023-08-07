@@ -211,7 +211,7 @@ def telescope():
     default="",
     callback=output_folder_exists,
     type=str,
-    help="Folder you wish to use to save plots.",
+    help="Folder in which you wish to save plots.",
 )
 @click.option("--bootstrap", is_flag=True)
 @click.option(
@@ -226,7 +226,7 @@ def telescope():
     required=False,
     default=0.5,
     type=float,
-    help="Folder you wish to use to save plots.",
+    help="Proportion (P) of the initial sample.",
 )
 def compare(
     source: click.File,
@@ -558,7 +558,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     default="",
     callback=output_folder_exists,
     type=str,
-    help="Folder you wish to use to save plots.",
+    help="Folder in which you wish to save plots.",
 )
 @click.option("--bootstrap", is_flag=True)
 @click.option(
@@ -812,7 +812,7 @@ def n_compare_nlg(
     default="",
     callback=output_folder_exists,
     type=str,
-    help="Folder you wish to use to save plots.",
+    help="Folder in which you wish to save plots.",
 )
 @click.option(
     "--systems_names",
