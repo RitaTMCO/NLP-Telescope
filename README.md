@@ -181,6 +181,14 @@ cd NLP-Telescope
 poetry install --without dev
 ```
 
+Finally, run the following commands:
+
+```bash
+chmod +x download.sh 
+ ./download.sh
+```
+
+
 ## **Before running the tool:**
 
 Some metrics, such as COMET, may take some time. You can switch the COMET model to a more lightweight model with the following env variable:
