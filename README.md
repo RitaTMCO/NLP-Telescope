@@ -36,9 +36,9 @@ NLP-Telescope also offers new features compared to MT-Telescope, such as:
 
 + Being able to analyse four Natural Language Processing (NLP) tasks such as **machine translation**, **text summarization**, **dialogue system** and **text classification**. For each task, **appropriate visual analysis interface, metrics and filters are added**. This functionality is updated from MT-Telescope, which analyses machine translation systems only;
 
-+ Analysing and evaluating **gender biases** when comparing the references with the systems outputs. Only available for the machine translation. There are three ways for this evaluation: **with dataset**, **with library** and **with datasets and library**;
++ Analysing and evaluating **gender biases** when comparing the references with the systems outputs. Only available for the machine translation;
 
-+ Being able to **rank the systems** through an aggregation mechanism that aggregates all requested metrics such as average, median, weighted mean, pairwise comparison [(Peyrard et al., 2021)](https://aclanthology.org/2021.acl-long.179/) and social choice theory [ (Colombo et al., 2022)](https://arxiv.org/abs/2202.03799). Only available for the machine translation;
++ Being able to **rank the systems** through an aggregation mechanism that aggregates all requested metrics;
 
 + Being able to **rename systems** (important for systems to contain the names that the user requires in the plot) through the upload of one file (in which each line is a system name) or directly on the web browser;
 
