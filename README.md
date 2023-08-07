@@ -185,7 +185,7 @@ Finally, run the following commands:
 
 ```bash
 chmod +x download.sh 
- ./download.sh
+./download.sh
 ```
 
 
