@@ -92,7 +92,7 @@ class Classification(Task):
                 sys = collection_testsets.system_name_id(sys_name)
                 confusion_matrix_of_system(testset.ref,testset.systems_output[sys],labels,sys_name,path_dir)
                 for l in labels:
-                    confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[sys_name],l,labels,sys_name, path_dir)
+                    confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[sys],l,labels,sys_name, path_dir)
 
 
         #-------------- |Analysis Of Each Label| --------------------
