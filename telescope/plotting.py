@@ -44,18 +44,25 @@ def buckets_ratio(number_of_systems:int):
     ratio = int((number_of_systems)/2) + ratio_r + ratio_font + ratio_bar
     return ratio_font, ratio_r, ratio_bar, ratio
 
-def calculate_color(num:int,number_of_labels:int, rgb=False):
+def calculate_color(number_of_labels:int, rgb=False):
+    interval = np.linspace(0.0, 1.0, number_of_labels)
     if number_of_labels <= 10:
-        colors_cmap = plt.get_cmap('tab10') 
+        colors = plt.cm.tab10(interval)
     elif number_of_labels <= 20:
-        colors_cmap = plt.get_cmap('tab20b') 
+        colors = plt.cm.tab20b(interval)
+    elif number_of_labels <= 40:
+        inter1 = np.linspace(0.0, 1.0, int(number_of_labels/2))
+        inter2 = np.linspace(0.0, 1.0, number_of_labels-int(number_of_labels/2))
+        colors = np.vstack((plt.cm.tab20b(inter1), plt.cm.tab20c(inter2)))
     else:
-        colors_cmap = plt.get_cmap('rainbow') 
-
-    colors = colors_cmap(num/number_of_labels)
+        colors = plt.cm.gist_rainbow(interval)
 
     if rgb:
-        return "rgb(" + str(int(255 * colors[0])) + "," + str(int(255 * colors[1])) + "," + str(int(255 * colors[2])) +")"
+        colors_rgb = []
+        for i in range(number_of_labels):
+            r,g,b = colors[i][0],colors[i][1],colors[i][2]
+            colors_rgb.append("rgb(" + str(int(255 * r)) + "," + str(int(255 * g)) + "," + str(int(255 * b)) +")")
+        return colors_rgb
 
     return colors
 
@@ -466,6 +473,7 @@ def update_multiple_buckets(
             va="center",
             color=color,
             fontsize=font,
+            weight='bold'
         )
         plt.text(
             r2.get_x() + r2.get_width() / 2.0,
@@ -475,6 +483,7 @@ def update_multiple_buckets(
             va="center",
             color=color,
             fontsize=font,
+            weight='bold'
         )
         plt.text(
             r3.get_x() + r3.get_width() / 2.0,
@@ -484,6 +493,7 @@ def update_multiple_buckets(
             va="center",
             color=color,
             fontsize=font,
+            weight='bold'
         )
         plt.text(
             r4.get_x() + r4.get_width() / 2.0,
@@ -493,6 +503,7 @@ def update_multiple_buckets(
             va="center",
             color=color,
             fontsize=font,
+            weight='bold'
         )
 
     # Custom x axis
@@ -604,11 +615,12 @@ def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_nam
     hist_data = [scores[:, i] for i in range(scores.shape[1])]
     number_of_systems = len(multiple_result.systems_metric_results)
     try:
+        colors = calculate_color(number_of_systems,True)
         fig = ff.create_distplot(
             hist_data,
             sys_names,
             bin_size=[0.1 for _ in range(scores.shape[1])],
-            colors = [calculate_color(i,number_of_systems,True) for i in range(number_of_systems)]
+            colors = colors
         ) 
 
         fig.update_layout(xaxis_title="Score", yaxis_title="Probability Density")
@@ -850,7 +862,9 @@ def analysis_bucket(scores_dict: Dict[str,List[float]], systems_names: List[str]
     plt.figure(figsize=(12+ratio,10+ratio))
     plt.clf()
 
-    axs = [plt.bar(r, scores_label[0], edgecolor="white", width=barWidth, color=calculate_color(0,number_of_labels))]
+    colors = calculate_color(number_of_labels)
+
+    axs = [plt.bar(r, scores_label[0], edgecolor="white", width=barWidth, color=colors[0])]
 
     for i in range(1, number_of_labels):
         bottom = np.array([0.0 for _ in range(number_of_systems)])
@@ -863,7 +877,7 @@ def analysis_bucket(scores_dict: Dict[str,List[float]], systems_names: List[str]
                     scores.append(scores_per_system[j])
  
             bottom += np.array(scores)
-        axs.append(plt.bar(r, scores_label[i], bottom=bottom, edgecolor="white", width=barWidth,color=calculate_color(i,number_of_labels)))
+        axs.append(plt.bar(r, scores_label[i], bottom=bottom, edgecolor="white", width=barWidth,color=colors[i]))
     
     for i in range(number_of_systems):
         for ax in axs:
@@ -876,6 +890,7 @@ def analysis_bucket(scores_dict: Dict[str,List[float]], systems_names: List[str]
             va="center",
             color=color,
             fontsize=font,
+            weight='bold'
             )
 
     plt.xticks(r, names,fontsize=18 + ratio_font,rotation = ROTATION)
