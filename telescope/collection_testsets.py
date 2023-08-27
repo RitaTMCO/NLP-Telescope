@@ -21,7 +21,7 @@ class CollectionTestsets:
         self,
         src_name: str, #filename of source file 
         refs_names: List[str], #filenames of references files 
-        refs_indexes: Dict[str, str],  #id of each reference file. {filename:ref_id} 
+        refs_ids: Dict[str, str],  #id of each reference file. {filename:ref_id} 
         systems_ids: Dict[str, str], #id of each system. {filename:sys_id} 
         systems_names: Dict[str, str], #name of each system. {sys_id:name} 
         filenames: List[str], # all filenames
@@ -29,7 +29,7 @@ class CollectionTestsets:
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
-        self.refs_indexes = refs_indexes
+        self.refs_ids = refs_ids
         self.systems_ids = systems_ids
         self.systems_names = systems_names
         self.filenames = filenames
@@ -101,13 +101,13 @@ class CollectionTestsets:
         sources = read_lines(source_file)
 
         ref_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_references, accept_multiple_files=True)
-        references, refs_indexes = {}, {}
+        references, refs_ids = {}, {}
         for ref_file in ref_files:
             if ref_file.name not in references:
                 data = read_lines(ref_file)
                 ref_id = cls.create_ref_id(ref_file.name,data)
                 references[ref_file.name] = data
-                refs_indexes[ref_file.name] = ref_id
+                refs_ids[ref_file.name] = ref_id
 
         outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output, accept_multiple_files=True)
         systems_ids, systems_names, outputs = {}, {}, {}
@@ -122,7 +122,7 @@ class CollectionTestsets:
                     systems_names[sys_id] = st.session_state[cls.task + "_" + sys_id + "_rename" ]
                 outputs[sys_id] = output
 
-        return source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs
+        return source_file,sources,ref_files,references,refs_ids,outputs_files,systems_ids,systems_names,outputs
     
     @classmethod
     def upload_names(cls, systems_names:Dict[str,str]) -> list:
@@ -180,32 +180,34 @@ class CollectionTestsets:
             
             id = 1
             for sys_file,sys_name in zip(systems_output,sys_names):
-                data = [l.strip() for l in sys_file.readlines()]
-                sys_id = "Sys " + str(id)
-                id += 1
-                systems_ids[sys_file.name] = sys_id
-                systems_names[sys_id] = sys_name
-                outputs[sys_id] = data
+                if sys_file.name not in systems_ids:
+                    data = [l.strip() for l in sys_file.readlines()]
+                    sys_id = "Sys " + str(id)
+                    id += 1
+                    systems_ids[sys_file.name] = sys_id
+                    systems_names[sys_id] = sys_name
+                    outputs[sys_id] = data
             
         else:
             id = 1
             for sys_file in systems_output:
-                data = [l.strip() for l in sys_file.readlines()]
-                sys_id = "Sys " + str(id)
-                id += 1
-                systems_ids[sys_file.name] = sys_id
-                systems_names[sys_id] = sys_id
-                outputs[sys_id] = data
+                if sys_file.name not in systems_ids:
+                    data = [l.strip() for l in sys_file.readlines()]
+                    sys_id = "Sys " + str(id)
+                    id += 1
+                    systems_ids[sys_file.name] = sys_id
+                    systems_names[sys_id] = sys_id
+                    outputs[sys_id] = data
         
         id = 1
-        references,refs_indexes = {},{}
+        references,refs_ids = {},{}
         for ref in reference:
             if ref.name not in references:
                 data = [l.strip() for l in ref.readlines()]
                 ref_id = "Ref " + str(id)
                 id += 1
                 references[ref.name] = data
-                refs_indexes[ref.name] = ref_id
+                refs_ids[ref.name] = ref_id
 
         src = [l.strip() for l in source.readlines()]
 
@@ -214,11 +216,11 @@ class CollectionTestsets:
 
         cls.validate_files(src,references,systems_names,outputs)
 
-        files = [source,src,reference,references,refs_indexes,systems_output,systems_ids,systems_names,outputs] 
+        files = [source,src,reference,references,refs_ids,systems_output,systems_ids,systems_names,outputs] 
 
         testsets = cls.create_testsets(files)
 
-        return cls(source.name, references.keys(), refs_indexes, systems_ids, systems_names,
+        return cls(source.name, references.keys(), refs_ids, systems_ids, systems_names,
                     [source.name] +  list(references.keys()) + list(systems_ids.values()), testsets, extra_info)
     
 
@@ -229,14 +231,14 @@ class NLGTestsets(CollectionTestsets):
         self,
         src_name: str,
         refs_names: List[str],
-        refs_indexes: Dict[str, str],
+        refs_ids: Dict[str, str],
         systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, Testset],
         language_pair: str
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, testsets)
+        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, testsets)
         self.language_pair = language_pair.lower()
     
     @property
@@ -265,7 +267,7 @@ class NLGTestsets(CollectionTestsets):
 
         language = cls.upload_language()
         
-        source_file,sources,ref_files,references, refs_indexes, outputs_files,systems_ids, systems_names, outputs = files
+        source_file,sources,ref_files,references, refs_ids, outputs_files,systems_ids, systems_names, outputs = files
 
         systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
 
@@ -280,7 +282,7 @@ class NLGTestsets(CollectionTestsets):
 
             testsets = cls.create_testsets(files)
 
-            return cls(source_file.name, references.keys(), refs_indexes, systems_ids, systems_names,
+            return cls(source_file.name, references.keys(), refs_ids, systems_ids, systems_names,
                 [source_file.name] +  list(references.keys()) + list(systems_ids.values()),
                 testsets, language)
 
@@ -294,14 +296,14 @@ class MTTestsets(NLGTestsets):
         self,
         src_name: str,
         refs_names: List[str],
-        refs_indexes: Dict[str, str],
+        refs_ids: Dict[str, str],
         systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, MultipleTestset],
         language_pair: str,
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames,
+        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames,
                 testsets, language_pair)
     
     @staticmethod
@@ -323,14 +325,14 @@ class SummTestsets(NLGTestsets):
         self,
         src_name: str,
         refs_names: List[str],
-        refs_indexes: Dict[str, str],
+        refs_ids: Dict[str, str],
         systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, MultipleTestset],
         language_pair: str,
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, 
+        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, 
                 testsets, language_pair)
         
     @staticmethod
@@ -366,14 +368,14 @@ class DialogueTestsets(NLGTestsets):
         self,
         src_name: str,
         refs_names: List[str],
-        refs_indexes: Dict[str, str],
+        refs_ids: Dict[str, str],
         systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, MultipleTestset],
         language_pair: str
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, 
+        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, 
                 testsets, language_pair)
    
     @staticmethod
@@ -409,14 +411,14 @@ class ClassTestsets(CollectionTestsets):
         self,
         src_name: str,
         refs_names: List[str],
-        refs_indexes: Dict[str, str],
+        refs_ids: Dict[str, str],
         systems_ids: Dict[str, str],
         systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, MultipleTestset],
         labels: List[str]
     ) -> None:
-        super().__init__(src_name, refs_names, refs_indexes, systems_ids, systems_names, filenames, testsets)
+        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, testsets)
         self.labels = labels
     
     @staticmethod
@@ -427,7 +429,7 @@ class ClassTestsets(CollectionTestsets):
     @classmethod
     def read_data(cls):
         files = cls.upload_files()
-        source_file,sources,ref_files,references,refs_indexes,outputs_files,systems_ids,systems_names,outputs = files
+        source_file,sources,ref_files,references,refs_ids,outputs_files,systems_ids,systems_names,outputs = files
         labels_file = cls.upload_labels()
 
         systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
@@ -445,6 +447,6 @@ class ClassTestsets(CollectionTestsets):
 
             labels = read_lines(labels_file)
 
-            return cls(source_file.name, references.keys(), refs_indexes, systems_ids, systems_names,
+            return cls(source_file.name, references.keys(), refs_ids, systems_ids, systems_names,
                 [source_file.name] +  list(references.keys()) + list(systems_ids.values()),
                 testsets, labels)

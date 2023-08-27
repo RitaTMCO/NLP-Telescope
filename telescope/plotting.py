@@ -635,6 +635,8 @@ def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_nam
             st.plotly_chart(fig)
         return True
     except np.linalg.LinAlgError:
+        if runtime.exists() and saving_dir == None:
+            st.warning("One of outputs is same as the selected refrence. Please, remove the output or the reference.")
         return False
 
 
@@ -871,7 +873,7 @@ def analysis_bucket(scores_dict: Dict[str,List[float]], systems_names: List[str]
         for scores_per_system in scores_label[:i]:
             scores = []
             for j in range(number_of_systems):
-                if (scores_per_system[j] > 0 and scores_label[i][j] <= 0) or (scores_per_system[j] < 0 and scores_label[i][j] >= 0):
+                if (scores_per_system[j] >= 0 and scores_label[i][j] < 0) or (scores_per_system[j] < 0 and scores_label[i][j] >= 0):
                     scores.append(0.0)
                 else:
                     scores.append(scores_per_system[j])

@@ -32,7 +32,8 @@ class Task(metaclass=abc.ABCMeta):
         
     @classmethod
     @abc.abstractmethod
-    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str) -> None:
+    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
+                            metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interface to display the plots"""
         pass
     

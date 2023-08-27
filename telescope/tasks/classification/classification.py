@@ -40,12 +40,13 @@ class Classification(Task):
         return  ClassTestsets.read_data_cli(source, system_names_file, systems_output, reference, extra_info, labels_file)
     
     @classmethod
-    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str) -> None:
+    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
+                            metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interfave to display the plots"""
 
         path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/" 
 
-        ref_id = collection_testsets.refs_indexes[ref_filename]
+        ref_id = collection_testsets.refs_ids[ref_filename]
         testset = collection_testsets.testsets[ref_filename]
         labels = collection_testsets.labels
         names_of_systems = collection_testsets.names_of_systems()

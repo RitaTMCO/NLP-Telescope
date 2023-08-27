@@ -560,7 +560,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     type=str,
     help="Folder in which you wish to save plots.",
 )
-@click.option("--bootstrap", is_flag=True)
+@click.option("--bootstrap", is_flag=True, help="Avaliable for " + "|".join([t.name for t in available_nlg_tasks.values() if t.bootstrap]) + "." )
 @click.option(
     "--system_x",
     "-x",
@@ -689,7 +689,7 @@ def n_compare_nlg(
 
         click.secho('\nMetric Results', fg="yellow") 
         results_df = display_table(systems_names,results)
-        if bootstrap and num_systems > 1: 
+        if bootstrap and num_systems > 1 and available_nlg_tasks[task].bootstrap:
             bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x_id,y_id,num_splits,sample_ratio)
         
         if universal_metric and num_systems > 1 and available_nlg_tasks[task].universal_metrics and universal_metric in available_nlg_tasks[task].universal_metrics: 
@@ -727,7 +727,7 @@ def n_compare_nlg(
             results_df.to_csv(metrics_results_dir + "results.csv")
             analysis_metrics(list(results.values()), systems_names,metrics_results_dir)
 
-            if bootstrap and num_systems > 1:
+            if bootstrap and num_systems > 1 and available_nlg_tasks[task].bootstrap:
                 x_name = systems_names[x_id]
                 y_name = systems_names[y_id]
                 filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.csv"

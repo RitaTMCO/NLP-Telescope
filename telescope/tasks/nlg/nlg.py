@@ -25,14 +25,13 @@ class NLG(Task):
     filters = AVAILABLE_NLG_FILTERS
     bias_evaluations = AVAILABLE_NLG_BIAS_EVALUATIONS
     universal_metrics = AVAILABLE_NLG_UNIVERSAL_METRICS
-    bootstrap = True
     segment_result_source = False
     sentences_similarity = False
 
 
     @classmethod
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
-                            metrics:list, available_metrics:dict, num_samples: int, sample_ratio: float) -> None:
+                            metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interfave to display the plots"""
 
         path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/"  
@@ -69,18 +68,19 @@ class NLG(Task):
                 plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(),path)
         
         # -------------- | Distribution of segment-level scores| -----------
-        if len(collection_testsets.testsets[ref_filename]) > 1 and plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
-
+        if len(collection_testsets.testsets[ref_filename]) > 1:
             st.text("\n")
             st.header(":blue[Distribution of segment-level scores:]")
-            st.markdown("This displot shows the distribution of segment-level scores. It is composed of histogram, kernel density estimation curve and rug plot.")
 
-            plot_multiple_distributions(results[metric], collection_testsets.names_of_systems())
-            _, middle, _ = st.columns(3)
-            if middle.button('Download the distribution of segment-level scores'):
-                if not os.path.exists(path):
-                    os.makedirs(path)  
-                plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(),path)
+            if plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
+                st.markdown("This displot shows the distribution of segment-level scores. It is composed of histogram, kernel density estimation curve and rug plot.")
+
+                plot_multiple_distributions(results[metric], collection_testsets.names_of_systems())
+                _, middle, _ = st.columns(3)
+                if middle.button('Download the distribution of segment-level scores'):
+                    if not os.path.exists(path):
+                        os.makedirs(path)  
+                    plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(),path)
             
         
         # -------------- |Pairwise comparison| -----------------
@@ -122,37 +122,38 @@ class NLG(Task):
 
                 #Bootstrap Resampling
 
-                name = system_x_name + "-" + system_y_name + "_bootstrap_results.csv"
+                if cls.bootstrap:
+                    name = system_x_name + "-" + system_y_name + "_bootstrap_results.csv"
 
-                if 'data_boostrap' not in st.session_state:
-                    st.session_state.data_boostrap = None
+                    if 'data_boostrap' not in st.session_state:
+                        st.session_state.data_boostrap = None
                 
-                if st.session_state.get("export-" + name):
-                    if not os.path.exists(path):
-                        os.makedirs(path)  
-                    st.session_state.data_boostrap.to_csv(path + "/" + name)
+                    if st.session_state.get("export-" + name):
+                        if not os.path.exists(path):
+                            os.makedirs(path)  
+                        st.session_state.data_boostrap.to_csv(path + "/" + name)
 
-                _, middle, _ = st.columns(3)
+                    _, middle, _ = st.columns(3)
                     
-                if middle.button("Perform Bootstrap Resampling", key="button-bootstrap"):
-                    st.warning(
-                        "Running metrics for {} partitions of size {}".format(
-                            num_samples, sample_ratio * len(collection_testsets.testsets[ref_filename])
+                    if middle.button("Perform Bootstrap Resampling", key="button-bootstrap"):
+                        st.warning(
+                            "Running metrics for {} partitions of size {}".format(
+                                num_samples, sample_ratio * len(collection_testsets.testsets[ref_filename])
+                            )
                         )
-                    )
-                    st.subheader("Bootstrap resampling results:")
-                    list_df = list()
-                    with st.spinner("Running bootstrap resampling..."):
-                        for metric in metrics:
-                            bootstrap_result = available_metrics[metric].multiple_bootstrap_resampling(
-                                collection_testsets.testsets[ref_filename], int(num_samples), 
-                                sample_ratio, system_x_id, system_y_id, collection_testsets.target_language, results[metric])
-                            df = plot_bootstraping_result(bootstrap_result)
-                            list_df.append(df)
-                        _, middle, _ = st.columns(3)
-                        name = system_x_name + "-" + system_y_name + "_bootstrap_results.csv"
-                        st.session_state.data_boostrap = pd.concat(list_df)
-                        export_dataframe(label="Export bootstrap resampling results", path=path, name= name, dataframe=st.session_state.data_boostrap,column=middle)
+                        st.subheader("Bootstrap resampling results:")
+                        list_df = list()
+                        with st.spinner("Running bootstrap resampling..."):
+                            for metric in metrics:
+                                bootstrap_result = available_metrics[metric].multiple_bootstrap_resampling(
+                                    collection_testsets.testsets[ref_filename], int(num_samples), 
+                                    sample_ratio, system_x_id, system_y_id, collection_testsets.target_language, results[metric])
+                                df = plot_bootstraping_result(bootstrap_result)
+                                list_df.append(df)
+                            _, middle, _ = st.columns(3)
+                            name = system_x_name + "-" + system_y_name + "_bootstrap_results.csv"
+                            st.session_state.data_boostrap = pd.concat(list_df)
+                            export_dataframe(label="Export bootstrap resampling results", path=path, name=name, dataframe=st.session_state.data_boostrap,column=middle)
     @classmethod
     def plots_cli_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
                             saving_dir:str, x_id:str ,y_id:str) -> None:
