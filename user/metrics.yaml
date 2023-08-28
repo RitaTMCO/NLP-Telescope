@@ -43,8 +43,3 @@ Classification metrics:
       - Precision
       - Recall
       - F1-score
-
-Evaluation Bias metrics:
-      - Demographic-Parity
-      - Accuracy
-      - F1-score

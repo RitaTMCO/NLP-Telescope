@@ -5,7 +5,7 @@ import pandas as pd
 from typing import List, Dict
 from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.collection_testsets import CollectionTestsets
-from telescope.metrics.metric import MetricResult, MultipleMetricResults
+from telescope.metrics.metric import MetricResult, MultipleMetricResults, Metric
 from telescope.plotting import ( 
     confusion_matrix_of_system, 
     confusion_matrix_focused_on_one_label,
@@ -68,13 +68,16 @@ class MultipleBiasResults():
         groups: List[str],
         systems_bias_results: Dict[str,BiasResult], # {id_of_systems:BiasResults}
         text_groups_ref_per_seg: Dict[int, List[Dict[str,str]]],
-        metrics: List[str],
+        metrics: List[Metric],
         time: float
     ) -> None:
         for bias_results in systems_bias_results.values():
             assert bias_results.ref == ref
             assert bias_results.groups_ref == groups_ref
+            assert bias_results.groups_ref_per_seg == groups_ref_per_seg
             assert bias_results.groups == groups
+            assert bias_results.text_groups_ref_per_seg == text_groups_ref_per_seg
+            assert list(bias_results.metrics_results_per_metric.keys()) == [metric.name for metric in metrics]
         
         self.ref = ref
         self.groups_ref = groups_ref
@@ -227,7 +230,7 @@ class MultipleBiasResults():
 
         name = system_name.replace(" ", "_") + "_bias_segments.csv"
 
-        click = "click_" + system_name + sys_id + "bias_evaluation"
+        click = "click_" + system_name + sys_id + "bias_evaluation" + option_bias
         if click not in st.session_state:
             st.session_state[click] =  0
         if 'dataframe_bias' not in st.session_state:

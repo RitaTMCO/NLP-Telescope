@@ -609,7 +609,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     type=click.Choice(GenderBiasEvaluation.options_bias_evaluation),
     required=False,
     multiple=False,
-    default="with datasets and library",
+    default="with dataset and library",
     help="Options for Gender Bias Evaluation.",
 )
 @click.option(

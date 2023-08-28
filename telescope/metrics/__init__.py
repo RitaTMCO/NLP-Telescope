@@ -29,6 +29,7 @@ from telescope.utils import read_yaml_file
 
 metrics_yaml = read_yaml_file("metrics.yaml")
 universal_metrics_yaml = read_yaml_file("universal_metrics.yaml")
+bias_evaluations_yaml = bias_evaluations_yaml = read_yaml_file("bias_evaluations.yaml")
 
 AVAILABLE_METRICS = [
     COMET,
@@ -47,7 +48,15 @@ AVAILABLE_METRICS = [
     Precision,
     Recall,
     F1Score,
-    DemographicParity,
+]
+
+AVAILABLE_BIAS_METRICS = [
+    Accuracy,
+    Precision,
+    Recall,
+    F1Score,
+    DemographicParity
+
 ]
 
 METRICS_WEIGHTS = {}
@@ -61,22 +70,24 @@ for weighted_mean in universal_metrics_yaml["Weights"]:
             weight = list(metric_w.values())[0]
             METRICS_WEIGHTS[name][metric] = weight
 
-names_availabels_metrics = {metric.name:metric for metric in AVAILABLE_METRICS}
+AVAILABLE_METRICS_NAMES = {metric.name:metric for metric in AVAILABLE_METRICS}
+
+AVAILABLE_BIAS_METRICS_NAMES = {metric.name:metric for metric in AVAILABLE_BIAS_METRICS}
 
 try:
-    AVAILABLE_NLP_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["NLP metrics"]]
+    AVAILABLE_NLP_METRICS = [AVAILABLE_METRICS_NAMES[metric_name] for metric_name in metrics_yaml["NLP metrics"]]
 
-    AVAILABLE_NLG_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["NLG metrics"]] + AVAILABLE_NLP_METRICS
+    AVAILABLE_NLG_METRICS = [AVAILABLE_METRICS_NAMES[metric_name] for metric_name in metrics_yaml["NLG metrics"]] + AVAILABLE_NLP_METRICS
 
-    AVAILABLE_MT_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Machine Translation metrics"]]  + AVAILABLE_NLG_METRICS
+    AVAILABLE_MT_METRICS = [AVAILABLE_METRICS_NAMES[metric_name] for metric_name in metrics_yaml["Machine Translation metrics"]]  + AVAILABLE_NLG_METRICS
 
-    AVAILABLE_SUMMARIZATION_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Summarization metrics"]] + AVAILABLE_NLG_METRICS
+    AVAILABLE_SUMMARIZATION_METRICS = [AVAILABLE_METRICS_NAMES[metric_name] for metric_name in metrics_yaml["Summarization metrics"]] + AVAILABLE_NLG_METRICS
 
-    AVAILABLE_DIALOGUE_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Dialogue System metrics"]] + AVAILABLE_NLG_METRICS
+    AVAILABLE_DIALOGUE_METRICS = [AVAILABLE_METRICS_NAMES[metric_name] for metric_name in metrics_yaml["Dialogue System metrics"]] + AVAILABLE_NLG_METRICS
 
-    AVAILABLE_CLASSIFICATION_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Classification metrics"]] + AVAILABLE_NLP_METRICS
+    AVAILABLE_CLASSIFICATION_METRICS = [AVAILABLE_METRICS_NAMES[metric_name] for metric_name in metrics_yaml["Classification metrics"]] + AVAILABLE_NLP_METRICS
 
-    AVAILABLE_EVALUATION_BIAS_METRICS = [names_availabels_metrics[metric_name] for metric_name in metrics_yaml["Evaluation Bias metrics"]] 
+    AVAILABLE_BIAS_EVALUATION_METRICS = [AVAILABLE_BIAS_METRICS_NAMES[metric_name] for metric_name in bias_evaluations_yaml["Bias Evaluation metrics"]] 
 
 except KeyError as error:
     print("Error (yaml): " + str(error) + " as a metric is not available.")
