@@ -197,7 +197,7 @@ class MultipleBiasResults():
                 for grop in self.groups:
                     self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,sys_name,grop,path_dir)
 
-        st.subheader("Analysis Of Each Label")
+        st.subheader("Analysis of each group")
         self.display_analysis_labels(collection_testsets)
 
         st.subheader("Number of times each group was identified correctly")           
@@ -218,7 +218,7 @@ class MultipleBiasResults():
             self.display_number_of_incorrect_labels_of_each_system(collection_testsets,path)
 
 
-        st.subheader("Segments with Bias")
+        st.subheader("20 Segments with Bias")
         click = 0
         system_name = st.selectbox(
             "**Select the System**",
@@ -245,7 +245,7 @@ class MultipleBiasResults():
                 os.makedirs(path)  
             st.session_state.dataframe_bias.to_csv(path + "/" + name)
 
-        if(middle.button("Show Random Segments with bias", on_click=callback)):
+        if(middle.button("Show Random Segments with Bias", on_click=callback)):
 
             if st.session_state[click] == 1:
                 dataframe = self.display_bias_segments_of_one_system(collection_testsets,system_name, [i for i in range(len(self.ref))])

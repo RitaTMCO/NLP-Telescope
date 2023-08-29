@@ -772,7 +772,7 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
     n = len(gender_refs_seg)
     if not ids: 
         ids = random.sample(range(n),n)
-    num = 10
+    num = 20
     bias_segments = list()
     lines = list()
     table = list()

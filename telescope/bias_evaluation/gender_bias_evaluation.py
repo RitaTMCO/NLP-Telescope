@@ -31,7 +31,7 @@ class GenderBiasEvaluation(BiasEvaluation):
         #[{"they":"neutral", "she":"female", "he":"male"},...]
         self.gender_sets_of_gender_terms = self.open_and_read_identify_terms(self.directory + 'gendered_terms.json')
         self.gender_sets_of_occupations = self.open_and_read_identify_terms(self.directory + 'occupations.json')
-        self.gender_sets_of_prons_dets = self.open_and_read_identify_terms(self.directory + 'pronouns_determinants.json')
+        self.gender_sets_of_prons_dets = self.open_and_read_identify_terms(self.directory + 'pronouns_determiners.json')
         self.gender_sets_of_suffixes = self.open_and_read_identify_terms(self.directory + 'suffixes.json') 
 
         self.nlp = spacy.load(self.models[self.language])
@@ -42,10 +42,12 @@ class GenderBiasEvaluation(BiasEvaluation):
     def dep_language(self, token:Token):
         if self.language == "pt":
             return (token.dep_== "nsubj" or token.dep_== "nsubj:pass" or token.dep_== "obj" or token.dep_ == "iobj" or 
-                    token.dep_== "obl" or token.dep_== "obl:agent" or token.dep_ == "nmod") 
+                    token.dep_== "obl" or token.dep_== "obl:agent" or token.dep_ == "nmod" or token.dep_ == "det" or 
+                    token.dep_ == "compound") 
         elif self.language == "en":
             return (token.dep_== "nsubj" or token.dep_== "nsubjpass" or token.dep_== "dobj"  or token.dep_ == "iobj" or
-                      token.dep_== "pobj" or token.dep_== "agent" or token.dep_ == "nmod")
+                      token.dep_== "pobj" or token.dep_== "agent" or token.dep_ == "nmod" or token.dep_ == "det" or
+                      token.dep_ == "compound")
 
     def find_extract_genders_match_identify_terms(self, output_per_sys:Dict[str,List[str]], ref:List[str], option_bias_evaluation:str):
         num_segs = len(ref)
@@ -216,13 +218,13 @@ class GenderBiasEvaluation(BiasEvaluation):
             return num[0]
         return ""
     
-    def find_prontype_person_case_from_morph(self,token:Token):
-        per = token.morph.get("Person")
-        type = token.morph.get("PronType")
-        case = token.morph.get("Case")
-        if per and type and case:
-            return [per[0],type[0],case[0]]
-        return []
+    def find_prontype_definite_person_case_from_morph(self,token:Token):
+        data = [token.morph.get("PronType"), token.morph.get("Definite"), token.morph.get("Person"), token.morph.get("Case")]
+        info = []
+        for dt in data:
+            if dt:
+                info.append(dt[0])
+        return info
     
     def has_gender(self,token:Token):
         return (token.has_morph() and token.morph.get("Gender"))
@@ -246,9 +248,13 @@ class GenderBiasEvaluation(BiasEvaluation):
                  and token_ref.pos_ == token_ref.pos_
                  and token_ref.dep_ == token_sys.dep_)
         pron = (token_ref.pos_ == "PRON" and token_sys.pos_ == "PRON" and 
-                 self.find_prontype_person_case_from_morph(token_ref) == self.find_prontype_person_case_from_morph(token_sys)
+                 self.find_prontype_definite_person_case_from_morph(token_ref) == self.find_prontype_definite_person_case_from_morph(token_sys)
                  and token_ref.dep_ == token_sys.dep_)
-        return lemma or pron
+        det = (token_ref.pos_ == "DET" and token_sys.pos_ == "DET" and 
+                self.find_prontype_definite_person_case_from_morph(token_ref) == self.find_prontype_definite_person_case_from_morph(token_sys)
+                and token_ref.dep_ == token_sys.dep_)
+
+        return lemma or pron or det
     
     def has_term_with_library(self,term_ref:dict, seg_terms_sys:List[dict]):
         list_sys_terms = [term_sys["term"] for term_sys in seg_terms_sys]
