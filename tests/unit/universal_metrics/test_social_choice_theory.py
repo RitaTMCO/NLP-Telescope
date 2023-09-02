@@ -120,7 +120,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
 
     def test_score_calculation_and_ranking(self):
 
-        expected_sys_score = {"Sys 1": 7, "Sys 2":5, "Sys 3":3}
+        expected_sys_score = {"Sys 1": 2, "Sys 2":4, "Sys 3":6}
         expected_sys_rank = {"Sys 1": 3, "Sys 2": 2, "Sys 3": 1}
 
         result = self.social_choice_theory.universal_score_calculation_and_ranking(self.testset)

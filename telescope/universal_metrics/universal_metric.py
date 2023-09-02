@@ -40,11 +40,7 @@ class UniversalMetric(metaclass=abc.ABCMeta):
 
         universal_scores = self.universal_score(testset)
 
-        if self.name == "social-choice-theory":
-            ranks = self.ranking_systems(universal_scores,False) 
-        else:
-            ranks = self.ranking_systems(universal_scores)
-
+        ranks = self.ranking_systems(universal_scores)
 
         sys_id_results = {sys_id:UniversalMetricResult(ref, systems_outputs[sys_id], metrics, self.name, self.title, description["rank"], description["score"]) 
                                               for sys_id,description in ranks.items()}
