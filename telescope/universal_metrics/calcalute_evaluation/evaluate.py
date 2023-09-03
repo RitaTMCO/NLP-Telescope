@@ -96,10 +96,7 @@ class SystemsScores:
         
         metric_scores = {}
         for system, data in scores.items():
-            if metric_name == "social-choice-theory":
-                metric_scores[system] = data["Score"] * -1
-            else:
-                metric_scores[system] = data["Score"]
+            metric_scores[system] = data["Score"]
                 
         return metric_scores
 
