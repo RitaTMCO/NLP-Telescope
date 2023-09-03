@@ -30,7 +30,7 @@ class SocialChoiceTheory(UniversalMetric):
             ranking_systems = ranking_systems_per_metrics[metric]
             points_systems = {}
             for sys_id in systems_ids:
-                points_systems[sys_id] = n - ranking_systems[sys_id]["rank"]
+                points_systems[sys_id] = n + 1 - ranking_systems[sys_id]["rank"]
             points_systems_per_metrics[metric] = points_systems
 
         return points_systems_per_metrics
@@ -43,12 +43,11 @@ class SocialChoiceTheory(UniversalMetric):
         systems_ids = list(systems_outputs.keys())
         ranking_systems_per_metrics= {}
     
-        for metric_results in list(self.multiple_metrics_results.values()):
+        for metric, metric_results in self.multiple_metrics_results.items():
             scores = {}
             for sys_id, result in metric_results.systems_metric_results.items():
                 scores[sys_id] = result.sys_score
-            
-            metric = metric_results.metric
+                
             if metric == "TER":
                 rank_scores = self.ranking_systems(scores,False)
             else:

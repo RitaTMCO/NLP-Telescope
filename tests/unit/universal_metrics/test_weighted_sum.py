@@ -2,12 +2,12 @@
 
 import unittest
 
-from telescope.universal_metrics.median import Median
+from telescope.universal_metrics.weighted_sum import WeightedSum
 from telescope.testset import MultipleTestset
 from telescope.metrics.result import MetricResult, MultipleMetricResults
 
 
-class TestMedian(unittest.TestCase):
+class TestWeightedSum(unittest.TestCase):
 
     # sys_id:sys_name
     systems_names = {"Sys 1": "Sys A", "Sys 2":"Sys B", "Sys 3":"Sys C"}
@@ -142,40 +142,24 @@ class TestMedian(unittest.TestCase):
         }
     )
 
-    multiple_metric_result_odd = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3}
-    multiple_metric_result_even = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3,"mock_4":multiple_result_4}
+    multiple_metric_result = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3, "mock_4":multiple_result_4}
 
-    median_odd = Median(multiple_metric_result_odd)
-    median_even = Median(multiple_metric_result_even)
+    weighted_sum = WeightedSum(multiple_metric_result,"weighted-sum",{"mock_1":3.0,"mock_2":2.0,"mock_3":1.0})
 
 
-    def test_score_calculation_and_ranking_odd(self):
+    def test_score_calculation_and_ranking(self):
 
-        expected_sys_score = {"Sys 1": 0.1, "Sys 2":0.2, "Sys 3":0.3}
+        expected_sys_score = {"Sys 1": 0.6, "Sys 2":1.0, "Sys 3":1.8}
         expected_sys_rank = {"Sys 1": 3, "Sys 2": 2, "Sys 3": 1}
-        result = self.median_odd.universal_score_calculation_and_ranking(self.testset)
-        for sys in list(self.systems_names.keys()):
-            sys_result  = result.systems_universal_metrics_results[sys]
-            self.assertListEqual(sys_result.ref, self.testset.ref)
-            self.assertListEqual(sys_result.system_output, self.testset.systems_output[sys])
-            self.assertListEqual(sys_result.metrics, self.metrics[:-1])
-            self.assertEqual(sys_result.universal_metric, "median")
-            self.assertEqual(sys_result.title, "Median")
-            self.assertEqual(sys_result.rank, expected_sys_rank[sys])
-            self.assertAlmostEqual(sys_result.universal_score, expected_sys_score[sys],places=5)
-    
 
-    def test_score_calculation_and_ranking_even(self):
+        result = self.weighted_sum.universal_score_calculation_and_ranking(self.testset)
 
-        expected_sys_score = {"Sys 1": 0.1, "Sys 2":0.25, "Sys 3":0.3}
-        expected_sys_rank = {"Sys 1": 3, "Sys 2": 2, "Sys 3": 1}
-        result = self.median_even.universal_score_calculation_and_ranking(self.testset)
         for sys in list(self.systems_names.keys()):
             sys_result  = result.systems_universal_metrics_results[sys]
             self.assertListEqual(sys_result.ref, self.testset.ref)
             self.assertListEqual(sys_result.system_output, self.testset.systems_output[sys])
             self.assertListEqual(sys_result.metrics, self.metrics)
-            self.assertEqual(sys_result.universal_metric, "median")
-            self.assertEqual(sys_result.title, "Median")
+            self.assertEqual(sys_result.universal_metric, "weighted-sum")
+            self.assertEqual(sys_result.title, "Weighted Sum")
             self.assertEqual(sys_result.rank, expected_sys_rank[sys])
             self.assertAlmostEqual(sys_result.universal_score, expected_sys_score[sys],places=5)

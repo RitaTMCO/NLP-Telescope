@@ -1,12 +1,12 @@
 All universal metrics:
     - average
     - median
-    - weighted-mean-seed-12_-1_1
-    - weighted-mean-seed-12_0_1_TER
-    - weighted-mean-seed-24_-1_1
-    - weighted-mean-seed-24_0_1_TER
-    - weighted-mean-seed-36_-1_1
-    - weighted-mean-seed-36_0_1_TER
+    - weighted-sum-seed-12_-1_1
+    - weighted-sum-seed-12_0_1_TER
+    - weighted-sum-seed-24_-1_1
+    - weighted-sum-seed-24_0_1_TER
+    - weighted-sum-seed-36_-1_1
+    - weighted-sum-seed-36_0_1_TER
     - pairwise-comparison
     - social-choice-theory
 
@@ -19,12 +19,12 @@ Machine Translation universal metrics:
     - median
     - pairwise-comparison
     - social-choice-theory
-    - weighted-mean-seed-12_-1_1
-    - weighted-mean-seed-12_0_1_TER
-    - weighted-mean-seed-24_-1_1
-    - weighted-mean-seed-24_0_1_TER
-    - weighted-mean-seed-36_-1_1
-    - weighted-mean-seed-36_0_1_TER
+    - weighted-sum-seed-12_-1_1
+    - weighted-sum-seed-12_0_1_TER
+    - weighted-sum-seed-24_-1_1
+    - weighted-sum-seed-24_0_1_TER
+    - weighted-sum-seed-36_-1_1
+    - weighted-sum-seed-36_0_1_TER
 
 Summarization universal metrics: []
 
@@ -32,8 +32,8 @@ Dialogue System universal metrics: []
 
 Classification universal metrics: []
 
-Weights:
-    - weighted-mean-seed-12_-1_1:
+Weighted Sum Weights:
+    - weighted-sum-seed-12_-1_1:
                     - COMET: 0.9628728220854801
                     - BERTScore: 0.9985333568325733
                     - TER: 0.9353262789374076
@@ -41,7 +41,7 @@ Weights:
                     - chrF: -0.7226871926439731
                     - ZeroEdit: -0.19709395488846404
                     - GLEU: 0.3986663667150692
-    - weighted-mean-seed-12_0_1_TER:
+    - weighted-sum-seed-12_0_1_TER:
                     - COMET: 0.9986848166789297
                     - BERTScore: 0.7353073024658041
                     - TER: -0.7902823440114416
@@ -49,7 +49,7 @@ Weights:
                     - chrF: 0.9439558227023246
                     - ZeroEdit: 0.6247283381277922
                     - GLEU: 0.9922517256091837
-    - weighted-mean-seed-24_-1_1:
+    - weighted-sum-seed-24_-1_1:
                     - COMET: 0.9227282113776127
                     - BERTScore: 0.323216020515119
                     - TER: 0.9002489468698955
@@ -57,7 +57,7 @@ Weights:
                     - chrF: -0.7529886619139088
                     - ZeroEdit: 0.33424495232266305
                     - GLEU: 0.4877107654875014
-    - weighted-mean-seed-24_0_1_TER:
+    - weighted-sum-seed-24_0_1_TER:
                     - COMET: 0.9914122834734483
                     - BERTScore: 0.754639713938849
                     - TER: -0.011567276974607734
@@ -65,7 +65,7 @@ Weights:
                     - chrF: 0.7222514616409522
                     - ZeroEdit: 0.7511089275609979
                     - GLEU: 0.377073907352921
-    - weighted-mean-seed-36_-1_1:
+    - weighted-sum-seed-36_-1_1:
                     - COMET: 0.8088182463871796
                     - BERTScore: -0.9300633458833634
                     - TER: 0.8637471800063113
@@ -73,7 +73,7 @@ Weights:
                     - chrF: -0.9710789349402459
                     - ZeroEdit: -0.0462380880123846
                     - GLEU: 0.44555363169092077
-    - weighted-mean-seed-36_0_1_TER:
+    - weighted-sum-seed-36_0_1_TER:
                     - COMET: 0.9239438470415701
                     - BERTScore: 0.9743855784209294
                     - TER: -0.009867929929865807
@@ -81,3 +81,5 @@ Weights:
                     - chrF: 0.03279858438722305
                     - ZeroEdit: 0.9812810945428202
                     - GLEU: 0.3900578288980192
+
+Weighted Mean Weights: []

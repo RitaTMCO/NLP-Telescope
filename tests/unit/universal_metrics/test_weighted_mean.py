@@ -12,7 +12,7 @@ class TestWeightedMean(unittest.TestCase):
     # sys_id:sys_name
     systems_names = {"Sys 1": "Sys A", "Sys 2":"Sys B", "Sys 3":"Sys C"}
 
-    metrics = ["mock_1","mock_2","mock_3"]
+    metrics = ["mock_1","mock_2","mock_3","mock_4"]
 
     testset = MultipleTestset(
         src=["a", "b", "c"],
@@ -113,14 +113,43 @@ class TestWeightedMean(unittest.TestCase):
         }
     )
 
-    multiple_metric_result = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3}
+    multiple_result_4 = MultipleMetricResults(
+        systems_metric_results = {
+            "Sys 1": MetricResult(
+                sys_score=1,
+                seg_scores=[1, 0.5, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 1"],
+                ref=testset.ref,
+                metric="mock_4",
+            ),
+            "Sys 2": MetricResult(
+                sys_score=0.5,
+                seg_scores=[1, 0.25, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 2"],
+                ref=testset.ref,
+                metric="mock_4",
+            ),
+            "Sys 3": MetricResult(
+                sys_score=0.4,
+                seg_scores=[1, 0.75, 1],
+                src=testset.src,
+                cand=testset.systems_output["Sys 3"],
+                ref=testset.ref,
+                metric="mock_4",
+            )
+        }
+    )
+
+    multiple_metric_result = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3, "mock_4":multiple_result_4}
 
     weighted_mean = WeightedMean(multiple_metric_result,"weighted-mean",{"mock_1":3.0,"mock_2":2.0,"mock_3":1.0})
 
 
     def test_score_calculation_and_ranking(self):
 
-        expected_sys_score = {"Sys 1": 0.2, "Sys 2":1/3, "Sys 3":0.6}
+        expected_sys_score = {"Sys 1": 0.1, "Sys 2":1/6, "Sys 3":0.3}
         expected_sys_rank = {"Sys 1": 3, "Sys 2": 2, "Sys 3": 1}
 
         result = self.weighted_mean.universal_score_calculation_and_ranking(self.testset)

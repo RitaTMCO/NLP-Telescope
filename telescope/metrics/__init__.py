@@ -59,16 +59,34 @@ AVAILABLE_BIAS_METRICS = [
 
 ]
 
-METRICS_WEIGHTS = {}
-
-for weighted_mean in universal_metrics_yaml["Weights"]:
+MEAN_METRICS_WEIGHTS = {}
+for weighted_mean in universal_metrics_yaml["Weighted Mean Weights"]:
     name = list(weighted_mean.keys())[0]
-    if name not in METRICS_WEIGHTS:
-        METRICS_WEIGHTS[name] = {}
+    if name not in MEAN_METRICS_WEIGHTS:
+        sum_weight = 0
+        MEAN_METRICS_WEIGHTS[name] = {}
         for metric_w in list(weighted_mean.values())[0]:
             metric = list(metric_w.keys())[0]
             weight = list(metric_w.values())[0]
-            METRICS_WEIGHTS[name][metric] = weight
+            if weight < 0:
+                print("The weight for the " + metric + " must not be negative (" + name + ").")
+                sys.exit(1)
+            MEAN_METRICS_WEIGHTS[name][metric] = weight
+            sum_weight += weight
+        if sum_weight == 0:
+            print("All weights are zeros (" + name + ").")
+            sys.exit(1)
+
+SUM_METRICS_WEIGHTS = {}
+for weighted_mean in universal_metrics_yaml["Weighted Sum Weights"]:
+    name = list(weighted_mean.keys())[0]
+    if name not in SUM_METRICS_WEIGHTS:
+        SUM_METRICS_WEIGHTS[name] = {}
+        for metric_w in list(weighted_mean.values())[0]:
+            metric = list(metric_w.keys())[0]
+            weight = list(metric_w.values())[0]
+            SUM_METRICS_WEIGHTS[name][metric] = weight
+        
 
 AVAILABLE_METRICS_NAMES = {metric.name:metric for metric in AVAILABLE_METRICS}
 
