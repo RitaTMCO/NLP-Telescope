@@ -1,4 +1,5 @@
 import json 
+import yaml
 import optuna
 import argparse
 import numpy as np
@@ -6,6 +7,7 @@ import pandas as pd
 from pytorch_lightning import seed_everything
 from itertools import combinations
 from typing import Dict, List
+from telescope.utils import read_yaml_file
 
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -120,8 +122,47 @@ class StudyWeights:
         self.best_value = study.best_value
         self.best_trial = study.best_trial.number
         print(self.weights)
+    
 
-    def write_file(self, path:str,ter:bool,weighted_mean:bool) -> None:
+    def write_yaml(self,weighted_mean:bool,ter:bool) -> None:
+        filename = "universal_metrics.yaml"
+        data_yaml = read_yaml_file(filename)
+
+        if weighted_mean:
+            u_name = "weighted-mean-" + "seed-" + str(self.seed) + "_0_1" 
+            data_yaml["Weighted Mean Weights"][u_name] = self.weights
+        else:
+            u_name = "weighted-sum-" + "seed-" + str(self.seed) + "_"
+            if ter:
+                u_name += "TER_0_1"
+            else:
+                u_name += "_-1_1"
+            data_yaml["Weighted Sum Weights"][u_name] = self.weights
+        data_yaml["All universal metrics"].append(u_name)
+        data_yaml["Machine Translation universal metrics"].append(u_name)
+
+        y =  open("user/" + filename, 'w')
+        data_final = yaml.dump(data_yaml, default_flow_style=False,sort_keys=False)
+
+        for k in list(data_yaml.keys())[1:]:
+            data_final = data_final.replace(k, '\n' + k)
+            for name in data_yaml[k]:
+                data_final = data_final.replace("- " + name, '\t- ' + name)
+        for name in list(data_yaml["Weighted Mean Weights"].keys()):
+            data_final = data_final.replace(" " + name, '\n ' + name)
+            data_final = data_final.replace("\t-\n " + name, '- ' + name)
+        for name in list(data_yaml["Weighted Sum Weights"].keys()):
+            data_final = data_final.replace(" " + name, '\n ' + name)
+            data_final = data_final.replace("\t-\n " + name, '- ' + name)
+            
+        data_final = data_final.replace("Weighted Sum Weights", "#-------------------------- | Weights |--------------------------\n\nWeighted Sum Weights")
+        data_final = data_final.replace("Weighted Mean Weights", "\nWeighted Mean Weights")
+
+        y.write(data_final)
+        y.close()
+
+
+    def write_files(self, path:str,yaml_p:str,ter:bool,weighted_mean:bool) -> None:
         data = {}
         data["weights_metrics"] = self.weights
         data["best_value"] = self.best_value
@@ -145,6 +186,10 @@ class StudyWeights:
         f = open(path + "/" + extra + "metrics_weights.json", "w")
         json.dump(data,f,indent=4)
         f.close()
+
+        if yaml_p:
+            self.write_yaml(weighted_mean,ter)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -194,6 +239,13 @@ if __name__ == "__main__":
         help="Output Path.", 
         type=str
     )
+    parser.add_argument(
+        "-y",
+        "--yaml", 
+        help="Write in YAML.", 
+        type=bool,
+        default=False
+    )
 
     args = parser.parse_args()
     seed_everything(args.seed_everything)
@@ -209,4 +261,4 @@ if __name__ == "__main__":
         study = StudyWeights(systems_scores,args.seed_everything,args.trials)
         study.optimize_weights(args.ter, args.weighted_mean)
         if args.output_path:
-            study.write_file(args.output_path,args.ter,args.weighted_mean)
+            study.write_files(args.output_path,args.yaml,args.ter,args.weighted_mean)

@@ -24,14 +24,11 @@ AVAILABLE_UNIVERSAL_METRICS  = [
 AVAILABLE_UNIVERSAL_METRICS_NAMES = {universal_metric.name:universal_metric for universal_metric in AVAILABLE_UNIVERSAL_METRICS 
                                      if universal_metric!=WeightedMean or universal_metric!=WeightedSum}
 
-
-for weighted_sum in universal_metrics_yaml["Weighted Sum Weights"]:
-    sum_name = list(weighted_sum.keys())[0]
+for sum_name in list(universal_metrics_yaml["Weighted Sum Weights"].keys()):
     if sum_name not in AVAILABLE_UNIVERSAL_METRICS_NAMES:
         AVAILABLE_UNIVERSAL_METRICS_NAMES[sum_name] = WeightedSum
 
-for weighted_mean in universal_metrics_yaml["Weighted Mean Weights"]:
-    mean_name = list(weighted_mean.keys())[0]
+for mean_name in list(universal_metrics_yaml["Weighted Mean Weights"].keys()):
     if mean_name not in AVAILABLE_UNIVERSAL_METRICS_NAMES:
         AVAILABLE_UNIVERSAL_METRICS_NAMES[mean_name] = WeightedMean
 
