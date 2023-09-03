@@ -129,35 +129,32 @@ class StudyWeights:
         data_yaml = read_yaml_file(filename)
 
         if weighted_mean:
-            u_name = "weighted-mean-" + "seed-" + str(self.seed) + "_0_1" 
+            u_name = "weighted-mean-" + "seed-" + str(self.seed) + "-trials-" + str(self.trials) + "_0_1" 
             data_yaml["Weighted Mean Weights"][u_name] = self.weights
         else:
-            u_name = "weighted-sum-" + "seed-" + str(self.seed) + "_"
+            u_name = "weighted-sum-" + "seed-" + str(self.seed) + "-trials-" + str(self.trials) + "_"
             if ter:
                 u_name += "TER_0_1"
             else:
-                u_name += "_-1_1"
+                u_name += "-1_1"
             data_yaml["Weighted Sum Weights"][u_name] = self.weights
-        data_yaml["All universal metrics"].append(u_name)
-        data_yaml["Machine Translation universal metrics"].append(u_name)
+        if u_name not in data_yaml["All universal metrics"]:
+            data_yaml["All universal metrics"].append(u_name)
+        if u_name not in data_yaml["Machine Translation universal metrics"]:
+            data_yaml["Machine Translation universal metrics"].append(u_name)
 
-        y =  open("user/" + filename, 'w')
         data_final = yaml.dump(data_yaml, default_flow_style=False,sort_keys=False)
-
         for k in list(data_yaml.keys())[1:]:
             data_final = data_final.replace(k, '\n' + k)
             for name in data_yaml[k]:
-                data_final = data_final.replace("- " + name, '\t- ' + name)
-        for name in list(data_yaml["Weighted Mean Weights"].keys()):
-            data_final = data_final.replace(" " + name, '\n ' + name)
-            data_final = data_final.replace("\t-\n " + name, '- ' + name)
-        for name in list(data_yaml["Weighted Sum Weights"].keys()):
-            data_final = data_final.replace(" " + name, '\n ' + name)
-            data_final = data_final.replace("\t-\n " + name, '- ' + name)
-            
+                data_final = data_final.replace("- " + name, '  - ' + name)
+        for name in list(data_yaml["Weighted Mean Weights"].keys()) + list(data_yaml["Weighted Sum Weights"].keys()):
+            data_final = data_final.replace("  " + name, '\n  ' + name)
+        data_final = data_final.replace("    -", '  -') 
         data_final = data_final.replace("Weighted Sum Weights", "#-------------------------- | Weights |--------------------------\n\nWeighted Sum Weights")
         data_final = data_final.replace("Weighted Mean Weights", "\nWeighted Mean Weights")
 
+        y =  open("user/" + filename, 'w')
         y.write(data_final)
         y.close()
 
