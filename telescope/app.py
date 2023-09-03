@@ -22,7 +22,7 @@ from telescope.metrics.result import MultipleMetricResults
 from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.plotting import export_dataframe, analysis_metrics
-from telescope.universal_metrics import WeightedMean
+from telescope.universal_metrics import WeightedMean, WeightedSum
 from telescope.utils import PATH_DOWNLOADED_PLOTS, create_downloaded_data_folder
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
@@ -238,11 +238,25 @@ def run_all_metrics(collection, metrics, filters):
 def run_universal_metric(testset, universal_metric, metrics_results, extra_info):
     if universal_metric == "pairwise-comparison":
         universal_metric = available_universal_metrics[universal_metric](metrics_results,extra_info[0],extra_info[1])
-    elif available_universal_metrics[universal_metric] == WeightedMean:
+    elif available_universal_metrics[universal_metric] == WeightedMean or available_universal_metrics[universal_metric] == WeightedSum:
         universal_metric = available_universal_metrics[universal_metric](metrics_results,universal_metric)
     else:
         universal_metric = available_universal_metrics[universal_metric](metrics_results)
     return universal_metric.universal_score_calculation_and_ranking(testset)
+
+def run_all_universal_metrics(collection, metrics_results_per_ref):
+    refs_names = collection.refs_names
+    return {u_metric: { 
+            ref_name: run_universal_metric(
+                                        collection_testsets.testsets[ref_name], 
+                                        u_metric,
+                                        metrics_results_per_ref[ref_name],
+                                        [])
+            for ref_name in refs_names
+            }
+        for u_metric in list(available_universal_metrics.keys()) if u_metric != "pairwise-comparison"
+    }
+
 
 
 # --------| Bias Evaluation |-----------
@@ -339,35 +353,46 @@ if collection_testsets:
         st.title("Models Rankings")
         st.text("\n\n\n")
 
-        universal_results = None
-        universal_metric = st.selectbox("**:blue[Select Univeral Metric:]**", list(available_universal_metrics.keys())) 
+        universal_results = run_all_universal_metrics(collection_testsets,metrics_results_per_ref)
+        universal = None
+        system_a_name = ""
+        system_b_name = ""
+        universal_metric = st.selectbox("**:blue[Select Univeral Metric:]**", list(available_universal_metrics.keys()))
         if universal_metric == "pairwise-comparison":
             left, right = st.columns(2)
-            system_x_name = left.selectbox(
+            system_a_name = left.selectbox(
                 "Select the system a:",
                 collection_testsets.names_of_systems(),
                 index=0,
                 key = "pairwise_1"
             )
-            system_y_name = right.selectbox(
+            system_b_name = right.selectbox(
                 "Select the system b:",
                 collection_testsets.names_of_systems(),
                 index=1,
                 key = "pairwise_2"
             )
 
-            if system_x_name == system_y_name:
+            if system_a_name == system_b_name:
                 st.warning("The system x cannot be the same as system y")
             else:
-                system_x_id = collection_testsets.system_name_id(system_x_name)
-                system_y_id = collection_testsets.system_name_id(system_y_name)
-                universal_results = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename], 
-                                                         [system_x_id,system_y_id])
+                system_a_id = collection_testsets.system_name_id(system_a_name)
+                system_b_id = collection_testsets.system_name_id(system_b_name)
+                universal = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename], 
+                                                         [system_a_id,system_b_id])
         else:
-            universal_results = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename], [])
+            universal = universal_results[universal_metric][ref_filename]
 
-        if universal_results:
-            universal_results.plots_web_interface(collection_testsets,ref_filename)
+        if universal:
+            universal.plots_web_interface(collection_testsets,ref_filename,system_a_name,system_b_name)
+        
+        _,col_rank_u,_ = st.columns(3)
+        
+        if st.button("Export all universal metrics (not included pairwise comparison)"):
+            for u_metric in list(available_universal_metrics.keys()):
+                if u_metric != "pairwise-comparison":
+                    universal_results[u_metric][ref_filename].dataframa_to_to_csv(collection_testsets,ref_filename)
+
 
     # ----------------------------| Metric Analysis and Plots |-------------------------------
 

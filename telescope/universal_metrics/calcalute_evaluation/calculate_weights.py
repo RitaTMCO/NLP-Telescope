@@ -7,7 +7,6 @@ import pandas as pd
 from pytorch_lightning import seed_everything
 from itertools import combinations
 from typing import Dict, List
-from telescope.utils import read_yaml_file
 
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -124,9 +123,10 @@ class StudyWeights:
         print(self.weights)
     
 
-    def write_yaml(self,weighted_mean:bool,ter:bool) -> None:
-        filename = "universal_metrics.yaml"
-        data_yaml = read_yaml_file(filename)
+    def write_yaml(self,filename:str, weighted_mean:bool,ter:bool) -> None:
+        file = open(filename, "r")
+        data_yaml = yaml.safe_load(file)
+        file.close()
 
         if weighted_mean:
             u_name = "weighted-mean-" + "seed-" + str(self.seed) + "-trials-" + str(self.trials) + "_0_1" 
@@ -154,7 +154,7 @@ class StudyWeights:
         data_final = data_final.replace("Weighted Sum Weights", "#-------------------------- | Weights |--------------------------\n\nWeighted Sum Weights")
         data_final = data_final.replace("Weighted Mean Weights", "\nWeighted Mean Weights")
 
-        y =  open("user/" + filename, 'w')
+        y =  open(filename, 'w')
         y.write(data_final)
         y.close()
 
@@ -185,7 +185,7 @@ class StudyWeights:
         f.close()
 
         if yaml_p:
-            self.write_yaml(weighted_mean,ter)
+            self.write_yaml(yaml_p,weighted_mean,ter)
 
 
 if __name__ == "__main__":
@@ -239,9 +239,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-y",
         "--yaml", 
-        help="Write in YAML.", 
-        type=bool,
-        default=False
+        help="File YAML.", 
+        type=str,
+        default=""
     )
 
     args = parser.parse_args()

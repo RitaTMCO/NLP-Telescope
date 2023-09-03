@@ -1,4 +1,5 @@
 import click
+import os
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -49,6 +50,7 @@ class MultipleUniversalMetricResult():
         self.universal_metric = universal_metric_x
         self.title = title_x
         self.systems_universal_metrics_results = systems_universal_metrics_results
+        self.universal_filename = self.universal_metric + "_ranks_systems.csv"
 
     def results_to_dataframe(self,systems_names:Dict[str, str]) -> pd.DataFrame:
         summary = []
@@ -60,15 +62,27 @@ class MultipleUniversalMetricResult():
         df = pd.DataFrame(np.array(summary), index=ranks, columns=["System", "Score"])
         return df
     
-    def plots_web_interface(self, collection_testsets:CollectionTestsets,ref_filename:str):
+    def plots_web_interface(self, collection_testsets:CollectionTestsets,ref_filename:str, sys_a:str="", sys_b:str=""):
         st.subheader(self.title)
         path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/" 
         df = self.results_to_dataframe(collection_testsets.systems_names)
         st.dataframe(df)
-        export_dataframe(label="Export ranks of systems", path=path, name= self.universal_metric + "_ranks_systems.csv", dataframe=df)
+
+        name = self.universal_filename
+
+        if self.universal_metric == "pairwise-comparison":
+            name = self.universal_metric + "_" + "_".join([sys_a, sys_b]) + "_ranks_systems.csv"
+        export_dataframe(label="Export ranks of systems", path=path, name = name, dataframe=df)
     
     def plots_cli_interface(self, collection_testsets:CollectionTestsets):
         click.secho("\nModels Rankings:", fg="yellow")
         df = self.results_to_dataframe(collection_testsets.systems_names)
         click.secho(str(df), fg="yellow")
         return df
+
+    def dataframa_to_to_csv(self,collection_testsets:CollectionTestsets,ref_filename:str):
+        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/"
+        df = self.results_to_dataframe(collection_testsets.systems_names)
+        if not os.path.exists(path):
+            os.makedirs(path)  
+        df.to_csv(path + "/" + self.universal_filename)
