@@ -1,0 +1,21 @@
+,System,Score
+rank 1,refB,140.0
+rank 2,refA,133.0
+rank 3,HuaweiTSC,126.0
+rank 4,Online-G,110.0
+rank 5,LanguageX,104.0
+rank 6,Online-W,102.0
+rank 7,chrf_bestmbr,95.0
+rank 8,Lan-Bridge,89.0
+rank 9,JDExploreAcademy,86.0
+rank 10,AISP-SJTU,83.0
+rank 11,comet_bestmbr,71.0
+rank 12,Online-B,69.0
+rank 13,bleurt_bestmbr,64.0
+rank 14,bleu_bestmbr,63.0
+rank 15,Online-Y,49.0
+rank 16,Online-A,42.0
+rank 17,NiuTrans,41.0
+rank 18,DLUT,32.0
+rank 19,M2M100_1.2B-B4,26.0
+rank 20,QUARTZ_TuneReranking,24.0
