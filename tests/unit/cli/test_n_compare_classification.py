@@ -132,7 +132,7 @@ class TestCompareCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
 
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/results.csv")))
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/analysis-metric-score.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/analysis-metrics-stacked-bar-plot.png")))
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Accuracy-analysis-labels-bucket.png")))
         for sys_name in self.sys_names:
             if sys_name != "Sys C":
@@ -172,6 +172,6 @@ class TestCompareCli(unittest.TestCase):
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/rates.csv")
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" )
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/results.csv")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_")  + "/analysis-metric-score.png")
+        os.remove(DATA_PATH + "/" + self.ref.replace("/","_")  + "/analysis-metrics-stacked-bar-plot.png")
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/Accuracy-analysis-labels-bucket.png")
         os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_"))

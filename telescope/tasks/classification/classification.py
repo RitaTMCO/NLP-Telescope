@@ -10,7 +10,7 @@ from telescope.metrics import AVAILABLE_CLASSIFICATION_METRICS
 from telescope.filters import AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.bias_evaluation import AVAILABLE_CLASSIFICATION_BIAS_EVALUATIONS
 from telescope.universal_metrics import AVAILABLE_CLASSIFICATION_UNIVERSAL_METRICS
-from telescope.plotting import (
+from telescope.multiple_plotting import (
     confusion_matrix_of_system,
     confusion_matrix_focused_on_one_label,
     analysis_labels,

@@ -6,7 +6,7 @@ from typing import List, Dict
 from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.collection_testsets import CollectionTestsets
 from telescope.metrics.metric import MetricResult, MultipleMetricResults, Metric
-from telescope.plotting import ( 
+from telescope.multiple_plotting import ( 
     confusion_matrix_of_system, 
     confusion_matrix_focused_on_one_label,
     rates_table,

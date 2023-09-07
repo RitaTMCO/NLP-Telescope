@@ -21,7 +21,7 @@ from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleMetricResults
 from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
-from telescope.plotting import export_dataframe, analysis_metrics
+from telescope.multiple_plotting import export_dataframe, analysis_metrics_stacked_bar_plot
 from telescope.universal_metrics import WeightedMean, WeightedSum
 from telescope.utils import PATH_DOWNLOADED_PLOTS, create_downloaded_data_folder
 
@@ -57,11 +57,15 @@ metrics = st.sidebar.multiselect(
 if available_tasks[task].universal_metrics:
     rank = st.sidebar.checkbox('Rankings of Models')
     available_universal_metrics = available_tasks[task].universal_metrics
-    
+
+def change_error_analysis():
+    st.session_state["first_time_error"] = 1
+
 metric = st.sidebar.selectbox(
     "Select the segment-level metric you wish to run:",
     list(m.name for m in available_metrics.values() if m.segment_level),
     index=0,
+    on_change = change_error_analysis
 )
 
 #---------- |Filters| ------------
@@ -410,13 +414,13 @@ if collection_testsets:
         
             dataframe = MultipleMetricResults.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
             left.dataframe(dataframe)
-            analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names,column=right)
+            analysis_metrics_stacked_bar_plot(list(metrics_results.values()),collection_testsets.systems_names,column=right)
 
             left_2,right_2 = st.columns([0.3, 0.7]) 
              
             export_dataframe(label="Export table with score",path=path, name= "results.csv", dataframe=dataframe, column=left_2)
             if right_2.button('Download the analysis of each metric'):
-                analysis_metrics(list(metrics_results.values()),collection_testsets.systems_names, path)
+                analysis_metrics_stacked_bar_plot(list(metrics_results.values()),collection_testsets.systems_names, path)
     
     
         if metric in metrics_results:

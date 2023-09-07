@@ -18,16 +18,23 @@ import unittest
 
 from telescope.testset import MultipleTestset
 from telescope.metrics.result import MetricResult, PairwiseResult, MultipleMetricResults
-from telescope.plotting import (plot_bucket_comparison,
-                                plot_bucket_multiple_comparison,
+from telescope.plotting import (
+                                plot_bucket_comparison,
                                 plot_pairwise_distributions,
-                                plot_multiple_distributions,
                                 plot_segment_comparison,
+
+                                )
+from telescope.multiple_plotting import (
+                                analysis_metrics_stacked_bar_plot,
+                                plot_bucket_multiple_comparison,
+                                plot_multiple_distributions,
                                 plot_multiple_segment_comparison,
                                 confusion_matrix_of_system,
                                 confusion_matrix_focused_on_one_label,
                                 analysis_labels,
-                                incorrect_examples
+                                incorrect_examples,
+                                number_of_correct_labels_of_each_system,
+                                number_of_incorrect_labels_of_each_system
                                 )
 
 from tests.data import DATA_PATH
@@ -202,6 +209,7 @@ class TestPlots(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        os.remove(DATA_PATH + "/analysis-metrics-stacked-bar-plot.png")
         os.remove(DATA_PATH + "/segment-comparison.html")
         os.remove(DATA_PATH + "/scores-distribution.html")
         os.remove(DATA_PATH + "/bucket-analysis.png")
@@ -217,6 +225,16 @@ class TestPlots(unittest.TestCase):
         os.remove(DATA_PATH + "/Sys_A-label-c.png")
         os.remove(DATA_PATH + "/mock-analysis-labels-bucket.png")
         os.remove(DATA_PATH + "/incorrect-examples.csv")
+        os.remove(DATA_PATH + "/number-of-correct-labels-of-each-system.png")
+        os.remove(DATA_PATH + "/number-of-incorrect-labels-of-each-system.png")
+    
+    def test_analysis_metrics_stacked_bar_plot(self):
+        analysis_metrics_stacked_bar_plot(
+            [self.multiple_result,self.multiple_result_bertscore,self.multiple_result_comet], self.systems_names, saving_dir=DATA_PATH
+            )
+        self.assertTrue(
+            os.path.isfile(os.path.join(DATA_PATH, "analysis-metrics-stacked-bar-plot.png"))
+        )
 
     def test_segment_comparison(self):
         plot_segment_comparison(self.result, DATA_PATH)
@@ -300,3 +318,19 @@ class TestPlots(unittest.TestCase):
         num = int(len(self.testset_class.ref)/4) + 1
         incorrect_examples(self.testset_class, "Sys 1", num, [], [], [], DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.csv")))
+    
+    def test_number_of_correct_labels_of_each_system(self):
+            number_of_correct_labels_of_each_system(list(self.systems_names.values()), 
+                                                    self.testset_class.ref, 
+                                                    list(self.testset_class.systems_output.values()),
+                                                    self.labels,
+                                                    DATA_PATH)
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "number-of-correct-labels-of-each-system.png")))
+
+    def test_number_of_incorrect_labels_of_each_system(self):
+            number_of_incorrect_labels_of_each_system(list(self.systems_names.values()), 
+                                                    self.testset_class.ref, 
+                                                    list(self.testset_class.systems_output.values()),
+                                                    self.labels,
+                                                    DATA_PATH)
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "number-of-incorrect-labels-of-each-system.png")))

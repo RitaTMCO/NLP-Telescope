@@ -3,15 +3,17 @@ import pandas as pd
 import numpy as np
 import os
 
-from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, NLGTestsets
+
+from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.metrics import AVAILABLE_NLG_METRICS
 from telescope.filters import AVAILABLE_NLG_FILTERS
 from telescope.bias_evaluation import AVAILABLE_NLG_BIAS_EVALUATIONS
 from telescope.universal_metrics import AVAILABLE_NLG_UNIVERSAL_METRICS
-from telescope.plotting import (
-    plot_bootstraping_result,
+
+from telescope.plotting import plot_bootstraping_result
+from telescope.multiple_plotting import (
     plot_bucket_multiple_comparison,
     plot_multiple_distributions,
     plot_multiple_segment_comparison,
@@ -73,8 +75,6 @@ class NLG(Task):
             st.header(":blue[Distribution of segment-level scores:]")
 
             if plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
-                st.markdown("This displot shows the distribution of segment-level scores. It is composed of histogram, kernel density estimation curve and rug plot.")
-
                 plot_multiple_distributions(results[metric], collection_testsets.names_of_systems())
                 _, middle, _ = st.columns(3)
                 if middle.button('Download the distribution of segment-level scores'):

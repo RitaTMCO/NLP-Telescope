@@ -11,8 +11,6 @@ from typing import Dict, List
 from colorama import Fore
 
 
-optuna.logging.set_verbosity(optuna.logging.WARNING)
-
 
 def create_dir(dir):
     if not os.path.exists(dir):
@@ -35,7 +33,7 @@ def evaluate_universal_metrics(metric_scores_path:str, metric_scores_file:str, h
         if systems_scores.has_systems():
             metrics_evaluation = MetricsEvaluation(systems_scores)
             metrics_evaluation.evaluate()
-            metrics_evaluation.write_file(output_path)
+            metrics_evaluation.write_dataframe(output_path)
 
 def evaluate_metrics(metric_scores_file:str, human_scores_file:str, language_pair:str, reference:str, domain:str, output_path:str, arg_metric:str):
     
@@ -54,7 +52,7 @@ def evaluate_metrics(metric_scores_file:str, human_scores_file:str, language_pai
             if systems_scores.has_systems():
                 metrics_evaluation = MetricsEvaluation(systems_scores)
                 metrics_evaluation.evaluate()
-                metrics_evaluation.write_file(output_path)
+                metrics_evaluation.write_dataframe(output_path)
 
 class SystemsScores:
     def __init__(self, human_scores:Dict[str,float], metric_scores:Dict[str,float], metric: str, human_scores_file:str , metric_scores_file:str,
@@ -172,16 +170,19 @@ class MetricsEvaluation:
         self.kendall(metric_scores, gold_scores)
 
 
-    def write_file(self, output_path:str) -> None:
-        data = {}
-        data["system_accuracy"] = self.system_accuracy_value
-        data["spearman"] = self.spearman_value
-        data["pearson"] = self.pearson_value
-        data["kendall"] = self.kendall_value
+    def write_dataframe(self, output_path:str) -> None:
+        data = {"metrics":self.systems_scores.metric}
+
+        data["system_accuracy"] = round(self.system_accuracy_value,3)
+        data["spearman"] = round(self.spearman_value,3)
+        data["pearson"] = round(self.pearson_value,3)
+        data["kendall"] = round(self.kendall_value,3)
+
 
         data["languages_pair"] = self.systems_scores.language_pair
         data["domain"] = self.systems_scores.domain
         data["reference"] = self.systems_scores.reference
+
 
         data["system_names"] = self.systems_scores.systems_names
         data["human_scores_file"] = self.systems_scores.human_scores_file
@@ -193,14 +194,20 @@ class MetricsEvaluation:
         path_domain = path_lang + self.systems_scores.domain + "/"
         path = path_domain + "/" + self.systems_scores.reference + "/"
 
-        create_dir(output_path)
-        create_dir(path_lang)
-        create_dir(path_domain)
-        create_dir(path)
+        df = pd.DataFrame([data])
 
-        f = open(path + "/" + self.systems_scores.metric + "-evaluation.json", "w")
-        json.dump(data,f,indent=4)
-        f.close()
+        if os.path.exists(path) and os.path.isfile(path + "/evaluation.csv"):
+            data_file = pd.read_csv(path + "/evaluation.csv")
+            d_res = pd.concat([data_file,df])
+        
+        else:
+            create_dir(output_path)
+            create_dir(path_lang)
+            create_dir(path_domain)
+            create_dir(path)
+            d_res = df
+
+        d_res.to_csv(path + "/evaluation.csv", index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -272,13 +279,7 @@ if __name__ == "__main__":
 
                     universal_metric_scores_path = reference_path + reference + "/universal_metrics/"
                     for universal_metric_scores_file in os.listdir(universal_metric_scores_path):
-                        if universal_metric_scores_file == "weighted_mean" or universal_metric_scores_file == "weighted-mean":
-                            weighted_mean_path = universal_metric_scores_path + universal_metric_scores_file + "/"
-
-                            for weighted_mean_file in os.listdir(weighted_mean_path):
-                                evaluate_universal_metrics(weighted_mean_path, weighted_mean_file, human_scores_file, args.languages_pair, reference, domain, 
-                                                           args.output_path, args.metric)
-                        elif universal_metric_scores_file == "pairwise-comparison_ranks_systems.csv":
+                        if "pairwise-comparison" in universal_metric_scores_file:
                             continue
                         else:
                             evaluate_universal_metrics(universal_metric_scores_path, universal_metric_scores_file, human_scores_file, args.languages_pair, reference, 

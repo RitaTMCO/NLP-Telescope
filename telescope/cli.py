@@ -25,6 +25,18 @@ import pandas as pd
 
 from typing import List, Union, Tuple
 
+from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
+from telescope.tasks.classification import Classification
+from telescope.metrics.result import MultipleMetricResults
+from telescope.testset import PairwiseTestset
+from telescope.multiple_plotting import analysis_metrics_stacked_bar_plot
+from telescope.plotting import (
+    plot_segment_comparison,
+    plot_pairwise_distributions,
+    plot_bucket_comparison,
+)
+
+
 from telescope.metrics import (
     AVAILABLE_METRICS, 
     AVAILABLE_CLASSIFICATION_METRICS, 
@@ -55,16 +67,6 @@ from telescope.bias_evaluation import (
     AVAILABLE_MT_BIAS_EVALUATIONS, 
     AVAILABLE_DIALOGUE_BIAS_EVALUATIONS, 
     AVAILABLE_SUMMARIZATION_BIAS_EVALUATIONS)
-from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
-from telescope.tasks.classification import Classification
-from telescope.metrics.result import MultipleMetricResults
-from telescope.testset import PairwiseTestset
-from telescope.plotting import (
-    plot_segment_comparison,
-    plot_pairwise_distributions,
-    plot_bucket_comparison,
-    analysis_metrics
-)
 
 
 available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
@@ -725,7 +727,7 @@ def n_compare_nlg(
             if not os.path.exists(metrics_results_dir):
                 os.makedirs(metrics_results_dir)
             results_df.to_csv(metrics_results_dir + "results.csv")
-            analysis_metrics(list(results.values()), systems_names,metrics_results_dir)
+            analysis_metrics_stacked_bar_plot(list(results.values()), systems_names,metrics_results_dir)
 
             if bootstrap and num_systems > 1 and available_nlg_tasks[task].bootstrap:
                 x_name = systems_names[x_id]
@@ -912,6 +914,6 @@ def n_compare_classification(
                 universal_result_df.to_csv(saving_dir + "ranks_systems.csv")
 
             results_df.to_csv(saving_dir + "/results.csv")
-            analysis_metrics(list(results.values()), systems_names,saving_dir)
+            analysis_metrics_stacked_bar_plot(list(results.values()), systems_names,saving_dir)
 
             Classification.plots_cli_interface(seg_metric,results,collection,ref_filename,saving_dir)
