@@ -22,7 +22,7 @@ AVAILABLE_UNIVERSAL_METRICS  = [
 ]
 
 AVAILABLE_UNIVERSAL_METRICS_NAMES = {universal_metric.name:universal_metric for universal_metric in AVAILABLE_UNIVERSAL_METRICS 
-                                     if universal_metric!=WeightedMean or universal_metric!=WeightedSum}
+                                     if universal_metric!=WeightedMean and universal_metric!=WeightedSum}
 
 for sum_name in list(universal_metrics_yaml["Weighted Sum Weights"].keys()):
     if sum_name not in AVAILABLE_UNIVERSAL_METRICS_NAMES:
