@@ -10,15 +10,30 @@ from typing import Dict, List
 
 from colorama import Fore
 
+u_metrics = {
+        "average" : "Average",
+        "median" : "Median",
+        "social-choice-theory" : "Social Choice Theory",
+        "weighted-sum-seed-12-trials-1000_-1_1" : "Weighted Sum 12",
+        "weighted-sum-seed-24-trials-1000_-1_1" : "Weighted Sum 24",
+        "weighted-sum-seed-36-trials-1000_-1_1" : "Weighted Sum 36",
+        "weighted-sum-seed-12-trials-1000_TER_0_1" : "Weighted Sum 12 TER",
+        "weighted-sum-seed-24-trials-1000_TER_0_1" : "Weighted Sum 24 TER",
+        "weighted-sum-seed-36-trials-1000_TER_0_1" : "Weighted Sum 36 TER",
+        "weighted-mean-seed-12-trials-1000_0_1" : "Weighted Mean 12",
+        "weighted-mean-seed-24-trials-1000_0_1" : "Weighted Mean 24",
+        "weighted-mean-seed-36-trials-1000_0_1" : "Weighted Mean 36",
+    }
+
 
 
 def create_dir(dir):
     if not os.path.exists(dir):
         os.mkdir(dir)
 
-def evaluate_universal_metrics(metric_scores_path:str, metric_scores_file:str, human_scores_file:str, language_pair:str, reference:str, domain:str, output_path:str,
+def evaluate_universal_metrics(metric_scores_path:str, metric_name:str, human_scores_file:str, language_pair:str, reference:str, domain:str, output_path:str,
                      universal_metric:str):
-    metric_name = metric_scores_file.replace("_ranks_systems.csv", "")
+    metric_scores_file = metric_name + "_ranks_systems.csv"
 
     if (universal_metric and universal_metric == metric_name) or not universal_metric:
 
@@ -171,12 +186,15 @@ class MetricsEvaluation:
 
 
     def write_dataframe(self, output_path:str) -> None:
-        data = {"metrics":self.systems_scores.metric}
+        if self.systems_scores.metric in u_metrics:
+            data = {"metric":u_metrics[self.systems_scores.metric]}
+        else:
+            data = {"metric": self.systems_scores.metric}
 
-        data["system_accuracy"] = round(self.system_accuracy_value,3)
-        data["spearman"] = round(self.spearman_value,3)
-        data["pearson"] = round(self.pearson_value,3)
-        data["kendall"] = round(self.kendall_value,3)
+        data["System Accuracy"] = round(self.system_accuracy_value,3)
+        data["Spearman"] = round(self.spearman_value,3)
+        data["Pearson"] = round(self.pearson_value,3)
+        data["Kendall"] = round(self.kendall_value,3)
 
 
         data["languages_pair"] = self.systems_scores.language_pair
@@ -278,11 +296,11 @@ if __name__ == "__main__":
 
 
                     universal_metric_scores_path = reference_path + reference + "/universal_metrics/"
-                    for universal_metric_scores_file in os.listdir(universal_metric_scores_path):
-                        if "pairwise-comparison" in universal_metric_scores_file:
+                    for universal_metric_name in list(u_metrics.keys()):
+                        if universal_metric_name + "_ranks_systems.csv" not in os.listdir(universal_metric_scores_path):
                             continue
                         else:
-                            evaluate_universal_metrics(universal_metric_scores_path, universal_metric_scores_file, human_scores_file, args.languages_pair, reference, 
+                            evaluate_universal_metrics(universal_metric_scores_path, universal_metric_name, human_scores_file, args.languages_pair, reference, 
                                                        domain, args.output_path, args.metric)
 
                         
