@@ -162,28 +162,18 @@ class MetricsEvaluation:
                 tp += 1
         self.system_accuracy_value = tp/len(pairs) 
         print("System_accuracy: " + str(self.system_accuracy_value))
-    
-    def spearman(self,metric_scores, gold_scores): 
-        self.spearman_value = stats.spearmanr(metric_scores, gold_scores)[0]
-        print("Spearman : " + str(self.spearman_value))
 
     def pearson(self,metric_scores, gold_scores): 
         self.pearson_value = stats.pearsonr(metric_scores, gold_scores)[0]
         print("Pearson : " + str(self.pearson_value))
     
-    def kendall(self,metric_scores, gold_scores): 
-        self.kendall_value = stats.kendalltau(metric_scores, gold_scores)[0]
-        print("Kendall : " + str(self.kendall_value))
-    
+
     def evaluate(self):
         gold_scores = self.systems_scores.systems_human_scores()
         metric_scores =  self.systems_scores.systems_metric_scores()
         systems_names = self.systems_scores.systems_names
         self.system_accuracy(metric_scores, gold_scores, systems_names)
-        self.spearman(metric_scores, gold_scores)
         self.pearson(metric_scores, gold_scores)
-        self.kendall(metric_scores, gold_scores)
-
 
     def write_dataframe(self, output_path:str) -> None:
         if self.systems_scores.metric in u_metrics:
@@ -192,9 +182,7 @@ class MetricsEvaluation:
             data = {"metric": self.systems_scores.metric}
 
         data["System Accuracy"] = round(self.system_accuracy_value,3)
-        data["Spearman"] = round(self.spearman_value,3)
         data["Pearson"] = round(self.pearson_value,3)
-        data["Kendall"] = round(self.kendall_value,3)
 
 
         data["languages_pair"] = self.systems_scores.language_pair
