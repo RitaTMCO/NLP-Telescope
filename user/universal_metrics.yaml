@@ -1,0 +1,127 @@
+All universal metrics:
+  - average
+  - median
+  - pairwise-comparison
+  - social-choice-theory
+  - weighted-sum-seed-12-trials-1000_-1_1
+  - weighted-sum-seed-12-trials-1000_TER_0_1
+  - weighted-mean-seed-12-trials-1000_0_1
+  - weighted-sum-seed-24-trials-1000_-1_1
+  - weighted-sum-seed-24-trials-1000_TER_0_1
+  - weighted-mean-seed-24-trials-1000_0_1
+  - weighted-sum-seed-36-trials-1000_-1_1
+  - weighted-sum-seed-36-trials-1000_TER_0_1
+  - weighted-mean-seed-36-trials-1000_0_1
+
+NLP universal metrics: []
+
+NLG universal metrics: []
+
+Machine Translation universal metrics:
+  - average
+  - median
+  - pairwise-comparison
+  - social-choice-theory
+  - weighted-sum-seed-12-trials-1000_-1_1
+  - weighted-sum-seed-12-trials-1000_TER_0_1
+  - weighted-mean-seed-12-trials-1000_0_1
+  - weighted-sum-seed-24-trials-1000_-1_1
+  - weighted-sum-seed-24-trials-1000_TER_0_1
+  - weighted-mean-seed-24-trials-1000_0_1
+  - weighted-sum-seed-36-trials-1000_-1_1
+  - weighted-sum-seed-36-trials-1000_TER_0_1
+  - weighted-mean-seed-36-trials-1000_0_1
+
+Summarization universal metrics: []
+
+Dialogue System universal metrics: []
+
+Classification universal metrics: []
+
+#-------------------------- | Weights |--------------------------
+
+Weighted Sum Weights:
+
+  weighted-sum-seed-12-trials-1000_-1_1:
+    COMET: 0.9628728220854801
+    BERTScore: 0.9985333568325733
+    TER: 0.9353262789374076
+    BLEU: 0.06389427415098614
+    chrF: -0.7226871926439731
+    ZeroEdit: -0.19709395488846404
+    GLEU: 0.3986663667150692
+
+  weighted-sum-seed-12-trials-1000_TER_0_1:
+    COMET: 0.8959601540715358
+    BERTScore: 0.6013066459764144
+    TER: -0.5505950991475295
+    BLEU: 0.09122309052191657
+    chrF: 0.7876232019059841
+    ZeroEdit: 0.45391675522473396
+    GLEU: 0.8535060207299312
+
+  weighted-sum-seed-24-trials-1000_-1_1:
+    COMET: 0.9227282113776127
+    BERTScore: 0.323216020515119
+    TER: 0.9002489468698955
+    BLEU: -0.03436585615411322
+    chrF: -0.7529886619139088
+    ZeroEdit: 0.33424495232266305
+    GLEU: 0.4877107654875014
+
+  weighted-sum-seed-24-trials-1000_TER_0_1:
+    COMET: 0.7407119730213791
+    BERTScore: 0.46908107324380854
+    TER: -0.12006186067537467
+    BLEU: 0.10173176196822728
+    chrF: 0.012536433005164493
+    ZeroEdit: 0.15707410223145113
+    GLEU: 0.20895682207270894
+
+  weighted-sum-seed-36-trials-1000_-1_1:
+    COMET: 0.8088182463871796
+    BERTScore: -0.9300633458833634
+    TER: 0.8637471800063113
+    BLEU: 0.46526293757972503
+    chrF: -0.9710789349402459
+    ZeroEdit: -0.0462380880123846
+    GLEU: 0.44555363169092077
+
+  weighted-sum-seed-36-trials-1000_TER_0_1:
+    COMET: 0.7772982939642904
+    BERTScore: 0.5533543330317817
+    TER: -0.15352027370797022
+    BLEU: 0.0005104275374661071
+    chrF: 0.020574342107476218
+    ZeroEdit: 0.027594610025032405
+    GLEU: 0.6406185469939992
+
+
+Weighted Mean Weights:
+
+  weighted-mean-seed-12-trials-1000_0_1:
+    COMET: 0.5348973871598494
+    BERTScore: 0.9668342400624875
+    TER: 0.844489034733739
+    BLEU: 0.2467660482462629
+    chrF: 0.02108558636603471
+    ZeroEdit: 0.044657999388422326
+    GLEU: 0.10987621247433216
+
+  weighted-mean-seed-24-trials-1000_0_1:
+    COMET: 0.19562516166977562
+    BERTScore: 0.6656109439289974
+    TER: 0.89690648361227
+    BLEU: 0.1382572667184
+    chrF: 0.7175101925126183
+    ZeroEdit: 0.15546517144105973
+    GLEU: 0.8720714463699798
+
+  weighted-mean-seed-36-trials-1000_0_1:
+    COMET: 0.659549875929393
+    BERTScore: 0.7373640603067059
+    TER: 0.9112605687136338
+    BLEU: 0.10955881858062713
+    chrF: 0.028989206023707983
+    ZeroEdit: 0.021359515207509536
+    GLEU: 0.3077568547150826

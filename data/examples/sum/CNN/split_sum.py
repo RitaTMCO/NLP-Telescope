@@ -51,7 +51,7 @@ for i in range(num):
     except:
         continue
     text_distilbart = tokenizer.decode(summary_text_ids[0], skip_special_tokens=True)
-    seg_output_large = sent_tokenize(text_distilbart)
+    seg_distilbart = sent_tokenize(text_distilbart)
 
 
     tokenizer = PreTrainedTokenizerFast.from_pretrained("ainize/bart-base-cnn")
@@ -75,16 +75,16 @@ for i in range(num):
 
 
     path = "_" + str(i+1) + "/"
-    if len(seg_ref) == len(seg_output_base) and len(seg_ref) == len(seg_output_large) and equal != 5:
+    if len(seg_ref) == len(seg_output_base) and len(seg_ref) == len(seg_distilbart) and equal != 5:
         if not os.path.exists(path):
             os.mkdir(path)
         write_sents(path + "src-article-" + str(i+1),seg_src)
-        write_sents(path + "bart-large-cnn-" + str(i+1),seg_output_large)
+        write_sents(path + "distilbart-cnn-" + str(i+1),seg_distilbart)
         write_sents(path + "bart-base-cnn-" + str(i+1),seg_output_base)
         write_sents(path + "highlights-" + str(i+1),seg_ref)
         equal += 1
     
-    elif (len(seg_ref) != len(seg_output_base) or len(seg_ref) != len(seg_output_large)) and not_equal != 5:
+    elif (len(seg_ref) != len(seg_output_base) or len(seg_ref) != len(seg_distilbart)) and not_equal != 5:
         if not os.path.exists(path):
             os.mkdir(path)
         write_sents(path + "src-article-" + str(i+1),seg_src)

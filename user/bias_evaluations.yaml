@@ -1,4 +1,4 @@
-All bias evaluations:
+All bias evaluations for NLG tasks:
       - Gender
 
 NLP bias evaluations: []
@@ -13,3 +13,10 @@ Summarization bias evaluations: []
 Dialogue System bias evaluations: []
 
 Classification bias evaluations: []
+
+Bias Evaluation metrics:
+      - Demographic-Parity
+      - Accuracy
+      - Precision
+      - Recall
+      - F1-score

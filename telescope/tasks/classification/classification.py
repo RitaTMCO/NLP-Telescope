@@ -3,13 +3,14 @@ import os
 import streamlit as st
 
 from typing import Tuple
-from telescope import PATH_DOWNLOADED_PLOTS
+from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, ClassTestsets
 from telescope.metrics import AVAILABLE_CLASSIFICATION_METRICS
 from telescope.filters import AVAILABLE_CLASSIFICATION_FILTERS
 from telescope.bias_evaluation import AVAILABLE_CLASSIFICATION_BIAS_EVALUATIONS
-from telescope.plotting import (
+from telescope.universal_metrics import AVAILABLE_CLASSIFICATION_UNIVERSAL_METRICS
+from telescope.multiple_plotting import (
     confusion_matrix_of_system,
     confusion_matrix_focused_on_one_label,
     analysis_labels,
@@ -24,6 +25,7 @@ class Classification(Task):
     metrics = AVAILABLE_CLASSIFICATION_METRICS
     filters = AVAILABLE_CLASSIFICATION_FILTERS
     bias_evaluations = AVAILABLE_CLASSIFICATION_BIAS_EVALUATIONS
+    universal_metrics = AVAILABLE_CLASSIFICATION_UNIVERSAL_METRICS
 
     @staticmethod
     def input_web_interface() -> CollectionTestsets:
@@ -38,12 +40,13 @@ class Classification(Task):
         return  ClassTestsets.read_data_cli(source, system_names_file, systems_output, reference, extra_info, labels_file)
     
     @classmethod
-    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str) -> None:
+    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
+                            metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interfave to display the plots"""
 
-        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_filename + "/" 
+        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/" 
 
-        ref_id = collection_testsets.refs_indexes[ref_filename]
+        ref_id = collection_testsets.refs_ids[ref_filename]
         testset = collection_testsets.testsets[ref_filename]
         labels = collection_testsets.labels
         names_of_systems = collection_testsets.names_of_systems()
@@ -63,7 +66,7 @@ class Classification(Task):
         df_rates = rates_table(labels,testset.ref,testset.systems_output[system])
         st.dataframe(df_rates)
         _,middle,_ = st.columns(3)
-        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_rates.csv", dataframe=df_rates,column=middle)
+        export_dataframe(label="Export rates",path=path, name= system_name.replace(" ", "_") + "_rates.csv", dataframe=df_rates,column=middle)
 
         # Overall Confusion Matrix
 
@@ -79,7 +82,7 @@ class Classification(Task):
             index=0,
             key = "confusion_matrix"
         )
-        confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[system_name],label,labels,system_name)
+        confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[system],label,labels,system_name)
 
         _,middle,_ = st.columns(3)
         if middle.button('Download all confusion matrices of all systems'):
@@ -90,7 +93,7 @@ class Classification(Task):
                 sys = collection_testsets.system_name_id(sys_name)
                 confusion_matrix_of_system(testset.ref,testset.systems_output[sys],labels,sys_name,path_dir)
                 for l in labels:
-                    confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[sys_name],l,labels,sys_name, path_dir)
+                    confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[sys],l,labels,sys_name, path_dir)
 
 
         #-------------- |Analysis Of Each Label| --------------------
@@ -143,7 +146,7 @@ class Classification(Task):
     
         if df is not None:
             st.dataframe(df)
-            export_dataframe(label="Export incorrect examples", name=system_name + "_incorrect-examples.csv", dataframe=df)
+            export_dataframe(label="Export incorrect examples", path=path, name= system_name + "_incorrect-examples.csv", dataframe=df)
             
             old_num_incorrect_ids = st.session_state[num_incorrect_ids]
             new_num_incorrect_ids = len(st.session_state[incorrect_ids])

@@ -29,10 +29,15 @@ class TestF1Score(unittest.TestCase):
         self.assertEqual(self.f1score.name, "F1-score")
 
     def test_score(self):
-
+        
+        expected_seg = [0.5, 2/3, 2/3]
         expected_sys = (0.5 + 2/3 + 2/3) / 3
 
         result = self.f1score.score([],self.pred,self.true)
+
+        self.assertEqual(result.sys_score, expected_sys)
+        for i in range(len(self.labels)):
+            self.assertEqual(result.seg_scores[i], expected_seg[i])
         
         self.assertEqual(result.sys_score, expected_sys)
         self.assertListEqual(result.ref, self.true)

@@ -3,6 +3,7 @@ import json
 from typing import List,Dict
 from telescope.bias_evaluation.bias_result import MultipleBiasResults
 from telescope.testset import MultipleTestset
+from telescope.metrics import AVAILABLE_BIAS_EVALUATION_METRICS
 
 
 class BiasEvaluation(metaclass=abc.ABCMeta):
@@ -10,7 +11,7 @@ class BiasEvaluation(metaclass=abc.ABCMeta):
     name = None
     available_languages = list()
     groups = list()
-    metrics = list()
+    metrics = AVAILABLE_BIAS_EVALUATION_METRICS
 
     def __init__(self, language: str):
         if not self.language_support(language):

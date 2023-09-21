@@ -24,32 +24,99 @@ import click
 import pandas as pd
 
 from typing import List, Union, Tuple
-from copy import deepcopy
 
-from telescope.collection_testsets import NLGTestsets
-from telescope.metrics import AVAILABLE_METRICS, AVAILABLE_CLASSIFICATION_METRICS, AVAILABLE_MT_METRICS, PairwiseResult
-from telescope.filters import AVAILABLE_FILTERS, AVAILABLE_CLASSIFICATION_FILTERS
-from telescope.tasks import AVAILABLE_NLG_TASKS, AVAILABLE_CLASSIFICATION_TASKS
-from telescope.bias_evaluation import AVAILABLE_BIAS_EVALUATIONS
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.tasks.classification import Classification
 from telescope.metrics.result import MultipleMetricResults
 from telescope.testset import PairwiseTestset
+from telescope.multiple_plotting import analysis_metrics_stacked_bar_plot
 from telescope.plotting import (
     plot_segment_comparison,
     plot_pairwise_distributions,
     plot_bucket_comparison,
 )
 
-available_metrics = {m.name: m for m in AVAILABLE_METRICS}
+
+from telescope.metrics import (
+    AVAILABLE_METRICS, 
+    AVAILABLE_CLASSIFICATION_METRICS, 
+    AVAILABLE_MT_METRICS, 
+    AVAILABLE_SUMMARIZATION_METRICS, 
+    AVAILABLE_DIALOGUE_METRICS, 
+    PairwiseResult)
+from telescope.filters import (
+    AVAILABLE_FILTERS, 
+    AVAILABLE_CLASSIFICATION_FILTERS, 
+    AVAILABLE_MT_FILTERS, 
+    AVAILABLE_SUMMARIZATION_FILTERS, 
+    AVAILABLE_DIALOGUE_FILTERS)
+from telescope.tasks import (
+    AVAILABLE_NLG_TASKS, 
+    AVAILABLE_CLASSIFICATION_TASKS,
+    AVAILABLE_TASKS
+    )
+from telescope.universal_metrics import (
+    AVAILABLE_UNIVERSAL_METRICS_NAMES, 
+    AVAILABLE_MT_UNIVERSAL_METRICS, 
+    AVAILABLE_SUMMARIZATION_UNIVERSAL_METRICS,
+    AVAILABLE_DIALOGUE_UNIVERSAL_METRICS,
+    AVAILABLE_CLASSIFICATION_UNIVERSAL_METRICS,
+    WeightedMean)
+from telescope.bias_evaluation import (
+    AVAILABLE_BIAS_EVALUATIONS, 
+    AVAILABLE_MT_BIAS_EVALUATIONS, 
+    AVAILABLE_DIALOGUE_BIAS_EVALUATIONS, 
+    AVAILABLE_SUMMARIZATION_BIAS_EVALUATIONS)
+
+
+available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
+available_class_tasks = {t.name: t for t in AVAILABLE_CLASSIFICATION_TASKS}
+available_tasks = {t.name: t for t in AVAILABLE_TASKS}
+
+available_metrics = {m.name: m for m in AVAILABLE_METRICS if m.name!="Demographic-Parity"}
 available_mt_metrics = {m.name: m for m in AVAILABLE_MT_METRICS}
+available_sum_metrics = {m.name: m for m in AVAILABLE_SUMMARIZATION_METRICS}
+available_dial_metrics = {m.name: m for m in AVAILABLE_DIALOGUE_METRICS}
 available_class_metrics = {m.name: m for m in AVAILABLE_CLASSIFICATION_METRICS}
 
 available_filters = {f.name: f for f in AVAILABLE_FILTERS}
 available_class_filters = {f.name: f for f in AVAILABLE_CLASSIFICATION_FILTERS}
-available_nlg_tasks = {t.name: t for t in AVAILABLE_NLG_TASKS}
+available_mt_filters = {f.name: f for f in AVAILABLE_MT_FILTERS}
+available_sum_filters = {f.name: f for f in AVAILABLE_SUMMARIZATION_FILTERS}
+available_dial_filters = {f.name: f for f in AVAILABLE_DIALOGUE_FILTERS}
 
 available_bias_evaluation = {b.name: b for b in AVAILABLE_BIAS_EVALUATIONS}
+available_mt_bias_evaluation = {f.name: f for f in AVAILABLE_MT_BIAS_EVALUATIONS}
+available_sum_bias_evaluation = {f.name: f for f in AVAILABLE_SUMMARIZATION_BIAS_EVALUATIONS}
+available_dial_bias_evaluation = {f.name: f for f in AVAILABLE_DIALOGUE_BIAS_EVALUATIONS}
+
+available_universal_metrics = AVAILABLE_UNIVERSAL_METRICS_NAMES
+available_mt_universal_metrics = AVAILABLE_MT_UNIVERSAL_METRICS
+available_sum_universal_metrics = AVAILABLE_SUMMARIZATION_UNIVERSAL_METRICS
+available_dial_universal_metrics = AVAILABLE_DIALOGUE_UNIVERSAL_METRICS
+available_class_universal_metrics = AVAILABLE_CLASSIFICATION_UNIVERSAL_METRICS
+
+
+help_mt_metrics = "\n\n|machine-translation|: [" + ", ".join(list(available_mt_metrics.keys())) + "].\n"
+help_sum_metrics = "\n|summarization|: [" + ", ".join(list(available_sum_metrics.keys())) + "].\n"
+help_dial_metrics = "\n|dialogue-system|: [" + ", ".join(list(available_dial_metrics.keys())) + "].\n"
+help_metrics = help_mt_metrics + help_sum_metrics + help_dial_metrics
+
+help_mt_filters = "\n\n|machine-translation|: [" + ", ".join(list(available_mt_filters.keys())) + "].\n"
+help_sum_filters = "\n|summarization|: [" + ", ".join(list(available_sum_filters.keys())) + "].\n"
+help_dial_filters = "\n|dialogue-system|: [" + ", ".join(list(available_dial_filters.keys())) + "].\n"
+help_filters = help_mt_filters + help_sum_filters + help_dial_filters
+
+help_mt_bias_evaluation  = "\n\n|machine-translation|: [" + ", ".join(list(available_mt_bias_evaluation.keys())) + "].\n"
+help_sum_bias_evaluation  = "\n|summarization|: [" + ", ".join(list(available_sum_bias_evaluation.keys())) + "].\n"
+help_dial_bias_evaluation  = "\n|dialogue-system|: [" + ", ".join(list(available_dial_bias_evaluation.keys())) + "].\n"
+help_bias_evaluation  = help_mt_bias_evaluation  + help_sum_bias_evaluation  + help_dial_bias_evaluation 
+
+help_mt_universal_metrics  = "\n\n|machine-translation|: [" + ", ".join(list(available_mt_universal_metrics.keys())) + "].\n"
+help_sum_universal_metrics  = "\n|summarization|: [" + ", ".join(list(available_sum_universal_metrics.keys())) + "].\n"
+help_dial_universal_metrics  = "\n|dialogue-system|: [" + ", ".join(list(available_dial_universal_metrics.keys())) + "].\n"
+help_universal_metrics  = help_mt_universal_metrics  + help_sum_universal_metrics  + help_dial_universal_metrics 
+
 
 def readlines(ctx, param, file: click.File) -> List[str]:
     return [l.strip() for l in file.readlines()]
@@ -146,7 +213,7 @@ def telescope():
     default="",
     callback=output_folder_exists,
     type=str,
-    help="Folder you wish to use to save plots.",
+    help="Folder in which you wish to save plots.",
 )
 @click.option("--bootstrap", is_flag=True)
 @click.option(
@@ -161,7 +228,7 @@ def telescope():
     required=False,
     default=0.5,
     type=float,
-    help="Folder you wish to use to save plots.",
+    help="Proportion (P) of the initial sample.",
 )
 def compare(
     source: click.File,
@@ -355,20 +422,21 @@ def seg_metric_in_metrics(seg_metric, metrics):
         )
     return metrics
 
-def apply_filter(collection,filter,length_min_val,length_max_val):
+def apply_filter(collection,filter,length_min_val,length_max_val,task):
     for ref_name in collection.refs_names:
         corpus_size = len(collection.testsets[ref_name])
         
         for f in filter:
-            if f == "length":
-                fil = available_filters[f](collection.testsets[ref_name], int(length_min_val*100), 
+            if f in f in [fi.name for fi in available_tasks[task].filters]:
+                if f == "length":
+                    fil = available_filters[f](collection.testsets[ref_name], int(length_min_val*100), 
                                     int(length_max_val*100))
-            elif f == "named-entities":
-                fil = available_filters[f](collection.testsets[ref_name], collection.source_language, 
+                elif f == "named-entities":
+                    fil = available_filters[f](collection.testsets[ref_name], collection.source_language, 
                                                                             collection.target_language)
-            else:
-                fil = available_filters[f](collection.testsets[ref_name])
-            collection.testsets[ref_name].apply_filter(fil)
+                else:
+                    fil = available_filters[f](collection.testsets[ref_name])
+                collection.testsets[ref_name].apply_filter(fil)
 
         if (1 - (len(collection.testsets[ref_name]) / corpus_size)) * 100 == 100:
             click.secho("For reference " + ref_name + ", the current filters reduce the Corpus on 100%!", fg="green")
@@ -453,7 +521,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     type=click.Choice(list(available_metrics.keys())),
     required=True,
     multiple=True,
-    help="Metric to run. This option can be multiple.",
+    help="Metric to run. This option can be multiple." + help_metrics
 )
 @click.option(
     "--filter",
@@ -462,7 +530,7 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     required=False,
     default=[],
     multiple=True,
-    help="Filter to run. This option can be multiple.",
+    help="Filter to run. This option can be multiple." + help_filters,
 )
 @click.option(
     "--length_min_val",
@@ -492,9 +560,9 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     default="",
     callback=output_folder_exists,
     type=str,
-    help="Folder you wish to use to save plots.",
+    help="Folder in which you wish to save plots.",
 )
-@click.option("--bootstrap", is_flag=True)
+@click.option("--bootstrap", is_flag=True, help="Avaliable for " + "|".join([t.name for t in available_nlg_tasks.values() if t.bootstrap]) + "." )
 @click.option(
     "--system_x",
     "-x",
@@ -536,15 +604,23 @@ def bootstrap_result(collection,ref_filename,results,metric,system_x,system_y,nu
     type=click.Choice(list(available_bias_evaluation.keys())),
     required=False,
     multiple=True,
-    help="Bias Evaluation. This option can be multiple. Bias Evaluation Available: Gender Bias Evaluation for Machine Translation",
+    help="Bias Evaluation. This option can be multiple." + help_bias_evaluation,
 )
 @click.option(
     "--option_gender_bias_evaluation",
     type=click.Choice(GenderBiasEvaluation.options_bias_evaluation),
     required=False,
     multiple=False,
-    default="with datasets and library",
+    default="with dataset and library",
     help="Options for Gender Bias Evaluation.",
+)
+@click.option(
+    "--universal_metric",
+    "-u",
+    type=click.Choice(list(available_universal_metrics.keys())),
+    required=False,
+    multiple=False,
+    help="Models Rankings from Universal Metric." + help_universal_metrics,
 )
 def n_compare_nlg(
     source: click.File,
@@ -565,19 +641,26 @@ def n_compare_nlg(
     sample_ratio: float,
     systems_names: click.File,
     bias_evaluations: Union[Tuple[str], str],
-    option_gender_bias_evaluation: str
+    option_gender_bias_evaluation: str,
+    universal_metric: str
 ):  
     collection = available_nlg_tasks[task].input_cli_interface(source,systems_names,system_output,reference,language)
     
     systems_ids = collection.systems_ids
     systems_names =  collection.systems_names
     language = collection.language_pair.split("-")[1]
-    if (system_x and system_x.name in systems_ids) and (system_y and system_y.name in systems_ids):
-        x_id = systems_ids[system_x.name]
-        y_id = systems_ids[system_y.name]
-    else:
-        x_id = collection.indexes_of_systems()[0]
-        y_id = collection.indexes_of_systems()[1]
+    num_systems = len(systems_ids)
+
+    x_id = None
+    y_id = None
+    
+    if len(systems_ids) > 1:
+        if (system_x and system_x.name in systems_ids) and (system_y and system_y.name in systems_ids):
+            x_id = systems_ids[system_x.name]
+            y_id = systems_ids[system_y.name]
+        else:
+            x_id = collection.indexes_of_systems()[0]
+            y_id = collection.indexes_of_systems()[1]
 
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
@@ -591,7 +674,10 @@ def n_compare_nlg(
         }
 
     if filter:
-        apply_filter(collection,filter,length_min_val,length_max_val)   
+        apply_filter(collection,filter,length_min_val,length_max_val,task)   
+    
+    if seg_metric not in [me.name for me in available_nlg_tasks[task].metrics]:
+        seg_metric = "BERTScore"
 
     metric = seg_metric_in_metrics(seg_metric,metric)
 
@@ -599,15 +685,25 @@ def n_compare_nlg(
         testset = collection.testsets[ref_filename]
         results = {
             m: available_metrics[m](language=language).multiple_comparison(testset) 
-            for m in metric }
+            for m in metric if m in [me.name for me in available_nlg_tasks[task].metrics]}
 
         click.secho('\n\nReference: ' + ref_filename, fg="yellow")
 
         click.secho('\nMetric Results', fg="yellow") 
         results_df = display_table(systems_names,results)
-        if bootstrap and len(systems_ids.values()) > 1: 
+        if bootstrap and num_systems > 1 and available_nlg_tasks[task].bootstrap:
             bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x_id,y_id,num_splits,sample_ratio)
         
+        if universal_metric and num_systems > 1 and available_nlg_tasks[task].universal_metrics and universal_metric in available_nlg_tasks[task].universal_metrics: 
+            if universal_metric == "pairwise-comparison":
+                universal_me = available_universal_metrics[universal_metric](results,x_id,y_id)
+            elif available_universal_metrics[universal_metric] == WeightedMean:
+                universal_me = available_universal_metrics[universal_metric](results,universal_metric)
+            else:
+                universal_me = available_universal_metrics[universal_metric](results)
+            universal_result = universal_me.universal_score_calculation_and_ranking(testset)
+            universal_result_df = universal_result.plots_cli_interface(collection)
+
         if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
             click.secho('\nBias Results', fg="yellow")
             bias_results_df = {}
@@ -624,12 +720,16 @@ def n_compare_nlg(
             saving_dir = output_folder + ref_filename.replace("/","_") + "/"
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
-            
+            if universal_metric and num_systems > 1 and available_nlg_tasks[task].universal_metrics and universal_metric in available_nlg_tasks[task].universal_metrics: 
+                universal_result_df.to_csv(saving_dir + "ranks_systems.csv")
+
             metrics_results_dir = saving_dir + "metrics_results/"
             if not os.path.exists(metrics_results_dir):
                 os.makedirs(metrics_results_dir)
             results_df.to_csv(metrics_results_dir + "results.csv")
-            if bootstrap and len(systems_ids.values()) > 1:
+            analysis_metrics_stacked_bar_plot(list(results.values()), systems_names,metrics_results_dir)
+
+            if bootstrap and num_systems > 1 and available_nlg_tasks[task].bootstrap:
                 x_name = systems_names[x_id]
                 y_name = systems_names[y_id]
                 filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.csv"
@@ -714,7 +814,7 @@ def n_compare_nlg(
     default="",
     callback=output_folder_exists,
     type=str,
-    help="Folder you wish to use to save plots.",
+    help="Folder in which you wish to save plots.",
 )
 @click.option(
     "--systems_names",
@@ -722,6 +822,28 @@ def n_compare_nlg(
     required=False,
     type=click.File(),
     help="File that contains the names of the systems per line.",
+)
+@click.option(
+    "--universal_metric",
+    "-u",
+    type=click.Choice(list(available_class_universal_metrics.keys())),
+    required=False,
+    multiple=False,
+    help="Models Rankings from Universal Metric.",
+)
+@click.option(
+    "--system_x",
+    "-x",
+    required=False,
+    help="System X outputs for pairwise-comparison",
+    type=click.File(),
+)
+@click.option(
+    "--system_y",
+    "-y",
+    required=False,
+    help="System Y outputs for pairwise-comparison.",
+    type=click.File(),
 )
 def n_compare_classification(
     source: click.File,
@@ -732,18 +854,35 @@ def n_compare_classification(
     filter: Union[Tuple[str], str],
     seg_metric: str,
     output_folder: str,
-    systems_names: click.File
+    systems_names: click.File,
+    universal_metric: str,
+    system_x: click.File,
+    system_y: click.File
 ):  
     collection = Classification.input_cli_interface(source,systems_names,system_output,reference,"", labels)
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 
+    task = collection.task
+
     if filter:
-        apply_filter(collection,filter,0,0)   
+        apply_filter(collection,filter,0,0,task)   
 
     metric = seg_metric_in_metrics(seg_metric,metric)
 
     systems_names = collection.systems_names
+    systems_ids = collection.systems_ids
+    num_systems = len(systems_ids)
+
+    x_id = None
+    y_id = None
+    if len(systems_ids) > 1:
+        if (system_x and system_x.name in systems_ids) and (system_y and system_y.name in systems_ids):
+            x_id = systems_ids[system_x.name]
+            y_id = systems_ids[system_y.name]
+        else:
+            x_id = collection.indexes_of_systems()[0]
+            y_id = collection.indexes_of_systems()[1]
 
     labels = collection.labels
     for ref_filename in collection.refs_names:
@@ -755,13 +894,26 @@ def n_compare_classification(
 
         results_df = display_table(systems_names,results)
 
+        if universal_metric and num_systems > 1 and available_class_tasks[task].universal_metrics and universal_metric in available_class_tasks[task].universal_metrics: 
+            if universal_metric == "pairwise-comparison":
+                universal_me = available_universal_metrics[universal_metric](results,x_id,y_id)
+            elif available_universal_metrics[universal_metric] == WeightedMean:
+                universal_me = available_universal_metrics[universal_metric](results,universal_metric)
+            else:
+                universal_me = available_universal_metrics[universal_metric](results)
+            universal_result = universal_me.universal_score_calculation_and_ranking(testset)
+            universal_result_df = universal_result.plots_cli_interface(collection)
+
         if output_folder != "":
             if not output_folder.endswith("/"):
                 output_folder += "/"    
             saving_dir = output_folder + ref_filename.replace("/","_") + "/"
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
+            if universal_metric and num_systems > 1 and available_class_tasks[task].universal_metrics and universal_metric in available_class_tasks[task].universal_metrics:
+                universal_result_df.to_csv(saving_dir + "ranks_systems.csv")
 
             results_df.to_csv(saving_dir + "/results.csv")
+            analysis_metrics_stacked_bar_plot(list(results.values()), systems_names,saving_dir)
 
             Classification.plots_cli_interface(seg_metric,results,collection,ref_filename,saving_dir)

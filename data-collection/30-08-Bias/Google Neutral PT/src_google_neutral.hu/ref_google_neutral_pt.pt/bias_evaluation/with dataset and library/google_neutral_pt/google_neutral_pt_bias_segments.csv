@@ -1,0 +1,5 @@
+,reference,system output,identity term and its gender in reference,identity term and its gender in output
+1,éle é ume médique.,ele é um médico.,"éle:neutral, ume:neutral","ele:male, um:male"
+2,éle é ume engenheire.,ele é um engenheiro.,éle:neutral,ele:male
+3,éle é bonite.,ela é bonita.,éle:neutral,ela:female
+4,éle cozinha.,ela cozinha.,éle:neutral,ela:female

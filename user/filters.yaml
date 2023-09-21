@@ -3,10 +3,10 @@ All filters:
       - length
       - named-entities
 
-NLP filters: []
+NLP filters:
+      - duplicates
 
 NLG filters: 
-      - duplicates
       - length
       - named-entities
       
@@ -16,5 +16,4 @@ Summarization filters: []
 
 Dialogue System filters: []
 
-Classification filters:
-      - duplicates
+Classification filters: []

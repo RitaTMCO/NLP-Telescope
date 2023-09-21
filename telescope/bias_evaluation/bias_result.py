@@ -3,10 +3,10 @@ import streamlit as st
 import pandas as pd
 
 from typing import List, Dict
-from telescope import PATH_DOWNLOADED_PLOTS
+from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.collection_testsets import CollectionTestsets
-from telescope.metrics.metric import MetricResult, MultipleMetricResults
-from telescope.plotting import ( 
+from telescope.metrics.metric import MetricResult, MultipleMetricResults, Metric
+from telescope.multiple_plotting import ( 
     confusion_matrix_of_system, 
     confusion_matrix_focused_on_one_label,
     rates_table,
@@ -68,13 +68,16 @@ class MultipleBiasResults():
         groups: List[str],
         systems_bias_results: Dict[str,BiasResult], # {id_of_systems:BiasResults}
         text_groups_ref_per_seg: Dict[int, List[Dict[str,str]]],
-        metrics: List[str],
+        metrics: List[Metric],
         time: float
     ) -> None:
         for bias_results in systems_bias_results.values():
             assert bias_results.ref == ref
             assert bias_results.groups_ref == groups_ref
+            assert bias_results.groups_ref_per_seg == groups_ref_per_seg
             assert bias_results.groups == groups
+            assert bias_results.text_groups_ref_per_seg == text_groups_ref_per_seg
+            assert list(bias_results.metrics_results_per_metric.keys()) == [metric.name for metric in metrics]
         
         self.ref = ref
         self.groups_ref = groups_ref
@@ -149,17 +152,17 @@ class MultipleBiasResults():
 
     def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets, ref_name:str, option_bias):
         if option_bias:
-            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_name + "/bias_evaluation/" + option_bias + "/"
+            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_name + "/bias_evaluation/" + option_bias + "/"
         else:
-            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + ref_name + "/bias_evaluation/"
+            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_name + "/bias_evaluation/"
     
         df = self.display_bias_evaluations_informations()
         st.dataframe(df)
-        export_dataframe(label="Bias Evaluations Informations", name="bias_evaluation_informations.csv", dataframe=df)
+        export_dataframe(label="Bias Evaluations Informations", path=path, name= "bias_evaluation_informations.csv", dataframe=df)
     
         dataframe = MultipleMetricResults.results_to_dataframe(list(self.multiple_metrics_results_per_metris.values()),collection_testsets.systems_names)
         st.dataframe(dataframe)
-        export_dataframe(label="Export table with score", name="bias_results.csv", dataframe=dataframe)
+        export_dataframe(label="Export table with score", path=path, name= "bias_results.csv", dataframe=dataframe)
 
         st.subheader("Confusion Matrices")
         system_name = st.selectbox(
@@ -171,7 +174,7 @@ class MultipleBiasResults():
         rates = self.display_rates_of_one_system(collection_testsets, system_name)
         st.dataframe(rates)
         _,middle,_ = st.columns(3)
-        export_dataframe(label="Export rates", name=system_name.replace(" ", "_") + "_bias_rates.csv", dataframe=rates, column=middle)
+        export_dataframe(label="Export rates", path=path, name= system_name.replace(" ", "_") + "_bias_rates.csv", dataframe=rates, column=middle)
 
         self.display_confusion_matrix_of_one_system(collection_testsets,system_name)
         
@@ -194,7 +197,7 @@ class MultipleBiasResults():
                 for grop in self.groups:
                     self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,sys_name,grop,path_dir)
 
-        st.subheader("Analysis Of Each Label")
+        st.subheader("Analysis of each group")
         self.display_analysis_labels(collection_testsets)
 
         st.subheader("Number of times each group was identified correctly")           
@@ -215,7 +218,7 @@ class MultipleBiasResults():
             self.display_number_of_incorrect_labels_of_each_system(collection_testsets,path)
 
 
-        st.subheader("Segments with Bias")
+        st.subheader("20 Segments with Bias")
         click = 0
         system_name = st.selectbox(
             "**Select the System**",
@@ -224,13 +227,25 @@ class MultipleBiasResults():
                 key="bias")
         
         sys_id = collection_testsets.system_name_id(system_name)
-        click = "click_" + system_name + sys_id + "bias_evaluation"
+
+        name = system_name.replace(" ", "_") + "_bias_segments.csv"
+
+        click = "click_" + system_name + sys_id + "bias_evaluation" + option_bias
         if click not in st.session_state:
             st.session_state[click] =  0
+        if 'dataframe_bias' not in st.session_state:
+             st.session_state.dataframe_bias = None
+
         def callback():
             st.session_state[click] +=  1
         _, middle, _ = st.columns(3)
-        if(middle.button("Show Random Segments with bias", on_click=callback)):
+
+        if st.session_state.get("export-" + name):
+            if not os.path.exists(path):
+                os.makedirs(path)  
+            st.session_state.dataframe_bias.to_csv(path + "/" + name)
+
+        if(middle.button("Show Random Segments with Bias", on_click=callback)):
 
             if st.session_state[click] == 1:
                 dataframe = self.display_bias_segments_of_one_system(collection_testsets,system_name, [i for i in range(len(self.ref))])
@@ -240,7 +255,8 @@ class MultipleBiasResults():
             if dataframe is not None:
                 st.dataframe(dataframe)
                 _,middle,_ = st.columns(3)
-                export_dataframe(label="Export table with segments", name=system_name.replace(" ", "_") + "_bias_segments.csv", dataframe=dataframe, column=middle)
+                st.session_state.dataframe_bias = dataframe
+                export_dataframe(label="Export table with segments", path=path, name= name, dataframe=dataframe, column=middle)
             else:
                 st.warning("There are no segments with bias.")
 

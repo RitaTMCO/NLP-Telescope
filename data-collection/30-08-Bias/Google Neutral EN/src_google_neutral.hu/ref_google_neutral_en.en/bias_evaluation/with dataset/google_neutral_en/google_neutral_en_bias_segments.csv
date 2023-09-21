@@ -1,0 +1,5 @@
+,reference,system output,identity term and its gender in reference,identity term and its gender in output
+1,they are a doctor.,he is a doctor.,"they:neutral, doctor:neutral","he:male, doctor:neutral"
+2,they are an engineer.,he is an engineer.,"they:neutral, engineer:neutral","he:male, engineer:neutral"
+3,they are beautiful.,she is beautiful.,they:neutral,she:female
+4,they cook.,she cooks.,they:neutral,she:female

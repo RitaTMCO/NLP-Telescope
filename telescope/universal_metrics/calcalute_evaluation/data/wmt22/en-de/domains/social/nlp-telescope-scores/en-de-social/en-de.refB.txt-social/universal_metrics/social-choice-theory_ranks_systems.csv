@@ -1,0 +1,18 @@
+,System,Score
+rank 1,refB,119.0
+rank 2,Online-Y,104.0
+rank 3,Online-B,101.0
+rank 4,bleu_bestmbr,98.0
+rank 5,chrf_bestmbr,91.0
+rank 6,JDExploreAcademy,84.0
+rank 7,Online-A,77.0
+rank 8,Online-W,76.0
+rank 9,Lan-Bridge,70.0
+rank 10,Online-G,60.0
+rank 11,PROMT,57.0
+rank 12,comet_bestmbr,41.0
+rank 13,OpenNMT,38.0
+rank 14,refA,35.0
+rank 15,QUARTZ_TuneReranking,32.0
+rank 16,bleurt_bestmbr,26.0
+rank 17,M2M100_1.2B-B4,19.0

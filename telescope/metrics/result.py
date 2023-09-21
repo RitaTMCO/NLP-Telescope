@@ -106,9 +106,9 @@ class BootstrapResult:
         self.win_count = win_count
         self.metric = metric
         self.stats = {
-            "x_wins (%)": win_count[0] / sum(win_count),
-            "y_wins (%)": win_count[1] / sum(win_count),
-            "ties (%)": win_count[2] / sum(win_count),
+            "x_wins (%)": (win_count[0] / sum(win_count)) * 100,
+            "y_wins (%)": (win_count[1] / sum(win_count)) * 100,
+            "ties (%)": (win_count[2] / sum(win_count)) * 100,
             "x-mean": np.mean(self.x_scores),
             "y-mean": np.mean(self.y_scores),
         }
