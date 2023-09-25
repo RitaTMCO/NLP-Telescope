@@ -18,6 +18,12 @@ import unittest
 from click.testing import CliRunner
 from telescope.cli import n_compare_classification
 from tests.data import DATA_PATH
+from telescope.utils import (
+    FILENAME_SYSTEM_LEVEL_SCORES,
+    FILENAME_ANALYSIS_METRICS_STACKED,
+    FILENAME_RATES,
+    FILENAME_ANALYSIS_LABELS,
+)
 
 
 class TestCompareCli(unittest.TestCase):
@@ -131,18 +137,18 @@ class TestCompareCli(unittest.TestCase):
         result = self.runner.invoke(n_compare_classification, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
 
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/results.csv")))
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/analysis-metrics-stacked-bar-plot.png")))
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Accuracy-analysis-labels-bucket.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/" + FILENAME_SYSTEM_LEVEL_SCORES)))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/" + FILENAME_ANALYSIS_METRICS_STACKED)))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Accuracy" + FILENAME_ANALYSIS_LABELS)))
         for sys_name in self.sys_names:
             if sys_name != "Sys C":
                 self.assertTrue(
                     os.path.isfile(os.path.join(DATA_PATH, 
-                        self.ref.replace("/","_")  + "/" + sys_name + "/incorrect-examples.csv"))
+                        self.ref.replace("/","_")  + "/" + sys_name + "/" + sys_name.replace(" ", "_") + "-incorrect-examples.csv"))
                 )
             self.assertTrue(
                 os.path.isfile(os.path.join(DATA_PATH, 
-                    self.ref.replace("/","_")  + "/" + sys_name + "/rates.csv"))
+                    self.ref.replace("/","_")  + "/" + sys_name + "/" + FILENAME_RATES))
             )
             self.assertTrue(
                 os.path.isfile(os.path.join(DATA_PATH, 
@@ -167,11 +173,11 @@ class TestCompareCli(unittest.TestCase):
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/" + sys_name.replace(" ", "_") + "-label-positive.png")
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/singular_confusion_matrix/")
             if sys_name != "Sys C":
-                os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/incorrect-examples.csv")
+                os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" + sys_name.replace(" ", "_") + "-incorrect-examples.csv")
             os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/confusion-matrix-" + sys_name.replace(" ", "_") + ".png")
-            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/rates.csv")
+            os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" + FILENAME_RATES)
             os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + sys_name + "/" )
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/results.csv")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_")  + "/analysis-metrics-stacked-bar-plot.png")
-        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/Accuracy-analysis-labels-bucket.png")
+        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + FILENAME_SYSTEM_LEVEL_SCORES)
+        os.remove(DATA_PATH + "/" + self.ref.replace("/","_")  + "/" + FILENAME_ANALYSIS_METRICS_STACKED)
+        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/Accuracy" + FILENAME_ANALYSIS_LABELS)
         os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_"))

@@ -14,16 +14,17 @@
 # limitations under the License.
 import streamlit as st
 import requests
-import os
+import zipfile
+import io
 from PIL import Image
 
 from telescope.tasks import AVAILABLE_TASKS
 from telescope.metrics.result import MultipleMetricResults
 from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
-from telescope.multiple_plotting import export_dataframe, analysis_metrics_stacked_bar_plot
+from telescope.multiple_plotting import system_level_scores_table, analysis_metrics_stacked_bar_plot, download_data_zip
 from telescope.universal_metrics import WeightedMean, WeightedSum
-from telescope.utils import PATH_DOWNLOADED_PLOTS, create_downloaded_data_folder
+from telescope.utils import FILENAME_SYSTEM_LEVEL_SCORES
 
 available_tasks = {t.name: t for t in AVAILABLE_TASKS}
 
@@ -35,7 +36,9 @@ def load_image(image_url):
 #logo = load_image("https://github.com/Unbabel/MT-Telescope/blob/master/data/mt-telescope-logo.jpg?raw=true")
 st.sidebar.image("data/nlp-telescope-logo.png")
 
-create_downloaded_data_folder()
+
+def change_error_analysis():
+    st.session_state["first_time_error"] = 1
 
 # --------------------  APP Settings --------------------
 
@@ -44,6 +47,7 @@ task = st.sidebar.selectbox(
     "Select the natural language processing task:",
     list(t.name for t in available_tasks.values()),
     index=0,
+    on_change = change_error_analysis
 )
 
 #---------- |Metrics| ------------
@@ -57,9 +61,6 @@ metrics = st.sidebar.multiselect(
 if available_tasks[task].universal_metrics:
     rank = st.sidebar.checkbox('Rankings of Models')
     available_universal_metrics = available_tasks[task].universal_metrics
-
-def change_error_analysis():
-    st.session_state["first_time_error"] = 1
 
 metric = st.sidebar.selectbox(
     "Select the segment-level metric you wish to run:",
@@ -322,7 +323,7 @@ if collection_testsets:
     st.write("---")
     st.title("Informations About The Systems")
 
-    st.subheader(":blue[Rename Systems]")
+    st.header(":blue[Rename Systems:]")
     system_filename = st.selectbox(
         "**Select the System Filename**",
         list(collection_testsets.systems_ids.keys()),
@@ -335,7 +336,7 @@ if collection_testsets:
         st.session_state[task + "_" + sys_id + "_rename"] = system_name
         collection_testsets.systems_names[sys_id] = st.session_state[task + "_" + sys_id + "_rename"]
 
-    st.subheader(":blue[Systems Names]" )
+    st.header(":blue[Systems Names:]" )
     st.text(collection_testsets.display_systems())
 
 
@@ -350,12 +351,15 @@ if collection_testsets:
     )
     st.text("Reference: " + ref_filename)
 
+    path = collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_filename + "/" 
+
     # ----------------------------| Ranking Models |-------------------------------
 
     if available_tasks[task].universal_metrics and rank and len(collection_testsets.systems_names) > 1 and metrics_results_per_ref:
         st.write("---")
         st.title("Models Rankings")
         st.text("\n\n\n")
+        
 
         universal_results = run_all_universal_metrics(collection_testsets,metrics_results_per_ref)
         universal = None
@@ -391,44 +395,64 @@ if collection_testsets:
             universal.plots_web_interface(collection_testsets,ref_filename,system_a_name,system_b_name)
         
         _,col_rank_u,_ = st.columns(3)
-        
-        if st.button("Export all universal metrics (not included pairwise comparison)"):
+
+        rank_data_buf = io.BytesIO()
+        with zipfile.ZipFile(rank_data_buf, "w") as rank_zip:
             for u_metric in list(available_universal_metrics.keys()):
                 if u_metric != "pairwise-comparison":
-                    universal_results[u_metric][ref_filename].dataframa_to_to_csv(collection_testsets,ref_filename)
+                    universal_results[u_metric][ref_filename].dataframa_to_to_csv(collection_testsets,ref_filename, saving_dir = path, saving_zip=rank_zip)
+      
+        download_data_zip(
+                    label="Export all universal metrics (not included pairwise comparison)",
+                    data=rank_data_buf.getvalue(),
+                    filename="ranks-systems.zip",
+                    key = "ranks_systems_download"
+        )
+        rank_data_buf.close()
 
 
-    # ----------------------------| Metric Analysis and Plots |-------------------------------
+    # ----------------------------| NLP Evaluation and Plots |-------------------------------
 
     if metrics_results_per_ref:
         st.write("---")
-        st.title("Metric Analysis")
+        st.title("NLP Evaluation")
         st.text("\n\n\n")
 
         metrics_results = metrics_results_per_ref[ref_filename] 
 
         if len(metrics_results) > 0:
-            left,right = st.columns([0.3, 0.7])
-            left_2,right_2 = st.columns([0.3, 0.7])
-            path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_filename + "/"  
+
+            st.header(":blue[System-level analysis:]")
+
+            left,right = st.columns([0.3, 0.7]) 
+            sys_data_buf = io.BytesIO()
         
             dataframe = MultipleMetricResults.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
-            left.dataframe(dataframe)
-            analysis_metrics_stacked_bar_plot(list(metrics_results.values()),collection_testsets.systems_names,column=right)
 
-            left_2,right_2 = st.columns([0.3, 0.7]) 
-             
-            export_dataframe(label="Export table with score",path=path, name= "results.csv", dataframe=dataframe, column=left_2)
-            if right_2.button('Download the analysis of each metric'):
-                analysis_metrics_stacked_bar_plot(list(metrics_results.values()),collection_testsets.systems_names, path)
-    
-    
+            with zipfile.ZipFile(sys_data_buf, "w") as sys_zip:
+                 system_level_scores_table(dataframe,path,sys_zip,left)
+                 analysis_metrics_stacked_bar_plot(list(metrics_results.values()),collection_testsets.systems_names,saving_dir=path,
+                                                   saving_zip=sys_zip,column=right)
+            
         if metric in metrics_results:
             if available_tasks[task].bootstrap:
-                available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, metrics, available_metrics, 
-                                                      num_samples, sample_ratio)
+                available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, path, zipfile.ZipFile(sys_data_buf, "a"),
+                                                          metrics, available_metrics, num_samples, sample_ratio)
             else:
-                available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename)
+                available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, path, zipfile.ZipFile(sys_data_buf, "a"))
+        
+        if len(metrics_results) > 0:
+            st.header(":blue[Download:]")
+            st.markdown("Download all available NLP Evaluation plots and tables in the browser.")
+            _, download_sys_analysis_col, _ = st.columns(3)
+            download_data_zip(
+                    label="Download NLP Evaluation",
+                    data=sys_data_buf.getvalue(),
+                    filename="nlp-evaluation.zip",
+                    column=download_sys_analysis_col,
+                    key = "nlp_evaluation_download"
+                )
+            sys_data_buf.close()
     
     # ----------------------------| Bias Evaluation |-------------------------------
 
@@ -438,4 +462,18 @@ if collection_testsets:
         for evaluation in bias_evaluations:
             st.header(":blue[" + evaluation + " Bias Evaluation:]")
             multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
-            multiple_bias_results.plots_bias_results_web_interface(collection_testsets,ref_filename,option_bias_evaluation)
+            bias_data_buf = io.BytesIO()
+            with zipfile.ZipFile(bias_data_buf, "w") as bias_zip:
+                multiple_bias_results.plots_bias_results_web_interface(collection_testsets,ref_filename,path,bias_zip,option_bias_evaluation)
+            
+            st.subheader("Download")
+            st.markdown("Download all available " + evaluation + " Bias Evaluation plots and tables in the browser.")
+            _, download_bias_analysis_col, _ = st.columns(3)
+            download_data_zip(
+                    label="Download " + evaluation + " Bias Evaluation",
+                    data=bias_data_buf.getvalue(),
+                    filename= evaluation.lower() + "-bias-evaluation.zip",
+                    column=download_bias_analysis_col,
+                    key = evaluation.lower() + "_bias_evaluation_download"
+                )
+            bias_data_buf.close()

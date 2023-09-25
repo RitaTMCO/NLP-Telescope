@@ -3,12 +3,13 @@ import os
 import streamlit as st
 import numpy as np
 import pandas as pd
+import zipfile
 
 from typing import List, Dict
-from telescope.utils import PATH_DOWNLOADED_PLOTS
+from streamlit import runtime
 from telescope.collection_testsets import CollectionTestsets
 from telescope.metrics.metric import Metric
-from telescope.multiple_plotting  import export_dataframe
+from telescope.multiple_plotting  import  download_data_csv
 
 class UniversalMetricResult():
     def __init__(
@@ -64,15 +65,14 @@ class MultipleUniversalMetricResult():
     
     def plots_web_interface(self, collection_testsets:CollectionTestsets,ref_filename:str, sys_a:str="", sys_b:str=""):
         st.subheader(self.title)
-        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/" 
         df = self.results_to_dataframe(collection_testsets.systems_names)
         st.dataframe(df)
 
-        name = self.universal_filename
-
+        name = self.universal_filename + "_ranks_systems.csv"
         if self.universal_metric == "pairwise-comparison":
             name = self.universal_metric + "_" + "_".join([sys_a, sys_b]) + "_ranks_systems.csv"
-        export_dataframe(label="Export ranks of systems", path=path, name = name, dataframe=df)
+            
+        download_data_csv("Export ranks of systems",df,name,"ranks_download")
     
     def plots_cli_interface(self, collection_testsets:CollectionTestsets):
         click.secho("\nModels Rankings:", fg="yellow")
@@ -80,9 +80,17 @@ class MultipleUniversalMetricResult():
         click.secho(str(df), fg="yellow")
         return df
 
-    def dataframa_to_to_csv(self,collection_testsets:CollectionTestsets,ref_filename:str):
-        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/"
+    def dataframa_to_to_csv(self,collection_testsets:CollectionTestsets,ref_filename:str, sys_a:str="", sys_b:str="", 
+                            saving_dir:str=None, saving_zip: zipfile.ZipFile = None):
         df = self.results_to_dataframe(collection_testsets.systems_names)
-        if not os.path.exists(path):
-            os.makedirs(path)  
-        df.to_csv(path + "/" + self.universal_filename)
+
+        filename = self.universal_filename + "_ranks_systems.csv"
+        if self.universal_metric == "pairwise-comparison":
+            filename = self.universal_metric + "_" + "_".join([sys_a, sys_b]) + "_ranks_systems.csv"
+
+        if runtime.exists() and saving_dir and saving_zip:
+            saving_zip.writestr(saving_dir + filename, df.to_csv())
+        elif saving_dir is not None:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)  
+            df.to_csv(saving_dir + "/" + filename)

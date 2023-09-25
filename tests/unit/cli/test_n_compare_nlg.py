@@ -17,6 +17,16 @@ import unittest
 
 from click.testing import CliRunner
 from telescope.cli import n_compare_nlg
+from telescope.utils import (
+    FILENAME_SYSTEM_LEVEL_SCORES,
+    FILENAME_ANALYSIS_METRICS_STACKED,
+    FILENAME_ERROR_TYPE_ANALYSIS,
+    FILENAME_DISTRIBUTION_SEGMENT,
+    FILENAME_SEGMENT_COMPARISON,
+    FILENAME_BOOTSTRAP,
+    FILENAME_RATES,
+    FILENAME_ANALYSIS_LABELS,
+)
 from tests.data import DATA_PATH
 
 
@@ -300,15 +310,15 @@ class TestCompareCli(unittest.TestCase):
 
         for ref in self.refs:
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/ranks_systems.csv")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/COMET-multiple-bucket-analysis.png")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/multiple-scores-distribution.html")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys B-Sys C_multiple-segment-comparison.html")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/results.csv")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/analysis-metrics-stacked-bar-plot.png")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys B-Sys C_bootstrap_results.csv")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/COMET" + FILENAME_ERROR_TYPE_ANALYSIS)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_DISTRIBUTION_SEGMENT)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys B-Sys C" + FILENAME_SEGMENT_COMPARISON)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_SYSTEM_LEVEL_SCORES)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_ANALYSIS_METRICS_STACKED)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys B-Sys C" + FILENAME_BOOTSTRAP)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_evaluations_information.csv")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/Accuracy-analysis-labels-bucket.png")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/F1-score-analysis-labels-bucket.png")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/Accuracy" + FILENAME_ANALYSIS_LABELS)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/F1-score" + FILENAME_ANALYSIS_LABELS)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-correct-labels-of-each-system.png")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-incorrect-labels-of-each-system.png")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_results.csv")))
@@ -320,7 +330,7 @@ class TestCompareCli(unittest.TestCase):
                     )
                 self.assertTrue(
                     os.path.isfile(os.path.join(
-                        DATA_PATH, dir + "/rates.csv"))
+                        DATA_PATH, dir + "/" + FILENAME_RATES))
                     )
                 self.assertTrue(
                     os.path.isfile(os.path.join(
@@ -332,23 +342,23 @@ class TestCompareCli(unittest.TestCase):
                             DATA_PATH, dir + "/singular_confusion_matrix/" + sys_name.replace(" ","_") + "-label-" + group + ".png"))
                         )
                     
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/Sys B-Sys C_multiple-segment-comparison.html")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/multiple-scores-distribution.html")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/COMET-multiple-bucket-analysis.png")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/results.csv")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/analysis-metrics-stacked-bar-plot.png")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/Sys B-Sys C" + FILENAME_SEGMENT_COMPARISON)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_DISTRIBUTION_SEGMENT)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/COMET" + FILENAME_ERROR_TYPE_ANALYSIS)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_SYSTEM_LEVEL_SCORES)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_ANALYSIS_METRICS_STACKED)
             os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_evaluations_information.csv")
-            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/Accuracy-analysis-labels-bucket.png")
-            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/F1-score-analysis-labels-bucket.png")
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/Accuracy" + FILENAME_ANALYSIS_LABELS)
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/F1-score" + FILENAME_ANALYSIS_LABELS)
             os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-correct-labels-of-each-system.png")
             os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-incorrect-labels-of-each-system.png")
             os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_results.csv")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys B-Sys C_bootstrap_results.csv")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys B-Sys C" + FILENAME_BOOTSTRAP)
             os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/ranks_systems.csv")
             for sys_name in ["Sys A", "Sys B", "Sys C"]:
                 dir = ref.replace("/","_")  + "/bias_results/gender/with dataset/" + sys_name
                 os.remove(DATA_PATH + "/" + dir + "/confusion-matrix-" + sys_name.replace(" ","_") + ".png")
-                os.remove(DATA_PATH + "/" + dir +  "/rates.csv")
+                os.remove(DATA_PATH + "/" + dir +  "/" + FILENAME_RATES)
                 os.remove(DATA_PATH + "/" + dir + "/bias-segments.csv")
                 for group in ["male", "female", "neutral"]:
                     os.remove(DATA_PATH + "/" + dir + "/singular_confusion_matrix/" + sys_name.replace(" ","_")  + "-label-" + group + ".png")
@@ -405,18 +415,18 @@ class TestCompareCli(unittest.TestCase):
 
         for ref in self.refs:
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/ranks_systems.csv")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/BERTScore-multiple-bucket-analysis.png")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/multiple-scores-distribution.html")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys 2-Sys 3_multiple-segment-comparison.html")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/results.csv")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/analysis-metrics-stacked-bar-plot.png")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys 2-Sys 3_bootstrap_results.csv")))
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/Sys 2-Sys 3_multiple-segment-comparison.html")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/multiple-scores-distribution.html")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/BERTScore-multiple-bucket-analysis.png")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/results.csv")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/analysis-metrics-stacked-bar-plot.png")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys 2-Sys 3_bootstrap_results.csv")
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/BERTScore" + FILENAME_ERROR_TYPE_ANALYSIS)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_DISTRIBUTION_SEGMENT)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys 2-Sys 3" + FILENAME_SEGMENT_COMPARISON)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_SYSTEM_LEVEL_SCORES)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_ANALYSIS_METRICS_STACKED)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys 2-Sys 3" + FILENAME_BOOTSTRAP)))
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/Sys 2-Sys 3" + FILENAME_SEGMENT_COMPARISON)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_DISTRIBUTION_SEGMENT)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/BERTScore" + FILENAME_ERROR_TYPE_ANALYSIS)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_SYSTEM_LEVEL_SCORES)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_ANALYSIS_METRICS_STACKED)
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys 2-Sys 3" + FILENAME_BOOTSTRAP)
             os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/ranks_systems.csv")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_"))

@@ -1,12 +1,9 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import os
+import zipfile
 
 from telescope.tasks.task import Task
 from telescope.collection_testsets import CollectionTestsets, NLGTestsets
-
-from telescope.utils import PATH_DOWNLOADED_PLOTS
 from telescope.metrics import AVAILABLE_NLG_METRICS
 from telescope.filters import AVAILABLE_NLG_FILTERS
 from telescope.bias_evaluation import AVAILABLE_NLG_BIAS_EVALUATIONS
@@ -18,7 +15,7 @@ from telescope.multiple_plotting import (
     plot_multiple_distributions,
     plot_multiple_segment_comparison,
     sentences_similarity,
-    export_dataframe
+    save_bootstrap_table,
 )
 
 class NLG(Task):
@@ -32,15 +29,13 @@ class NLG(Task):
 
 
     @classmethod
-    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
+    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, path :str, saving_zip: zipfile.ZipFile,
                             metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interfave to display the plots"""
 
-        path = PATH_DOWNLOADED_PLOTS  + collection_testsets.task + "/" + collection_testsets.src_name + "/" +  ref_filename + "/"  
-
         # --------------- |Source Sentences Similarity| ----------------
         if cls.sentences_similarity and (collection_testsets.target_language == "pt" or collection_testsets.target_language == "en"):
-            st.header(":blue[Similar Source Sentences]")
+            st.header(":blue[Similar Source Sentences:]")
             system_name = st.selectbox(
                 "Select the system:",
                 collection_testsets.names_of_systems(),
@@ -49,39 +44,22 @@ class NLG(Task):
             )
             system_id = collection_testsets.system_name_id(system_name)
             output = collection_testsets.testsets[ref_filename].systems_output[system_id]
-            df,min_value,max_value = sentences_similarity(collection_testsets.testsets[ref_filename].src, output, collection_testsets.target_language)
-            if df is not None:
-                name = system_name + "_" + str(min_value) + "-" + str(max_value) + "_similar-source-sentences.csv"
-                st.dataframe(df)
-                export_dataframe(label="Export similar source sentences", path=path, name = name, dataframe=df)
-            else:
-                st.warning("Segments not found")
+            sentences_similarity(collection_testsets.testsets[ref_filename].src, output, collection_testsets.target_language,path, saving_zip)
+
 
         # -------------- |Error-type analysis| ------------------
         if metric == "COMET" or metric == "BERTScore":
             st.text("\n")
             st.header(":blue[Error-type analysis:]")
-            
-            left = plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems())
-
-            if left.button('Download the error-type analysis'):
-                if not os.path.exists(path):
-                    os.makedirs(path)  
-                plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(),path)
+            plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(),path, saving_zip)
         
         # -------------- | Distribution of segment-level scores| -----------
         if len(collection_testsets.testsets[ref_filename]) > 1:
             st.text("\n")
             st.header(":blue[Distribution of segment-level scores:]")
-
             if plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
-                plot_multiple_distributions(results[metric], collection_testsets.names_of_systems())
-                _, middle, _ = st.columns(3)
-                if middle.button('Download the distribution of segment-level scores'):
-                    if not os.path.exists(path):
-                        os.makedirs(path)  
-                    plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(),path)
-            
+                plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), path, saving_zip)
+                
         
         # -------------- |Pairwise comparison| -----------------
         if len(results[metric].systems_metric_results) > 1:
@@ -113,25 +91,11 @@ class NLG(Task):
 
                 #Segment-level comparison
                 st.subheader("Segment-level comparison:")
-                plot_multiple_segment_comparison(results[metric],system_x,system_y,cls.segment_result_source)
-                _, middle, _ = st.columns(3)
-                if middle.button('Download the segment-level comparison'):
-                    if not os.path.exists(path):
-                        os.makedirs(path)  
-                    plot_multiple_segment_comparison(results[metric],system_x,system_y,cls.segment_result_source, path)
+                plot_multiple_segment_comparison(results[metric],system_x,system_y,cls.segment_result_source, path, saving_zip)
 
                 #Bootstrap Resampling
 
                 if cls.bootstrap:
-                    name = system_x_name + "-" + system_y_name + "_bootstrap_results.csv"
-
-                    if 'data_boostrap' not in st.session_state:
-                        st.session_state.data_boostrap = None
-                
-                    if st.session_state.get("export-" + name):
-                        if not os.path.exists(path):
-                            os.makedirs(path)  
-                        st.session_state.data_boostrap.to_csv(path + "/" + name)
 
                     _, middle, _ = st.columns(3)
                     
@@ -151,9 +115,12 @@ class NLG(Task):
                                 df = plot_bootstraping_result(bootstrap_result)
                                 list_df.append(df)
                             _, middle, _ = st.columns(3)
-                            name = system_x_name + "-" + system_y_name + "_bootstrap_results.csv"
-                            st.session_state.data_boostrap = pd.concat(list_df)
-                            export_dataframe(label="Export bootstrap resampling results", path=path, name=name, dataframe=st.session_state.data_boostrap,column=middle)
+                            data_boostrap = pd.concat(list_df)
+                            save_bootstrap_table(data_boostrap,system_x_name,system_y_name,path,saving_zip)
+
+                            
+    
+    
     @classmethod
     def plots_cli_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
                             saving_dir:str, x_id:str ,y_id:str) -> None:
@@ -164,12 +131,8 @@ class NLG(Task):
                 system_id = collection_testsets.system_name_id(system_name)
                 output = collection_testsets.testsets[ref_filename].systems_output[system_id]
                 output_file = saving_dir + system_name
-                if not os.path.exists(output_file):
-                    os.makedirs(output_file)  
-                df = sentences_similarity(collection_testsets.testsets[ref_filename].src, output, collection_testsets.target_language,output_file)
-                if df is None:
-                    os.rmdir(output_file)
-
+                sentences_similarity(collection_testsets.testsets[ref_filename].src, output, collection_testsets.target_language,output_file)
+                
         if metric == "COMET" or metric == "BERTScore":
             plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(), saving_dir)
         
