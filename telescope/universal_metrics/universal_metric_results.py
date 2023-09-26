@@ -84,7 +84,7 @@ class MultipleUniversalMetricResult():
                             saving_dir:str=None, saving_zip: zipfile.ZipFile = None):
         df = self.results_to_dataframe(collection_testsets.systems_names)
 
-        filename = self.universal_filename + "_ranks_systems.csv"
+        filename = self.universal_filename
         if self.universal_metric == "pairwise-comparison":
             filename = self.universal_metric + "_" + "_".join([sys_a, sys_b]) + "_ranks_systems.csv"
 

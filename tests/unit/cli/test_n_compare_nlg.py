@@ -309,7 +309,7 @@ class TestCompareCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
 
         for ref in self.refs:
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/ranks_systems.csv")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/social-choice-theory_ranks_systems.csv")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/COMET" + FILENAME_ERROR_TYPE_ANALYSIS)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_DISTRIBUTION_SEGMENT)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys B-Sys C" + FILENAME_SEGMENT_COMPARISON)))
@@ -334,7 +334,7 @@ class TestCompareCli(unittest.TestCase):
                     )
                 self.assertTrue(
                     os.path.isfile(os.path.join(
-                        DATA_PATH, dir + "/bias-segments.csv"))
+                        DATA_PATH, dir + "/" + sys_name.replace(" ","_") + "-bias-segments.csv"))
                     )
                 for group in ["male", "female", "neutral"]:
                     self.assertTrue(
@@ -354,12 +354,12 @@ class TestCompareCli(unittest.TestCase):
             os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-incorrect-labels-of-each-system.png")
             os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_results.csv")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys B-Sys C" + FILENAME_BOOTSTRAP)
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/ranks_systems.csv")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/social-choice-theory_ranks_systems.csv")
             for sys_name in ["Sys A", "Sys B", "Sys C"]:
                 dir = ref.replace("/","_")  + "/bias_results/gender/with dataset/" + sys_name
                 os.remove(DATA_PATH + "/" + dir + "/confusion-matrix-" + sys_name.replace(" ","_") + ".png")
                 os.remove(DATA_PATH + "/" + dir +  "/" + FILENAME_RATES)
-                os.remove(DATA_PATH + "/" + dir + "/bias-segments.csv")
+                os.remove(DATA_PATH + "/" + dir + "/" + sys_name.replace(" ","_") + "-bias-segments.csv")
                 for group in ["male", "female", "neutral"]:
                     os.remove(DATA_PATH + "/" + dir + "/singular_confusion_matrix/" + sys_name.replace(" ","_")  + "-label-" + group + ".png")
                 os.rmdir(DATA_PATH + "/" + dir + "/singular_confusion_matrix/")
@@ -414,7 +414,7 @@ class TestCompareCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
 
         for ref in self.refs:
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/ranks_systems.csv")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/social-choice-theory_ranks_systems.csv")))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/BERTScore" + FILENAME_ERROR_TYPE_ANALYSIS)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_DISTRIBUTION_SEGMENT)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/Sys 2-Sys 3" + FILENAME_SEGMENT_COMPARISON)))
@@ -427,6 +427,6 @@ class TestCompareCli(unittest.TestCase):
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_SYSTEM_LEVEL_SCORES)
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_ANALYSIS_METRICS_STACKED)
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys 2-Sys 3" + FILENAME_BOOTSTRAP)
-            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/ranks_systems.csv")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/social-choice-theory_ranks_systems.csv")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_"))
