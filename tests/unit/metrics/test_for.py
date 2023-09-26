@@ -1,27 +1,25 @@
 import os
 import unittest
 
-from telescope.metrics.recall.metric import Recall
+from telescope.metrics.fo_rate.metric import FORate
 from tests.data import DATA_PATH
 
 
-class TestRecall(unittest.TestCase):
+class TestFOR(unittest.TestCase):
     labels = ["a", "b", "c"]
-    recall = Recall(labels=labels)
+    fo_rate = FORate(labels=labels)
     pred = [ "a", "b", "a", "b", "c"]
     true = [ "a", "b", "c", "a", "c"]
 
     def test_name_property(self):
-        self.assertEqual(self.recall.name, "Recall")
+        self.assertEqual(self.fo_rate.name, "False Omission Rate")
 
     def test_score(self):
 
-        expected_seg = [0.5, 1, 0.5]
-        expected_sys = (0.5 + 1 + 0.5) / 3
+        expected_seg = [1/3, 0, 1/4]
 
-        result = self.recall.score([],self.pred,self.true)
+        result = self.fo_rate.score([],self.pred,self.true)
         
-        self.assertEqual(result.sys_score, expected_sys)
         for i in range(len(self.labels)):
             self.assertEqual(result.seg_scores[i], expected_seg[i])
         self.assertListEqual(result.ref, self.true)

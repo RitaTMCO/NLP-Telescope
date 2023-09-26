@@ -37,6 +37,15 @@ from telescope.multiple_plotting import (
                                 number_of_incorrect_labels_of_each_system
                                 )
 
+from telescope.utils import (
+    FILENAME_ANALYSIS_METRICS_STACKED,
+    FILENAME_ERROR_TYPE_ANALYSIS,
+    FILENAME_DISTRIBUTION_SEGMENT,
+    FILENAME_SEGMENT_COMPARISON,
+    FILENAME_SEGMENT_COMPARISON,
+    FILENAME_ANALYSIS_LABELS,
+)
+
 from tests.data import DATA_PATH
 
 
@@ -209,22 +218,22 @@ class TestPlots(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        os.remove(DATA_PATH + "/analysis-metrics-stacked-bar-plot.png")
+        os.remove(DATA_PATH + "/" + FILENAME_ANALYSIS_METRICS_STACKED)
         os.remove(DATA_PATH + "/segment-comparison.html")
         os.remove(DATA_PATH + "/scores-distribution.html")
         os.remove(DATA_PATH + "/bucket-analysis.png")
-        os.remove(DATA_PATH + "/Sys A-Sys B_multiple-segment-comparison.html")
-        os.remove(DATA_PATH + "/Sys B-Sys C_multiple-segment-comparison.html")
-        os.remove(DATA_PATH + "/Sys C-Sys A_multiple-segment-comparison.html")
-        os.remove(DATA_PATH + "/multiple-scores-distribution.html")
-        os.remove(DATA_PATH + "/COMET-multiple-bucket-analysis.png")
-        os.remove(DATA_PATH + "/BERTScore-multiple-bucket-analysis.png")
+        os.remove(DATA_PATH + "/Sys A-Sys B" + FILENAME_SEGMENT_COMPARISON)
+        os.remove(DATA_PATH + "/Sys B-Sys C" + FILENAME_SEGMENT_COMPARISON)
+        os.remove(DATA_PATH + "/Sys C-Sys A" + FILENAME_SEGMENT_COMPARISON)
+        os.remove(DATA_PATH + "/" + FILENAME_DISTRIBUTION_SEGMENT)
+        os.remove(DATA_PATH + "/COMET" + FILENAME_ERROR_TYPE_ANALYSIS)
+        os.remove(DATA_PATH + "/BERTScore" + FILENAME_ERROR_TYPE_ANALYSIS)
         os.remove(DATA_PATH + "/confusion-matrix-Sys_A.png")
         os.remove(DATA_PATH + "/Sys_B-label-a.png")
         os.remove(DATA_PATH + "/Sys_C-label-b.png")
         os.remove(DATA_PATH + "/Sys_A-label-c.png")
-        os.remove(DATA_PATH + "/mock-analysis-labels-bucket.png")
-        os.remove(DATA_PATH + "/incorrect-examples.csv")
+        os.remove(DATA_PATH + "/mock" + FILENAME_ANALYSIS_LABELS)
+        os.remove(DATA_PATH + "/Sys_A-incorrect-examples.csv")
         os.remove(DATA_PATH + "/number-of-correct-labels-of-each-system.png")
         os.remove(DATA_PATH + "/number-of-incorrect-labels-of-each-system.png")
     
@@ -233,7 +242,7 @@ class TestPlots(unittest.TestCase):
             [self.multiple_result,self.multiple_result_bertscore,self.multiple_result_comet], self.systems_names, saving_dir=DATA_PATH
             )
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "analysis-metrics-stacked-bar-plot.png"))
+            os.path.isfile(os.path.join(DATA_PATH, FILENAME_ANALYSIS_METRICS_STACKED))
         )
 
     def test_segment_comparison(self):
@@ -247,7 +256,7 @@ class TestPlots(unittest.TestCase):
         system_B = ["Sys 2", self.systems_names["Sys 2"]]
         plot_multiple_segment_comparison(self.multiple_result, system_A, system_B, source=True, saving_dir = DATA_PATH)
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "Sys A-Sys B_multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, "Sys A-Sys B" + FILENAME_SEGMENT_COMPARISON))
         )
     
     def test_multiple_segment_comparison_B_C(self):
@@ -255,7 +264,7 @@ class TestPlots(unittest.TestCase):
         system_C = ["Sys 3", self.systems_names["Sys 3"]]
         plot_multiple_segment_comparison(self.multiple_result, system_B, system_C, source=True, saving_dir = DATA_PATH)
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "Sys B-Sys C_multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, "Sys B-Sys C" + FILENAME_SEGMENT_COMPARISON))
         )
 
     def test_multiple_segment_comparison_C_A(self):
@@ -263,7 +272,7 @@ class TestPlots(unittest.TestCase):
         system_C = ["Sys 3", self.systems_names["Sys 3"]]
         plot_multiple_segment_comparison(self.multiple_result, system_C, system_A, source=True, saving_dir = DATA_PATH)
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "Sys C-Sys A_multiple-segment-comparison.html"))
+            os.path.isfile(os.path.join(DATA_PATH, "Sys C-Sys A" + FILENAME_SEGMENT_COMPARISON))
         )
 
     def test_pairwise_distributions(self):
@@ -275,7 +284,7 @@ class TestPlots(unittest.TestCase):
     def test_multiple_distributions(self):
         plot_multiple_distributions(self.multiple_result, list(self.systems_names.values()), DATA_PATH)
         self.assertTrue(
-            os.path.isfile(os.path.join(DATA_PATH, "multiple-scores-distribution.html"))
+            os.path.isfile(os.path.join(DATA_PATH, FILENAME_DISTRIBUTION_SEGMENT))
         )
 
     def test_bucket_comparison(self):
@@ -284,40 +293,40 @@ class TestPlots(unittest.TestCase):
 
     def test_bucket_multiple_comparison_comet(self):        
         plot_bucket_multiple_comparison(self.multiple_result_comet, list(self.systems_names.values()), DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "COMET-multiple-bucket-analysis.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "COMET" + FILENAME_ERROR_TYPE_ANALYSIS)))
 
     def test_bucket_multiple_comparison_bertscore(self):        
         plot_bucket_multiple_comparison(self.multiple_result_bertscore, list(self.systems_names.values()), DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "BERTScore-multiple-bucket-analysis.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "BERTScore" + FILENAME_ERROR_TYPE_ANALYSIS)))
     
     def test_confusion_matrix_of_system(self):
         confusion_matrix_of_system(self.testset_class.ref, self.testset_class.systems_output["Sys 1"], self.labels, 
-                                   self.systems_names["Sys 1"], DATA_PATH)
+                                   self.systems_names["Sys 1"], saving_dir=DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "confusion-matrix-Sys_A.png")))
     
     def test_confusion_matrix_focused_on_one_label_a(self):
         confusion_matrix_focused_on_one_label(self.testset_class.ref, self.testset_class.systems_output["Sys 2"], "a", 
-                                              self.labels, self.systems_names["Sys 2"], DATA_PATH)
+                                              self.labels, self.systems_names["Sys 2"], saving_dir=DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "Sys_B-label-a.png")))
 
     def test_confusion_matrix_focused_on_one_label_b(self):
         confusion_matrix_focused_on_one_label(self.testset_class.ref, self.testset_class.systems_output["Sys 3"], "b", 
-                                              self.labels, self.systems_names["Sys 3"], DATA_PATH)
+                                              self.labels, self.systems_names["Sys 3"], saving_dir=DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "Sys_C-label-b.png")))
 
     def test_confusion_matrix_focused_on_one_label_c(self):
         confusion_matrix_focused_on_one_label(self.testset_class.ref, self.testset_class.systems_output["Sys 1"], "c", 
-                                              self.labels, self.systems_names["Sys 1"], DATA_PATH)
+                                              self.labels, self.systems_names["Sys 1"], saving_dir=DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "Sys_A-label-c.png")))
 
     def test_analysis_labels(self):
         analysis_labels(self.multiple_result_class, list(self.systems_names.values()), self.labels, DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "mock-analysis-labels-bucket.png")))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "mock" + FILENAME_ANALYSIS_LABELS)))
     
     def test_incorrect_examples(self):
         num = int(len(self.testset_class.ref)/4) + 1
-        incorrect_examples(self.testset_class, "Sys 1", num, [], [], [], DATA_PATH)
-        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "incorrect-examples.csv")))
+        incorrect_examples(self.testset_class, "Sys 1", "Sys A", num, [], [], [], DATA_PATH)
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "Sys_A-incorrect-examples.csv")))
     
     def test_number_of_correct_labels_of_each_system(self):
             number_of_correct_labels_of_each_system(list(self.systems_names.values()), 

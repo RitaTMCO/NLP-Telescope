@@ -20,14 +20,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.figure_factory as ff
+import plotly
 import streamlit as st
 import random
 import spacy
+import io
+import zipfile
 
 from streamlit import runtime
 from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix, ConfusionMatrixDisplay
 from telescope.testset import MultipleTestset
+from telescope.metrics import (
+    Precision, 
+    Recall, 
+    FDRate,
+    FPRate,
+    FORate,
+    FNRate,
+    NPValue,
+    TNRate
+)
 from telescope.metrics.result import MultipleMetricResults
+from telescope.utils import (
+    FILENAME_SYSTEM_LEVEL_SCORES,
+    FILENAME_ANALYSIS_METRICS_STACKED,
+    FILENAME_ERROR_TYPE_ANALYSIS,
+    FILENAME_SIMILAR_SOURCE_SENTENCES,
+    FILENAME_DISTRIBUTION_SEGMENT,
+    FILENAME_SEGMENT_COMPARISON,
+    FILENAME_BOOTSTRAP,
+    FILENAME_RATES,
+    FILENAME_ANALYSIS_LABELS
+)
 
 T1_COLOR = "#9ACD32"
 T2_COLOR = "#56C3FF"
@@ -65,22 +89,68 @@ def calculate_color(number_of_labels:int, rgb=False):
 
     return colors
 
+def create_and_save_plot_zip(path:str, saving_zip:zipfile.ZipFile, plot:plt):   
+    image_bytes = io.BytesIO()
+    plot.savefig(image_bytes, bbox_inches='tight', format="png")
+    image = image_bytes.getvalue()
+    saving_zip.writestr(path , image)
+    image_bytes.close()
+
+def save_plot(saving_dir:str, filename:str, plot:plt):  
+    if not os.path.exists(saving_dir):
+        os.makedirs(saving_dir)
+    plot.savefig(saving_dir + "/" + filename, bbox_inches='tight')
+
+
+def create_and_save_table_zip(path:str, saving_zip:zipfile.ZipFile, table:pd.DataFrame):   
+    saving_zip.writestr(path, table.to_csv())
+
+def save_table(saving_dir:str, filename:str, table:pd.DataFrame):    
+    if not os.path.exists(saving_dir):
+        os.makedirs(saving_dir)
+    table.to_csv(saving_dir + "/" + filename)
+    
+
 
 ###################################################
 ############| Plots for N systems |################
 ###################################################
 
-def export_dataframe(label:str, path:str, name:str, dataframe:pd.DataFrame, column=None):
-    key ="export-" + name
+def download_data_zip(label:str, data:bytes, filename:str, key:str, column=None):
     if column != None:
-        column.button(label, key=key)
+        column.download_button( 
+            label=label,
+            data=data,
+            file_name=filename,
+            mime="application/zip",
+            key = key
+        )
     else:
-        st.button(label,key=key)
-    if st.session_state.get(key):
-        if not os.path.exists(path):
-            os.makedirs(path)  
-        dataframe.to_csv(path + "/" + name)
+        st.download_button( 
+            label=label,
+            data=data,
+            file_name=filename,
+            mime="application/zip",
+            key = key
+        )
 
+def download_data_csv(label:str, data:pd.DataFrame, filename:str, key:str, column=None):
+    if column != None:
+        column.download_button( 
+            label=label,
+            data=data.to_csv(),
+            file_name=filename,
+            mime="text/csv",
+            key = key
+        )
+    else:
+        st.download_button( 
+            label=label,
+            data=data.to_csv(),
+            file_name=filename,
+            mime="text/csv",
+            key = key
+        )
 
 def analysis_bucket(scores_dict: Dict[str,List[float]], systems_names: List[str], labels:List[str], title:str, y_label:str):
     number_of_systems = len(systems_names)
@@ -139,23 +209,42 @@ def analysis_bucket(scores_dict: Dict[str,List[float]], systems_names: List[str]
 
     return plt
 
-def analysis_metrics_stacked_bar_plot(multiple_metrics_results: List[MultipleMetricResults], systems_names:Dict[str, str], saving_dir: str = None, column=None):
+
+
+def system_level_scores_table(scores:pd.DataFrame,saving_dir: str = None, saving_zip:zipfile.ZipFile = None, column = None):
+    if runtime.exists():
+        if column != None:
+            column.dataframe(scores)
+        else:
+            st.dataframe(scores)
+        if saving_zip is not None and saving_dir is not None:
+            create_and_save_table_zip(saving_dir + FILENAME_SYSTEM_LEVEL_SCORES, saving_zip, scores)
+
+    elif saving_dir is not None:
+        save_table(saving_dir,FILENAME_SYSTEM_LEVEL_SCORES,scores)
+
+
+def analysis_metrics_stacked_bar_plot(multiple_metrics_results: List[MultipleMetricResults], systems_names:Dict[str, str], saving_dir: str = None, 
+                                      saving_zip:zipfile.ZipFile = None, column = None):
     metrics = [m_res.metric for m_res in multiple_metrics_results]
 
     scores_per_metric = {m_res.metric: np.array([m_res.systems_metric_results[sys_id].sys_score for sys_id in list(systems_names.keys())]) 
             for m_res in multiple_metrics_results}
 
-    plt = analysis_bucket(scores_per_metric, list(systems_names.values()), metrics, "Analysis of each metric", "Score") 
+    plot = analysis_bucket(scores_per_metric, list(systems_names.values()), metrics, "Analysis of each metric", "Score") 
 
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/analysis-metrics-stacked-bar-plot.png", bbox_inches='tight')
-    if runtime.exists() and saving_dir == None:
+    if runtime.exists():
         if column == None:
             st.pyplot(plt)
         else:
             column.pyplot(plt)
+
+        if saving_zip is not None and saving_dir is not None:
+            create_and_save_plot_zip(saving_dir + FILENAME_ANALYSIS_METRICS_STACKED,saving_zip,plot)
+    
+    elif saving_dir is not None:
+        save_plot(saving_dir, FILENAME_ANALYSIS_METRICS_STACKED,plot)
+
     plt.clf()
     plt.close()
 
@@ -164,7 +253,19 @@ def analysis_metrics_stacked_bar_plot(multiple_metrics_results: List[MultipleMet
 #######################################################| NLG |#######################################################
 #####################################################################################################################
 
-def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str=None, min_value:float=0.0,max_value:float=1.0):
+def save_bootstrap_table(result:pd.DataFrame,sys_x_name:str, sys_y_name:str, saving_dir: str = None, saving_zip:zipfile.ZipFile = None):
+    filename = sys_x_name + "-" + sys_y_name + FILENAME_BOOTSTRAP
+
+    if runtime.exists():
+        if saving_zip is not None and saving_dir is not None:
+            saving_zip.writestr(saving_dir + filename, result.to_csv())
+
+    elif saving_dir is not None:
+        save_table(saving_dir, filename,result)
+
+def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str=None, saving_zip:zipfile.ZipFile=None, 
+                         min_value:float=0.0,max_value:float=1.0):
+    
     def remove_stop_words_and_punct(text:str,nlp):
         final_text = ""
         doc = nlp(text.lower())
@@ -186,7 +287,7 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
 
     table = []
 
-    if runtime.exists() and saving_dir == None:
+    if runtime.exists():
         min_value,max_value = st.slider(
                     "Minimum and maximum similarity value", 0.0, 1.0, value=(0.0, 1.0), step=0.05, key="similarity")
 
@@ -204,15 +305,23 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
                 break
     
     if len(table) != 0:
-        df = pd.DataFrame(np.array(table), columns=["line", "source segment"])
-        if saving_dir is not None:
-            if not os.path.exists(saving_dir):
-                os.makedirs(saving_dir)
-            df.to_csv(saving_dir + "/" + str(min_value) + "-" + str(max_value) + "_similar-source-sentences.csv")
-        return df,min_value,max_value
-    else:
-        return None,0,0
+        filename = str(min_value) + "-" + str(max_value) + FILENAME_SIMILAR_SOURCE_SENTENCES
 
+        df = pd.DataFrame(np.array(table), columns=["line", "source segment"])
+
+        if runtime.exists():
+            if df is not None:
+                st.dataframe(df)
+                if saving_dir and saving_zip:
+                    create_and_save_table_zip(saving_dir + filename,saving_zip,df)
+
+        elif saving_dir is not None:
+            if df is not None:
+                save_table(saving_dir, filename,df)
+    else:
+        if runtime.exists():
+            st.warning("Segments not found")
+                
 
 
 def update_multiple_buckets(
@@ -361,7 +470,9 @@ def update_multiple_buckets(
 
 
 
-def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None) -> None:
+def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None, saving_zip: str = None) -> None:
+
+    filename = multiple_result.metric + FILENAME_ERROR_TYPE_ANALYSIS
 
     systems_results_seg_scores = {
         system: metric_system.seg_scores
@@ -395,15 +506,8 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
             values[2],
         )   
 
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        plot.savefig(saving_dir + "/" + multiple_result.metric + "-multiple-bucket-analysis.png", bbox_inches='tight')
 
-
-
-
-    if runtime.exists() and saving_dir == None:
+    if runtime.exists():
 
         def define_value(bucket_1,bucket_2,value):
             if (bucket_2!=None and bucket_1 < bucket_2) or st.session_state["reset_settings"]:
@@ -481,13 +585,20 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
                     """
         )
 
+        if saving_dir and saving_zip:
+            create_and_save_plot_zip(saving_dir + filename, saving_zip,
+                                     update_multiple_buckets(systems_results_seg_scores,systems_names, 
+                                             st.session_state["red_bucket_"+ multiple_result.metric], 
+                                             st.session_state["yellow_bucket_"+ multiple_result.metric], 
+                                             st.session_state["blue_bucket_"+ multiple_result.metric]))
 
-        return left
+
+    elif saving_dir is not None:
+        save_plot(saving_dir, filename, plot)
 
 
-
-
-def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None, test:str=False) -> bool:
+def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None, 
+                                saving_zip: zipfile.ZipFile = None, test:str=False) -> bool:
     scores_list = [
         metric_system.seg_scores 
         for metric_system in list(multiple_result.systems_metric_results.values())]
@@ -504,29 +615,37 @@ def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_nam
         ) 
 
         fig.update_layout(xaxis_title="Score", yaxis_title="Probability Density")
-        fig.update_xaxes( title_standoff = 40)
+        fig.update_xaxes(title_standoff = 40)
 
-        if saving_dir is not None and not test:
-            if not os.path.exists(saving_dir):
-                os.makedirs(saving_dir)
-            fig.write_html(saving_dir + "/multiple-scores-distribution.html")
 
-        if runtime.exists() and saving_dir == None and not test:
+        if runtime.exists() and not test:
             st.markdown("This displot shows the distribution of segment-level scores. It is composed of histogram, kernel density estimation curve and rug plot.")
             st.plotly_chart(fig)
+
+            if saving_dir and saving_zip:
+                saving_zip.writestr(saving_dir + FILENAME_DISTRIBUTION_SEGMENT , plotly.io.to_html(fig))
+        
+        elif saving_dir is not None and not test:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
+            fig.write_html(saving_dir + "/" + FILENAME_DISTRIBUTION_SEGMENT)
         return True
+    
     except np.linalg.LinAlgError:
-        if runtime.exists() and saving_dir == None:
+        if runtime.exists():
             st.warning("One of outputs is same as the selected refrence. Please, remove the output or the reference.")
         return False
     
 
 
 def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, system_x: List[str], system_y:List[str], source: bool = False, 
-                                     saving_dir: str = None) -> None:
+                                     saving_dir: str = None, saving_zip: zipfile.ZipFile = None) -> None:
+
 
     sys_x_id, sys_x_name = system_x
     sys_y_id, sys_y_name = system_y
+
+    filename = sys_x_name + "-" + sys_y_name + FILENAME_SEGMENT_COMPARISON
 
     scores = np.array(
         [multiple_result.systems_metric_results[sys_x_id].seg_scores, 
@@ -555,31 +674,32 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
                 tooltip=tool,
             )
         )
-
-    if saving_dir is not None:
+    
+    if runtime.exists():
+        st.altair_chart(c, use_container_width=True)
+        if saving_dir and saving_zip:
+            saving_zip.writestr(saving_dir + filename, c.properties(width=1300, height=600).to_html())
+        
+    elif saving_dir is not None:
         if not os.path.exists(saving_dir):
             os.makedirs(saving_dir)
         c.properties(width=1300, height=600).save(
-            saving_dir + "/" + sys_x_name + "-" + sys_y_name + "_multiple-segment-comparison.html", 
+            saving_dir + "/" + filename, 
             format="html"
         )
-
-    if runtime.exists() and saving_dir == None:
-        st.altair_chart(c, use_container_width=True)
-
-
-
 
 
 ################################################################################################################################
 #######################################################| Classification |#######################################################
 ################################################################################################################################
 
-def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[str], system_name:str, saving_dir: str = None):    
+def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[str], system_name:str, show:bool = False, saving_dir: str = None, 
+                               saving_zip:zipfile.ZipFile=None):    
+    
     matrix = confusion_matrix(true, pred, labels=labels)
     conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix,display_labels=labels)
     conf_mat.plot()
-
+    filename = "confusion-matrix-" + system_name.replace(" ", "_") + ".png"
     ratio = int((len(labels)/5)) * 3
 
     _, ax = plt.subplots(figsize=(5 + ratio, 5 + ratio))
@@ -587,101 +707,91 @@ def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[st
 
     plt.title("Confusion Matrix of " + system_name)
 
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/confusion-matrix-" + system_name.replace(" ", "_") + ".png", bbox_inches='tight')
-
-    if runtime.exists() and saving_dir == None:
-        st.pyplot(plt)
+    if runtime.exists():
+        if show:
+            st.pyplot(plt)
+        if saving_dir and saving_zip:
+            create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
+    elif saving_dir is not None:
+        save_plot(saving_dir, filename, plt)
 
     plt.clf()
     plt.close()
 
 
 
-
-def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], label: str, labels: List[str], system_name:str, saving_dir: str = None):
+def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], label: str, labels: List[str], system_name:str, show:bool = False,
+                                          saving_dir: str = None, saving_zip:zipfile.ZipFile=None):  
     
     matrix = multilabel_confusion_matrix(true, pred, labels=labels)
     index = labels.index(label)
     name = ["other labels"] + [label] 
+
+    filename = system_name.replace(" ", "_") + "-label-" + label + ".png"
     
     conf_mat = ConfusionMatrixDisplay(confusion_matrix=matrix[index],display_labels=name)
     conf_mat.plot()
     plt.title("Confusion Matrix of " + system_name)
 
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/" + system_name.replace(" ", "_") + "-label-" + label + ".png",bbox_inches='tight')
+    if runtime.exists():
+        if show:
+            st.pyplot(plt)
+        if saving_dir and saving_zip:
+            create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
+    elif saving_dir is not None:
+        save_plot(saving_dir, filename, plt)
 
-    if runtime.exists() and saving_dir == None:
-        st.pyplot(plt)
     plt.clf()
     plt.close()
 
 
 
-def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None):
-    table = { "Precison" : [], "FDR": [], "FOR": [], "NPV": [],
-            "Recall": [], "FPR":[], "FNR":[], "TNR": []
-    }
-    matrix = multilabel_confusion_matrix(true, pred, labels=labels)
+def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None, saving_zip: zipfile.ZipFile = None, show:bool = False, column = None):
+    table = { "PPV" : [], "TPR": [], "FDR": [], "FPR":[], "FOR": [], "FNR":[], "NPV": [], "TNR": [] }
+    
+    precison_labels = list(Precision(labels=labels).score([], pred, true).seg_scores)
+    recall_labels = list(Recall(labels=labels).score([], pred, true).seg_scores)
+    fdr_labels = list(FDRate(labels=labels).score([], pred, true).seg_scores)
+    fpr_labels = list(FPRate(labels=labels).score([], pred, true).seg_scores)
+    for_labels = list(FORate(labels=labels).score([], pred, true).seg_scores)
+    fnr_labels = list(FNRate(labels=labels).score([], pred, true).seg_scores)
+    npv_labels = list(NPValue(labels=labels).score([], pred, true).seg_scores)
+    tnr_labels = list(TNRate(labels=labels).score([], pred, true).seg_scores)
+
     num = len(labels)
     for i in range(num):
-        tn,fp,fn,tp = list(list(matrix[i][0]) + list(matrix[i][1]))
-        if sum([tp,fp]) == 0:
-            table["Precison"].append(0)
-            table["FDR"].append(0)
-        else:
-            table["Precison"].append(tp/sum([tp,fp]))
-            table["FDR"].append(fp/sum([tp,fp]))
-
-        if sum([tn,fn]) == 0:
-            table["FOR"].append(0)
-            table["NPV"].append(0)
-        else:
-            table["FOR"].append(fn/sum([tn,fn]))
-            table["NPV"].append(tn/sum([tn,fn]))
-            
-        if sum([tp,fn]) == 0:
-            table["Recall"].append(0)
-        else:
-            table["Recall"].append(tp/sum([tp,fn]))
-            
-        if sum([fp,tn]) == 0:
-            table["FPR"].append(0)
-        else:
-            table["FPR"].append(fp/sum([fp,tn]))
-            
-        if sum([fn,tp]) == 0:
-            table["FNR"].append(0)
-        else:
-            table["FNR"].append(fn/sum([fn,tp]))
-       
-        if sum([tn,fp]) == 0:
-            table["TNR"].append(0)
-        else:
-            table["TNR"].append(tn/sum([tn,fp]))
+        table["PPV"].append(precison_labels[i])
+        table["TPR"].append(recall_labels[i])
+        table["FDR"].append(fdr_labels[i])
+        table["FPR"].append(fpr_labels[i])
+        table["FOR"].append(for_labels[i])
+        table["FNR"].append(fnr_labels[i])
+        table["NPV"].append(npv_labels[i])
+        table["TNR"].append(tnr_labels[i])
 
     df = pd.DataFrame(table)
     df.index = labels
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        df.to_csv(saving_dir + "/rates.csv")
-    return df
+
+    if runtime.exists():
+        if show and column != None:
+            column.dataframe(df)
+        elif show:
+            st.dataframe(df)
+        if saving_zip is not None and saving_dir is not None:
+            create_and_save_table_zip(saving_dir + FILENAME_RATES, saving_zip, df)
+    elif saving_dir is not None:
+        save_table(saving_dir,FILENAME_RATES,df)
 
 
 
 
-def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], ids:List[int]=[],
+def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], ids:List[int]=[],
                        saving_dir:str = None):
     src = testset.src
     true = testset.ref
     pred = testset.systems_output[system]
-
+    filename = system_name.replace(" ","_") + "-incorrect-examples.csv"
+    
     n = len(true)
     if not ids:
         ids = random.sample(range(n),n)
@@ -701,14 +811,13 @@ def incorrect_examples(testset:MultipleTestset, system:str, num:int, incorrect_i
         if saving_dir is not None:
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
-            df.to_csv(saving_dir + "/incorrect-examples.csv")
+            df.to_csv(saving_dir + "/" + filename)
         return df.sort_index()
     else:
         return None
 
 
-
-def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None):
+def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
     seg_scores_list = [list(result_sys.seg_scores)
                 for result_sys in list(result.systems_metric_results.values())]
     
@@ -717,18 +826,17 @@ def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:
         seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
                     for i, label in enumerate(labels)}
         metric = result.metric
+        filename = metric + FILENAME_ANALYSIS_LABELS
 
         plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" , "Score") 
-        if saving_dir is not None:
-            if not os.path.exists(saving_dir):
-                os.makedirs(saving_dir)
-            plt.savefig(saving_dir + "/" + metric + "-analysis-labels-bucket.png")
-        if runtime.exists() and saving_dir == None:
+        if runtime.exists():
             st.pyplot(plt)
+            if saving_dir and saving_zip:
+                create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
+        elif saving_dir is not None:
+            save_plot(saving_dir, filename, plt)
         plt.clf()
         plt.close()
-
-
 
 
 
@@ -738,10 +846,11 @@ def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:
 
 
 def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str], systems_pred: List[List[str]], labels: List[str], 
-                                            saving_dir: str = None):
+                                            saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
     
     num_of_systems = len(sys_names)
     number_of_correct_labels = { label: np.array([0 for _ in range(num_of_systems)]) for label in labels }
+    filename = "number-of-correct-labels-of-each-system.png"
 
     for sys_i in range(num_of_systems):
         pred = systems_pred[sys_i]
@@ -750,12 +859,12 @@ def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str
                 number_of_correct_labels[t][sys_i] += 1
     
     plt = analysis_bucket(number_of_correct_labels, sys_names, labels, "Number of times each label was identified correctly", "Number of times")
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/number-of-correct-labels-of-each-system.png", bbox_inches='tight')
-    if runtime.exists() and saving_dir == None:
+    if runtime.exists():
         st.pyplot(plt)
+        if saving_dir and saving_zip:
+            create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
+    elif saving_dir is not None:
+        save_plot(saving_dir, filename, plt)
     plt.clf()
     plt.close()
 
@@ -763,10 +872,11 @@ def number_of_correct_labels_of_each_system(sys_names: List[str], true: List[str
 
 
 def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[str], systems_pred: List[List[str]], labels: List[str], 
-                                              saving_dir: str = None):
+                                              saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
     
     num_of_systems = len(sys_names)
     number_of_incorrect_labels = { label: np.array([0 for _ in range(num_of_systems)]) for label in labels }
+    filename = "number-of-incorrect-labels-of-each-system.png"
 
     for sys_i in range(num_of_systems):
         pred = systems_pred[sys_i]
@@ -775,19 +885,18 @@ def number_of_incorrect_labels_of_each_system(sys_names: List[str], true: List[s
                 number_of_incorrect_labels[t][sys_i] += 1
 
     plt = analysis_bucket(number_of_incorrect_labels, sys_names, labels, "Number of times each label was identified incorrectly", "Number of times")
-    if saving_dir is not None:
-        if not os.path.exists(saving_dir):
-            os.makedirs(saving_dir)
-        plt.savefig(saving_dir + "/number-of-incorrect-labels-of-each-system.png",bbox_inches='tight')
-    if runtime.exists() and saving_dir == None:
+    if runtime.exists():
         st.pyplot(plt)
+        if saving_dir and saving_zip:
+            create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
+    elif saving_dir is not None:
+        save_plot(saving_dir, filename, plt)
     plt.clf()
     plt.close()
 
 
 
-
-def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int, List[str]], gender_sys_seg: Dict[int, List[str]], 
+def bias_segments(system_name:str, ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int, List[str]], gender_sys_seg: Dict[int, List[str]], 
                   text_groups_ref_per_seg: Dict[int, List[Dict[str,str]]],text_groups_sys_per_seg: Dict[int, List[Dict[str,str]]], 
                   ids: List[int], saving_dir:str = None):
         
@@ -797,6 +906,7 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
             terms += token["term"] + ":" + token["gender"] + ", "
         return terms[:-2]
 
+    filename = system_name.replace(" ","_") + "-bias-segments.csv"
     n = len(gender_refs_seg)
     if not ids: 
         ids = random.sample(range(n),n)
@@ -820,7 +930,7 @@ def bias_segments(ref:List[str], output_sys:List[str], gender_refs_seg: Dict[int
         if saving_dir is not None:
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
-            df.to_csv(saving_dir + "/bias-segments.csv")
+            df.to_csv(saving_dir + "/" + filename)
         return df.sort_index()
     else:
         return None 

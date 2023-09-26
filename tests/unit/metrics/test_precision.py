@@ -16,11 +16,14 @@ class TestPrecision(unittest.TestCase):
 
     def test_score(self):
 
+        expected_seg = [0.5, 0.5, 1]
         expected_sys = (0.5 + 0.5 + 1) / 3
 
         result = self.precision.score([],self.pred,self.true)
         
         self.assertEqual(result.sys_score, expected_sys)
+        for i in range(len(self.labels)):
+            self.assertEqual(result.seg_scores[i], expected_seg[i])
         self.assertListEqual(result.ref, self.true)
         self.assertListEqual(result.src, [])
         self.assertListEqual(result.cand, self.pred)

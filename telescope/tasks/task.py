@@ -1,5 +1,6 @@
 import abc
 import click
+import zipfile
 
 from telescope.collection_testsets import CollectionTestsets
 from telescope.metrics import AVAILABLE_NLP_METRICS
@@ -32,7 +33,7 @@ class Task(metaclass=abc.ABCMeta):
         
     @classmethod
     @abc.abstractmethod
-    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, 
+    def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, plot: str, saving_zip: zipfile.ZipFile,
                             metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interface to display the plots"""
         pass

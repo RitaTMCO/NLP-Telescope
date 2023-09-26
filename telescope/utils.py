@@ -18,7 +18,16 @@ import yaml
 from io import StringIO
 
 PATH_USER = "user/" 
-PATH_DOWNLOADED_PLOTS = "user/downloaded_data/"
+
+FILENAME_SYSTEM_LEVEL_SCORES = "systems-metrics-scores.csv"
+FILENAME_ANALYSIS_METRICS_STACKED = "analysis-metrics-stacked-bar-plot.png"
+FILENAME_SIMILAR_SOURCE_SENTENCES = "_similar-source-sentences.csv"
+FILENAME_ERROR_TYPE_ANALYSIS = "-multiple-bucket-analysis.png"
+FILENAME_DISTRIBUTION_SEGMENT  = "multiple-scores-distribution.html"
+FILENAME_SEGMENT_COMPARISON = "_multiple-segment-comparison.html"
+FILENAME_BOOTSTRAP = "_bootstrap_results.csv"
+FILENAME_RATES = "rates.csv"
+FILENAME_ANALYSIS_LABELS = "-analysis-labels-bucket.png"
 
 
 def telescope_cache_folder():
@@ -43,7 +52,3 @@ def read_yaml_file(file_yaml):
     data = yaml.safe_load(file)
     file.close()
     return data
-
-def create_downloaded_data_folder():
-    if not os.path.exists(PATH_DOWNLOADED_PLOTS):
-        os.makedirs(PATH_DOWNLOADED_PLOTS)

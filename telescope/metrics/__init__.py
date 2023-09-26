@@ -23,6 +23,13 @@ from .f1_score import F1Score
 
 from .demographic_parity import DemographicParity
 
+from .fd_rate import FDRate
+from .fp_rate import FPRate
+from .fo_rate import FORate
+from .fn_rate import FNRate
+from .np_value import NPValue
+from .tn_rate import TNRate
+
 from .result import MetricResult, PairwiseResult, BootstrapResult
 
 from telescope.utils import read_yaml_file

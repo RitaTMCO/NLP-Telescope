@@ -1,27 +1,25 @@
 import os
 import unittest
 
-from telescope.metrics.recall.metric import Recall
+from telescope.metrics.tn_rate.metric import TNRate
 from tests.data import DATA_PATH
 
 
-class TestRecall(unittest.TestCase):
+class TestFPR(unittest.TestCase):
     labels = ["a", "b", "c"]
-    recall = Recall(labels=labels)
+    tnr = TNRate(labels=labels)
     pred = [ "a", "b", "a", "b", "c"]
     true = [ "a", "b", "c", "a", "c"]
 
     def test_name_property(self):
-        self.assertEqual(self.recall.name, "Recall")
+        self.assertEqual(self.tnr.name, "True Negative Rate")
 
     def test_score(self):
 
-        expected_seg = [0.5, 1, 0.5]
-        expected_sys = (0.5 + 1 + 0.5) / 3
+        expected_seg = [2/3, 3/4, 1]
 
-        result = self.recall.score([],self.pred,self.true)
+        result = self.tnr.score([],self.pred,self.true)
         
-        self.assertEqual(result.sys_score, expected_sys)
         for i in range(len(self.labels)):
             self.assertEqual(result.seg_scores[i], expected_seg[i])
         self.assertListEqual(result.ref, self.true)

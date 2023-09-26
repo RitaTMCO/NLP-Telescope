@@ -25,11 +25,16 @@ import pandas as pd
 
 from typing import List, Union, Tuple
 
+from telescope.utils import FILENAME_SYSTEM_LEVEL_SCORES
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 from telescope.tasks.classification import Classification
 from telescope.metrics.result import MultipleMetricResults
 from telescope.testset import PairwiseTestset
-from telescope.multiple_plotting import analysis_metrics_stacked_bar_plot
+from telescope.multiple_plotting import (
+    system_level_scores_table, 
+    analysis_metrics_stacked_bar_plot,
+    save_bootstrap_table
+)
 from telescope.plotting import (
     plot_segment_comparison,
     plot_pairwise_distributions,
@@ -689,7 +694,7 @@ def n_compare_nlg(
 
         click.secho('\n\nReference: ' + ref_filename, fg="yellow")
 
-        click.secho('\nMetric Results', fg="yellow") 
+        click.secho('\nNLP Evaluation', fg="yellow") 
         results_df = display_table(systems_names,results)
         if bootstrap and num_systems > 1 and available_nlg_tasks[task].bootstrap:
             bootstrap_df = bootstrap_result(collection,ref_filename,results,metric,x_id,y_id,num_splits,sample_ratio)
@@ -702,7 +707,7 @@ def n_compare_nlg(
             else:
                 universal_me = available_universal_metrics[universal_metric](results)
             universal_result = universal_me.universal_score_calculation_and_ranking(testset)
-            universal_result_df = universal_result.plots_cli_interface(collection)
+            universal_result.plots_cli_interface(collection)
 
         if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
             click.secho('\nBias Results', fg="yellow")
@@ -721,19 +726,18 @@ def n_compare_nlg(
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
             if universal_metric and num_systems > 1 and available_nlg_tasks[task].universal_metrics and universal_metric in available_nlg_tasks[task].universal_metrics: 
-                universal_result_df.to_csv(saving_dir + "ranks_systems.csv")
+                x_name = systems_names[x_id]
+                y_name = systems_names[y_id]
+                universal_result.dataframa_to_to_csv(collection,ref_filename, x_name, y_name, saving_dir)
 
             metrics_results_dir = saving_dir + "metrics_results/"
-            if not os.path.exists(metrics_results_dir):
-                os.makedirs(metrics_results_dir)
-            results_df.to_csv(metrics_results_dir + "results.csv")
+            system_level_scores_table(results_df, metrics_results_dir)
             analysis_metrics_stacked_bar_plot(list(results.values()), systems_names,metrics_results_dir)
 
             if bootstrap and num_systems > 1 and available_nlg_tasks[task].bootstrap:
                 x_name = systems_names[x_id]
                 y_name = systems_names[y_id]
-                filename = saving_dir + x_name + "-" + y_name + "_bootstrap_results.csv"
-                bootstrap_df.to_csv(filename)
+                save_bootstrap_table(bootstrap_df,x_name,y_name,saving_dir)
             available_nlg_tasks[task].plots_cli_interface(seg_metric, results, collection, ref_filename, metrics_results_dir, x_id, y_id)
 
             if bias_evaluations and available_nlg_tasks[task].bias_evaluations:
@@ -913,7 +917,7 @@ def n_compare_classification(
             if universal_metric and num_systems > 1 and available_class_tasks[task].universal_metrics and universal_metric in available_class_tasks[task].universal_metrics:
                 universal_result_df.to_csv(saving_dir + "ranks_systems.csv")
 
-            results_df.to_csv(saving_dir + "/results.csv")
+            system_level_scores_table(results_df,saving_dir)
             analysis_metrics_stacked_bar_plot(list(results.values()), systems_names,saving_dir)
 
             Classification.plots_cli_interface(seg_metric,results,collection,ref_filename,saving_dir)
