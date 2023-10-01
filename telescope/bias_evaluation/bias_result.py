@@ -2,6 +2,7 @@ import os
 import streamlit as st
 import pandas as pd
 import zipfile
+import numpy as np
 
 from streamlit import runtime
 from typing import List, Dict
@@ -18,6 +19,8 @@ from telescope.multiple_plotting import (
     create_and_save_table_zip,
     save_table,
     download_data_csv,
+    all_identity_terms,
+    table_identity_terms_found,
     )
 
 class BiasResult():
@@ -26,6 +29,7 @@ class BiasResult():
         groups: List[str],
         ref: List[str],
         system_output: List[str],
+        identity_terms_found_per_seg: Dict[int, List[dict]],
         groups_ref: List[str],
         groups_ref_per_seg: Dict[int,List[str]],
         groups_system: List[str],
@@ -37,6 +41,7 @@ class BiasResult():
         self.groups = groups
         self.ref = ref
         self.system_output = system_output
+        self.identity_terms_found_per_seg = identity_terms_found_per_seg
         assert len(groups_ref) == len(groups_system)
         self.groups_ref = groups_ref
         self.groups_ref_per_seg = groups_ref_per_seg
@@ -45,6 +50,9 @@ class BiasResult():
         self.text_groups_ref_per_seg = text_groups_ref_per_seg
         self.text_groups_sys_per_seg = text_groups_sys_per_seg
         self.metrics_results_per_metric = metrics_results_per_metric
+
+    def all_identity_terms_found(self,system_name:str, saving_dir:str=None,saving_zip:zipfile.ZipFile=None):
+        return table_identity_terms_found(system_name,self.identity_terms_found_per_seg,saving_dir,saving_zip)
 
     def display_confusion_matrix_of_system(self,system_name:str, saving_dir:str=None,saving_zip:zipfile.ZipFile = None,show: bool = False) -> None:
         confusion_matrix_of_system(self.groups_ref, self.groups_system, self.groups, system_name, 
@@ -61,6 +69,11 @@ class BiasResult():
     def display_bias_segments_of_system(self,system_name:str, ids:List[int], saving_dir:str = None):
         return bias_segments(system_name, self.ref, self.system_output, self.groups_ref_per_seg, self.groups_sys_per_seg, 
                              self.text_groups_ref_per_seg, self.text_groups_sys_per_seg, ids, saving_dir)
+    
+    def display_identity_terms(self,system_name:str, saving_dir:str = None,saving_zip:zipfile.ZipFile = None):
+        return all_identity_terms(system_name, self.groups_sys_per_seg, self.groups_ref_per_seg, self.text_groups_ref_per_seg, 
+                                  self.text_groups_sys_per_seg, saving_dir, saving_zip)
+
 
 
 # each reference have one MultipleBiasResult
@@ -68,6 +81,7 @@ class MultipleBiasResults():
     def __init__(
         self,
         ref: List[str],
+        identity_terms_found_ref_per_seg: [int, List[dict]],
         groups_ref: List[str],
         groups_ref_per_seg: Dict[int,List[str]],
         groups: List[str],
@@ -85,6 +99,7 @@ class MultipleBiasResults():
             assert list(bias_results.metrics_results_per_metric.keys()) == [metric.name for metric in metrics]
         
         self.ref = ref
+        self.identity_terms_found_ref_per_seg = identity_terms_found_ref_per_seg
         self.groups_ref = groups_ref
         self.groups_ref_per_seg = groups_ref_per_seg
         self.groups = groups
@@ -105,6 +120,11 @@ class MultipleBiasResults():
         sys_id = collection_testsets.system_name_id(system_name)
         bias_result = self.systems_bias_results[sys_id]
         return bias_result.display_bias_segments_of_system(system_name,ids,saving_dir)
+
+    def display_identity_terms_of_one_system(self,collection_testsets:CollectionTestsets,system_name:str, saving_dir:str = None,saving_zip:zipfile.ZipFile = None):
+        sys_id = collection_testsets.system_name_id(system_name)
+        bias_result = self.systems_bias_results[sys_id]
+        return bias_result.display_identity_terms(system_name,saving_dir,saving_zip)
 
     def display_confusion_matrix_of_one_system(self,collection_testsets:CollectionTestsets, system_name:str,
                                                saving_dir:str=None,saving_zip:zipfile.ZipFile = None,show: bool = False):
@@ -142,14 +162,31 @@ class MultipleBiasResults():
     
     def display_analysis_labels(self,collection_testsets:CollectionTestsets,saving_dir:str=None,saving_zip:zipfile.ZipFile = None):
         systems_names = collection_testsets.systems_names.values()
+
         for metric, multiple_metrics_results in self.multiple_metrics_results_per_metris.items():
+            right = None
+            left = None
+            if runtime.exists():
+                left,right = st.columns([0.3,0.7])
             if metric != "Precision" and metric != "Recall":
-                analysis_labels(multiple_metrics_results,systems_names,self.groups, saving_dir,saving_zip)
+                seg_scores_list = [list(result_sys.seg_scores) for result_sys in list(multiple_metrics_results.systems_metric_results.values())]
+                if any(seg_scores_list):
+                    seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
+                        for i, label in enumerate(self.groups)}
+                    df = pd.DataFrame.from_dict(seg_scores_dict )
+                    df.index = systems_names
+                    if runtime.exists():
+                        left.dataframe(df)
+                        if saving_dir and saving_zip:
+                            create_and_save_table_zip(saving_dir + metric + "_groups_bias_metrics.csv",saving_zip,df)
+                    elif saving_dir:
+                        save_table(saving_dir,metric + "_groups_bias_metrics.csv",df)
+                analysis_labels(multiple_metrics_results,systems_names,self.groups, saving_dir,saving_zip,right)
 
     def display_bias_evaluations_informations(self, saving_dir:str=None, saving_zip:zipfile.ZipFile=None, col = None):
         table = { 
             "Bias Evaluation Time": [self.time],
-            "Number of Identity Terms Found": [len(self.groups_ref)]
+            "Number of identity terms that were matched": [len(self.groups_ref)]
         }
         filename = "bias_evaluations_information.csv"
         df = pd.DataFrame.from_dict(table)
@@ -175,8 +212,14 @@ class MultipleBiasResults():
                 create_and_save_table_zip(saving_dir + filename,saving_zip,scores)
         elif saving_dir:
             save_table(saving_dir,filename,scores)
-
-
+    
+    def all_identity_terms_found_ref(self,ref_name:str,saving_dir:str=None,saving_zip:zipfile.ZipFile=None,):
+        return table_identity_terms_found(ref_name,self.identity_terms_found_ref_per_seg,saving_dir,saving_zip)
+    
+    def all_identity_terms_found_system(self,collection_testsets:CollectionTestsets, sys_name:str,saving_dir:str=None,saving_zip:zipfile.ZipFile=None):
+        sys_id = collection_testsets.system_name_id(sys_name)
+        bias_result = self.systems_bias_results[sys_id]
+        return bias_result.all_identity_terms_found(sys_name,saving_dir,saving_zip)
 
     def plots_bias_results_web_interface(self, collection_testsets:CollectionTestsets, ref_name:str, 
                                          path:str = None, saving_zip:zipfile.ZipFile = None, option_bias=None):
@@ -283,17 +326,19 @@ class MultipleBiasResults():
                 download_data_csv("Export table with segments", dataframe, system_name.replace(" ","_") + "-bias-segments.csv", "bias_seg_load",middle)
             else:
                 st.warning("There are no segments with bias.")
-    
 
+        self.all_identity_terms_found_ref(ref_name,saving_dir=path,saving_zip=saving_zip)
         for sys_name in collection_testsets.names_of_systems():
             path_dir = path + sys_name.replace(" ", "_") + "/"
             self.display_rates_of_one_system(collection_testsets, sys_name, saving_dir=path_dir, saving_zip=saving_zip)
             self.display_confusion_matrix_of_one_system(collection_testsets,sys_name,saving_dir=path_dir,saving_zip=saving_zip)
+            self.all_identity_terms_found_system(collection_testsets,sys_name,saving_dir=path_dir,saving_zip=saving_zip)
+            self.display_identity_terms_of_one_system(collection_testsets,system_name,saving_dir=path_dir,saving_zip=saving_zip)
             save_path = path_dir + "singular_confusion_matrix/"
             for grop in self.groups:
                 self.display_confusion_matrix_of_one_system_focused_on_one_label(collection_testsets,sys_name,grop,saving_dir=save_path,saving_zip=saving_zip)
 
-    
+
     def plots_bias_results_cli_interface(self, collection_testsets:CollectionTestsets, saving_dir:str):
         self.display_bias_evaluations_informations(saving_dir)
         self.display_analysis_labels(collection_testsets, saving_dir)        

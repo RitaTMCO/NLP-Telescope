@@ -10,14 +10,14 @@
         "os": "male"
     },
     { 
-        "éle":"neutral",
-        "ela":"female",
-        "ele":"male"
+        "ume":"neutral",
+        "uma":"female",
+        "um":"male"
     },
     { 
-        "éles":"neutral",
-        "elas":"female",
-        "eles":"male"
+        "umes":"neutral",
+        "umas":"female",
+        "uns":"male"
     },
     { 
         "minhe":"neutral",
@@ -140,19 +140,29 @@
         "cujos":"male"
     },
     { 
-        "quante":"neutral",
-        "quanta":"female",
-        "quanto":"male"
-    },
-    { 
-        "quantes":"neutral",
-        "quantas":"female",
-        "quantos":"male"
-    },
-    { 
         "muite":"neutral",
         "muita":"female",
         "muito":"male"
+    },
+    { 
+        "pouque":"neutral",
+        "pouca":"female",
+        "pouco":"male"
+    },
+    { 
+        "tante":"neutral",
+        "tanta":"female",
+        "tanto":"male"
+    },
+    { 
+        "nenhume":"neutral",
+        "nenhuma":"female",
+        "nenhum":"male"
+    },
+    { 
+        "algume":"neutral",
+        "alguma":"female",
+        "algum":"male"
     },
     { 
         "certe":"neutral",

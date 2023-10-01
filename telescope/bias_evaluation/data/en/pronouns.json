@@ -10,11 +10,6 @@
         "him":"male"
     },
     { 
-        "their":"neutral", 
-        "her":"female", 
-        "his":"male"
-    },
-    { 
         "theirs":"neutral", 
         "hers":"female", 
         "his":"male"

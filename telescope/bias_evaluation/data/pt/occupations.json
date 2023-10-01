@@ -1,5 +1,8 @@
 [   
     { "gerente":"neutral"},
+    { "guarda":"neutral"},
+    { "mudança":"neutral"},
+    { "motorista":"neutral"},
     { "terapeuta":"neutral"},
     { "recepcionista":"neutral"},
     { "especialista":"neutral"},
@@ -9,13 +12,27 @@
     { "higienista":"neutral"},
     { "cientista":"neutral"},
     { "dietista":"neutral"},
+    { "afaiate":"neutral"},
     { "chefe":"neutral"},
+    { "contabilista":"neutral"},
     {"assistente":"neutral"},
-    {"designer":"neutral"},
+    {
+        "designer":"neutral",
+        "projetista":"neutral"
+    },
     {"atendente":"neutral"},
     {"analista":"neutral"},
-    {"xerife":"neutral"},
+    {
+        "xerife":"neutral",
+        "delegade":"neutral",
+        "delegado":"male",
+        "delegada":"female"
+    },
     {"CEO":"neutral"},
+    {
+        "atendente":"neutral",
+        "balconista":"neutral"
+    },
     { 
         "estudante":"neutral",
         "aluna":"female",

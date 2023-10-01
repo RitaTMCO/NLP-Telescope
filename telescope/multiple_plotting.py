@@ -817,7 +817,7 @@ def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num
         return None
 
 
-def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
+def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None, col=None):
     seg_scores_list = [list(result_sys.seg_scores)
                 for result_sys in list(result.systems_metric_results.values())]
     
@@ -830,7 +830,10 @@ def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:
 
         plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" , "Score") 
         if runtime.exists():
-            st.pyplot(plt)
+            if col:
+                col.pyplot(plt)
+            else:
+                st.pyplot(plt)
             if saving_dir and saving_zip:
                 create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
         elif saving_dir is not None:
@@ -934,3 +937,78 @@ def bias_segments(system_name:str, ref:List[str], output_sys:List[str], gender_r
         return df.sort_index()
     else:
         return None 
+
+def all_identity_terms(system_name:str, gender_sys_seg: Dict[int, List[str]], gender_refs_seg: Dict[int, List[str]],text_groups_ref_per_seg: Dict[int, List[Dict[str,str]]],
+                       text_groups_sys_per_seg: Dict[int, List[Dict[str,str]]], saving_dir:str = None, saving_zip:str=None):
+
+    def gender_terms(text_groups: List[Dict[str,str]]):
+        terms = ""
+        for token in text_groups:
+            terms += token["term"] + ":" + token["gender"] + ", "
+        return terms[:-2]
+
+    filename = system_name.replace(" ","_") + "_all_identity_terms_matched.csv"
+    n = len(gender_refs_seg)
+    bias_segments = list()
+    lines = list()
+    table = list()
+    for i in range(n):
+        terms_ref = gender_terms(text_groups_ref_per_seg[i])
+        terms_sys = gender_terms(text_groups_sys_per_seg[i])
+        bias_segments.append("line " + str(i+1))
+        lines.append(i+1)
+        if (gender_refs_seg[i] != gender_sys_seg[i]):
+            has_bias = "Yes"
+        else:
+            has_bias = "No"
+
+        table.append([has_bias, terms_ref, terms_sys])
+
+    if len(bias_segments) != 0:
+        df = pd.DataFrame(np.array(table), index=lines, columns=["has_bias", "identity term and its gender in reference", "identity term and its gender in output"])
+        
+        if runtime.exists():
+            if saving_zip is not None and saving_dir is not None:
+                create_and_save_table_zip(saving_dir + filename, saving_zip, df)
+        
+        elif saving_dir is not None:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
+            df.to_csv(saving_dir + "/" + filename)
+        return df.sort_index()
+    else:
+        return None 
+
+def table_identity_terms_found(name:str, identity_terms_found_per_seg:Dict[int, List[dict]], saving_dir:str = None,saving_zip:str=None):
+
+    def gender_terms(text_groups: List[Dict[str,str]]):
+        terms = ""
+        for token in text_groups:
+            terms += token["term"] + ":" + token["gender"] + ", "
+        return terms[:-2]
+
+    filename = name.replace(" ","_") + "_all_identity_terms_found.csv"
+    n = len(identity_terms_found_per_seg)
+    segments = list()
+    lines = list()
+    table = list()
+    for i in range(n):
+        terms_ref = gender_terms(identity_terms_found_per_seg[i])
+        segments.append("line " + str(i+1))
+        lines.append(i+1)
+        table.append([terms_ref])
+
+    if len(segments) != 0:
+        df = pd.DataFrame(np.array(table), index=lines, columns=["identity term and its gender"])
+        if runtime.exists():
+            if saving_zip is not None and saving_dir is not None:
+                create_and_save_table_zip(saving_dir + filename, saving_zip, df)
+        elif saving_dir is not None:
+            if not os.path.exists(saving_dir):
+                os.makedirs(saving_dir)
+            df.to_csv(saving_dir + "/" + filename)
+        return df.sort_index()
+    else:
+        return None 
+
+    

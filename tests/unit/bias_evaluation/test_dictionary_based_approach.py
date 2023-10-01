@@ -33,7 +33,7 @@ class TestWithDataset(unittest.TestCase):
 
     def test_bias_evalaution_en(self):
 
-        result = self.gender_bias_evaluation_en.evaluation(self.testset_en, "with dataset")
+        result = self.gender_bias_evaluation_en.evaluation(self.testset_en, "dictionary-based approach")
 
         self.assertGreater(result.time, 0.0)
         self.assertListEqual(result.groups,["neutral", "female", "male"])
@@ -52,7 +52,7 @@ class TestWithDataset(unittest.TestCase):
 
     def test_bias_evalaution_pt(self):
 
-        result = self.gender_bias_evaluation_pt.evaluation(self.testset_pt, "with dataset")
+        result = self.gender_bias_evaluation_pt.evaluation(self.testset_pt, "dictionary-based approach")
 
         self.assertGreater(result.time, 0.0)
         self.assertListEqual(result.groups,["neutral", "female", "male"])

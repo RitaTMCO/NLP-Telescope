@@ -1,0 +1,25 @@
+[
+    {
+        "ae": "neutral",
+        "à": "female",
+        "ao": "male"
+    },
+    {
+        "aes": "neutral",
+        "às": "female",
+        "aos": "male"
+    },
+    {
+        "pele": "neutral",
+        "pelê": "neutral",
+        "pela": "female",
+        "pelo": "male"
+    },
+    {
+        "peles": "neutral",
+        "pelês": "neutral",
+        "pelas": "female",
+        "pelos": "male"
+    }
+    
+]

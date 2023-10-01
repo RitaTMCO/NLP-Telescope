@@ -224,7 +224,7 @@ class TestCompareCli(unittest.TestCase):
             "-b",
             "Gender",
             "--option_gender_bias_evaluation",
-            "with library"
+            "linguistic approach"
         ]
         result = self.runner.invoke(n_compare_nlg, args, catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
@@ -299,7 +299,7 @@ class TestCompareCli(unittest.TestCase):
             "-b",
             "Gender",
             "--option_gender_bias_evaluation",
-            "with dataset",
+            "dictionary-based approach",
             "-u",
             "social-choice-theory",
             "--output_folder",
@@ -316,14 +316,16 @@ class TestCompareCli(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_SYSTEM_LEVEL_SCORES)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/metrics_results/" + FILENAME_ANALYSIS_METRICS_STACKED)))
             self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/Sys B-Sys C" + FILENAME_BOOTSTRAP)))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_evaluations_information.csv")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/Accuracy" + FILENAME_ANALYSIS_LABELS)))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/F1-score" + FILENAME_ANALYSIS_LABELS)))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-correct-labels-of-each-system.png")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-incorrect-labels-of-each-system.png")))
-            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_results.csv")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/bias_evaluations_information.csv")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/Accuracy" + FILENAME_ANALYSIS_LABELS)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/Accuracy_groups_bias_metrics.csv")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/F1-score" + FILENAME_ANALYSIS_LABELS)))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/F1-score_groups_bias_metrics.csv")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/number-of-correct-labels-of-each-system.png")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/number-of-incorrect-labels-of-each-system.png")))
+            self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/bias_results.csv")))
             for sys_name in ["Sys A", "Sys B", "Sys C"]:
-                dir = ref.replace("/","_")  + "/bias_results/gender/with dataset/" + sys_name
+                dir = ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/" + sys_name
                 self.assertTrue(
                     os.path.isfile(os.path.join(
                         DATA_PATH, dir + "/confusion-matrix-" + sys_name.replace(" ","_") + ".png"))
@@ -347,16 +349,18 @@ class TestCompareCli(unittest.TestCase):
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/COMET" + FILENAME_ERROR_TYPE_ANALYSIS)
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_SYSTEM_LEVEL_SCORES)
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/metrics_results/" + FILENAME_ANALYSIS_METRICS_STACKED)
-            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_evaluations_information.csv")
-            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/Accuracy" + FILENAME_ANALYSIS_LABELS)
-            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/F1-score" + FILENAME_ANALYSIS_LABELS)
-            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-correct-labels-of-each-system.png")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/number-of-incorrect-labels-of-each-system.png")
-            os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/with dataset/bias_results.csv")
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/bias_evaluations_information.csv")
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/Accuracy" + FILENAME_ANALYSIS_LABELS)
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/F1-score" + FILENAME_ANALYSIS_LABELS)
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/Accuracy_groups_bias_metrics.csv")
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/F1-score_groups_bias_metrics.csv")
+            os.remove(DATA_PATH + "/" +ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/number-of-correct-labels-of-each-system.png")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/number-of-incorrect-labels-of-each-system.png")
+            os.remove(DATA_PATH + "/" + ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/bias_results.csv")
             os.remove(DATA_PATH + "/" + ref.replace("/","_") +  "/Sys B-Sys C" + FILENAME_BOOTSTRAP)
             os.remove(DATA_PATH + "/" + ref.replace("/","_") + "/social-choice-theory_ranks_systems.csv")
             for sys_name in ["Sys A", "Sys B", "Sys C"]:
-                dir = ref.replace("/","_")  + "/bias_results/gender/with dataset/" + sys_name
+                dir = ref.replace("/","_")  + "/bias_results/gender/dictionary-based approach/" + sys_name
                 os.remove(DATA_PATH + "/" + dir + "/confusion-matrix-" + sys_name.replace(" ","_") + ".png")
                 os.remove(DATA_PATH + "/" + dir +  "/" + FILENAME_RATES)
                 os.remove(DATA_PATH + "/" + dir + "/" + sys_name.replace(" ","_") + "-bias-segments.csv")
@@ -364,7 +368,7 @@ class TestCompareCli(unittest.TestCase):
                     os.remove(DATA_PATH + "/" + dir + "/singular_confusion_matrix/" + sys_name.replace(" ","_")  + "-label-" + group + ".png")
                 os.rmdir(DATA_PATH + "/" + dir + "/singular_confusion_matrix/")
                 os.rmdir(DATA_PATH + "/" + dir + "/")
-            os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/bias_results/gender/with dataset/")
+            os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/bias_results/gender/dictionary-based approach/")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/bias_results/gender/")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/bias_results/")
             os.rmdir(DATA_PATH + "/" + ref.replace("/","_") + "/metrics_results/")

@@ -1,5 +1,6 @@
 import abc
 import json
+import os
 from typing import List,Dict
 from telescope.bias_evaluation.bias_result import MultipleBiasResults
 from telescope.testset import MultipleTestset
@@ -20,9 +21,11 @@ class BiasEvaluation(metaclass=abc.ABCMeta):
             self.language = language 
 
     def open_and_read_identify_terms(self, filename:str) -> List[Dict[str,str]]:
-        with open(filename) as file:
-            identify_terms = json.load(file)
-        return identify_terms
+        if os.path.isfile(filename):
+            with open(filename) as file:
+                identify_terms = json.load(file)
+            return identify_terms
+        return []
 
     @classmethod
     def language_support(cls, language: str):

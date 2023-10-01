@@ -5,7 +5,7 @@ import unittest
 from telescope.testset import MultipleTestset
 from telescope.bias_evaluation.gender_bias_evaluation import GenderBiasEvaluation
 
-class TestWithLibrary(unittest.TestCase):
+class TestWithDatasetsAndLibrary(unittest.TestCase):
 
     testset_en = MultipleTestset(
         src=["Ele é um médico."], 
@@ -31,9 +31,9 @@ class TestWithLibrary(unittest.TestCase):
     gender_bias_evaluation_pt = GenderBiasEvaluation("pt")
 
 
-    def test_bias_evaluation_en(self):
+    def test_bias_evalaution_en(self):
 
-        result = self.gender_bias_evaluation_en.evaluation(self.testset_en, "with library")
+        result = self.gender_bias_evaluation_en.evaluation(self.testset_en, "hybrid approach")
 
         self.assertGreater(result.time, 0.0)
         self.assertListEqual(result.groups,["neutral", "female", "male"])
@@ -46,22 +46,23 @@ class TestWithLibrary(unittest.TestCase):
         self.assertEqual(len(result.systems_bias_results), 1)
         self.assertEqual(result.systems_bias_results["Sys 1"].groups_system, ["female"])
         self.assertEqual(result.systems_bias_results["Sys 1"].groups_sys_per_seg, {0:["female"]})
-        self.assertDictEqual(result.systems_bias_results["Sys 1"].text_groups_sys_per_seg,{0:[{'gender': 'female', 'term': 'she'}]})
+        self.assertDictEqual(result.systems_bias_results["Sys 1"].text_groups_sys_per_seg, {0:[{'gender': 'female', 'term': 'she'}]})
 
 
-    def test_bias_evaluation_pt(self):
+    def test_bias_evalaution_pt(self):
 
-        result = self.gender_bias_evaluation_pt.evaluation(self.testset_pt, "with library")
+        result = self.gender_bias_evaluation_pt.evaluation(self.testset_pt, "hybrid approach")
 
         self.assertGreater(result.time, 0.0)
         self.assertListEqual(result.groups,["neutral", "female", "male"])
 
         self.assertListEqual(result.ref, self.testset_pt.ref)
-        self.assertListEqual(result.groups_ref, ["male","male"])
-        self.assertDictEqual(result.groups_ref_per_seg, {0:["male","male"]})
-        self.assertDictEqual(result.text_groups_ref_per_seg,{0:[{'gender': 'male', 'term': 'ele'}, {'gender': 'male', 'term': 'um'}]})
+        self.assertListEqual(result.groups_ref, ["male"])
+        self.assertDictEqual(result.groups_ref_per_seg, {0:["male"]})
+        self.assertDictEqual(result.text_groups_ref_per_seg,{0:[{'gender': 'male', 'term': 'ele'}]})
 
         self.assertEqual(len(result.systems_bias_results), 1)
-        self.assertEqual(result.systems_bias_results["Sys 1"].groups_system, ["female","female"])
-        self.assertEqual(result.systems_bias_results["Sys 1"].groups_sys_per_seg, {0:["female","female"]})
-        self.assertDictEqual(result.systems_bias_results["Sys 1"].text_groups_sys_per_seg,{0:[{'gender': 'female', 'term': 'ela'}, {'gender': 'female', 'term': 'uma'}]})
+        self.assertEqual(result.systems_bias_results["Sys 1"].groups_system, ["female"])
+        self.assertEqual(result.systems_bias_results["Sys 1"].groups_sys_per_seg, {0:["female"]})
+        self.assertDictEqual(result.systems_bias_results["Sys 1"].text_groups_sys_per_seg,
+                             {0:[{'gender': 'female', 'term': 'ela'}]})
