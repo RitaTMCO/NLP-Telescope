@@ -1,0 +1,8 @@
+,dictionary-based approach,linguistic approach,hybrid approach
+Number of golden identity terms,330,330,330
+Number of identity terms found in tool,889,430,430
+TP,287,248,248
+FP,602,182,182
+FN,43,82,82
+Correct gender in TP,255,170,216
+Number of matchs,884,369,405

@@ -361,6 +361,7 @@ class GenderBiasEvaluation(BiasEvaluation):
     
     def is_match_with_combination(self,term_ref:dict,term_sys:dict):
         return (term_ref["token"].dep_ == term_sys["token"].dep_ and 
+                term_ref["token"].pos_ == term_sys["token"].pos_ and 
                 ((self.is_match_with_dataset(term_ref,term_sys) and term_ref["gender_set"] and term_sys["gender_set"]) or 
                  (self.is_match_with_library(term_ref,term_sys) and not term_ref["gender_set"] and not term_sys["gender_set"])))
     

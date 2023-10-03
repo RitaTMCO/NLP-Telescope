@@ -117,4 +117,4 @@ O incorporador trocou serviços com ê padeire porque ele não possuía cozinha.
 Ê editore entrevistou o vendedor e escreveu um artigo sobre sua empresa.            [editore:neutral,vendedor:male]
 Ê advogado ligou para a alfaiate e marcou uma consulta com ela.         [advogade:neutral,alfaiate:female,ela:female]     
 Ê designer parou o motorista e pediu que ele tomasse cuidado no Expo Location.          [designer:neutral, motorista:male,ele:male]
-Ê zeladore fez amizade com a professora e contou-lhe sobre as fofocas dos funcionários.         [zeladore:neutral.professora:female,funcionários:male]
+Ê zeladore fez amizade com a professora e contou-lhe sobre as fofocas dos funcionários.         [zeladore:neutral,professora:female,funcionários:male]
