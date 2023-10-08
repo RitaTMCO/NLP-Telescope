@@ -36,6 +36,7 @@ class TestCompareCli(unittest.TestCase):
     sys_names_file = os.path.join(DATA_PATH, "systems_names.txt")
     labels = os.path.join(DATA_PATH, "class/all_labels.txt")
     sys_names = ["Sys A", "Sys B", "Sys C"]
+    language = "en"
 
     def setUp(self):
         self.runner = CliRunner()
@@ -53,6 +54,8 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
+            self.language,
+            "--labels",
             self.labels,
             "-m",
             "F1-score",
@@ -75,6 +78,8 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
+            self.language,
+            "--labels",
             self.labels,
             "-m",
             "F1-score",
@@ -97,11 +102,13 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
+            self.language,
+            "--labels",
             self.labels,
             "-m",
             "F1-score",
             "-f",
-            "duplicates"
+            "remove-duplicates"
         ]
         result = self.runner.invoke(n_compare_classification, args, catch_exceptions=False)
         self.assertIn("Filters Successfully applied. Corpus reduced in", result.stdout)
@@ -121,13 +128,15 @@ class TestCompareCli(unittest.TestCase):
             "-r",
             self.ref,
             "-l",
+            self.language,
+            "--labels",
             self.labels,
             "-m",
             "F1-score",
             "--seg_metric",
             "Accuracy",
             "-f",
-            "duplicates",
+            "remove-duplicates",
             "--systems_names",
             self.sys_names_file,
             "--output_folder",
@@ -140,6 +149,8 @@ class TestCompareCli(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/" + FILENAME_SYSTEM_LEVEL_SCORES)))
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/" + FILENAME_ANALYSIS_METRICS_STACKED)))
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Accuracy" + FILENAME_ANALYSIS_LABELS)))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, self.ref.replace("/","_")  + "/Accuracy_results-by-label-table.csv")))
+
         for sys_name in self.sys_names:
             if sys_name != "Sys C":
                 self.assertTrue(
@@ -180,4 +191,5 @@ class TestCompareCli(unittest.TestCase):
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/" + FILENAME_SYSTEM_LEVEL_SCORES)
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_")  + "/" + FILENAME_ANALYSIS_METRICS_STACKED)
         os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/Accuracy" + FILENAME_ANALYSIS_LABELS)
+        os.remove(DATA_PATH + "/" + self.ref.replace("/","_") + "/Accuracy_results-by-label-table.csv")
         os.rmdir(DATA_PATH + "/" + self.ref.replace("/","_"))

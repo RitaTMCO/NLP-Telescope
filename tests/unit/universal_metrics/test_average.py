@@ -23,6 +23,7 @@ class TestAverage(unittest.TestCase):
             "Sys 2": ["a", "k", "c"],
             "Sys 3": ["a", "p", "c"]
         },
+        task= "task",
         filenames = ["src.txt","ref.txt","sys1.txt","sys2.txt","sys3.txt"]
     )
 

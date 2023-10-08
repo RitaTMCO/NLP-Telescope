@@ -20,7 +20,7 @@ from telescope.testset import Testset
 
 
 class DuplicatesFilter(Filter):
-    name = "duplicates"
+    name = "remove-duplicates"
 
     def __init__(self, testset: Testset, *args):
         self.testset = testset

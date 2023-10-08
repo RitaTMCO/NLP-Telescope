@@ -210,7 +210,7 @@ if __name__ == "__main__":
         print(Fore.CYAN + "Identity Terms Found Table")
         print(Fore.WHITE)
         p_fp_fn_gender_pd = pd.DataFrame(tp_fp_fn_gender)
-        p_fp_fn_gender_pd.index = ["Number of golden identity terms", "Number of identity terms found in tool", "TP", "FP", "FN", "Correct gender in TP", "Number of matchs"]
+        p_fp_fn_gender_pd.index = ["Number of golden identity terms", "Number of identity terms found in tool", "TP", "FP", "FN", "Correct gender in TP", "Number of matches"]
         print(p_fp_fn_gender_pd)
         print("\n")
         p_fp_fn_gender_pd.to_csv("data_evaluation/" + s.replace(" ","-") + "_identity_terms_found.csv")

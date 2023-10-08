@@ -31,19 +31,24 @@ class LengthFilter(Filter):
     def apply_filter(self) -> List[int]:
         dataframe = pd.DataFrame()
 
-        if len(self.testset.ref) != 1:
-            dataframe["ref"] = self.testset.ref
+        if self.testset.task == "classification":
+            text = self.testset.src
         else:
-            dataframe["ref"] = self.testset.ref + [""]
+            text = self.testset.ref
 
-        dataframe["lengths"] = [len(ref) for ref in list(dataframe["ref"])]
+        if len(text) != 1:
+            dataframe["text"] = text
+        else:
+            dataframe["text"] = text + [""]
+
+        dataframe["lengths"] = [len(text) for text in list(dataframe["text"])]
         dataframe["bins"], retbins = pd.qcut(
             dataframe["lengths"].rank(method="first"),
             len(range(0, 100, 5)),
             labels=range(0, 100, 5),
             retbins=True,
         )
-        if len(self.testset.ref) != 1:
+        if len(text) != 1:
             length_buckets = list(dataframe["bins"])
         else:
             length_buckets = [list(dataframe["bins"])[0]]

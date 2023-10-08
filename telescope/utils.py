@@ -27,7 +27,7 @@ FILENAME_DISTRIBUTION_SEGMENT  = "multiple-scores-distribution.html"
 FILENAME_SEGMENT_COMPARISON = "_multiple-segment-comparison.html"
 FILENAME_BOOTSTRAP = "_bootstrap_results.csv"
 FILENAME_RATES = "rates.csv"
-FILENAME_ANALYSIS_LABELS = "-analysis-labels-bucket.png"
+FILENAME_ANALYSIS_LABELS = "_results-by-label-plot.png"
 
 
 def telescope_cache_folder():

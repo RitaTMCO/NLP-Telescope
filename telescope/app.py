@@ -40,11 +40,21 @@ st.sidebar.image("data/nlp-telescope-logo.png")
 def change_error_analysis():
     st.session_state["first_time_error"] = 1
 
+def go_nlp():
+    st.session_state["go_nlp"] = True
+def stop_nlp():
+    st.session_state["go_nlp"] = False
+
+if "go_nlp" not in st.session_state:
+    st.session_state["go_nlp"] = False
+
+
+
 # --------------------  APP Settings --------------------
 
 #---------- |NLP task| ------------
 task = st.sidebar.selectbox(
-    "Select the natural language processing task:",
+    "Select a natural language processing task:",
     list(t.name for t in available_tasks.values()),
     index=0,
     on_change = change_error_analysis
@@ -53,17 +63,25 @@ task = st.sidebar.selectbox(
 #---------- |Metrics| ------------
 available_metrics = {m.name: m for m in available_tasks[task].metrics}
 
+if task != "classification":
+    segment_metrics_text = "Select the segment-level metric you wish to run:"
+    system_metrics_text = "Select the system-level metric you wish to run:"
+else:
+    segment_metrics_text = "Select the metrics by label:"
+    system_metrics_text = "Select the general metric:"
+
 metrics = st.sidebar.multiselect(
-    "Select the system-level metric you wish to run:",
+    system_metrics_text,
     list(available_metrics.keys()),
     default=list(available_metrics.keys())[0],
 )
+
 if available_tasks[task].universal_metrics:
     rank = st.sidebar.checkbox('Rankings of Models')
     available_universal_metrics = available_tasks[task].universal_metrics
 
 metric = st.sidebar.selectbox(
-    "Select the segment-level metric you wish to run:",
+    segment_metrics_text,
     list(m.name for m in available_metrics.values() if m.segment_level),
     index=0,
     on_change = change_error_analysis
@@ -88,7 +106,7 @@ if "length" in available_filters:
         help=(
             "In order to isolate segments according to caracter length "
             "we will create a sequence length distribution that you can constraint "
-            "through it's density funcion. This slider is used to specify the confidence interval P(a < X < b)"
+            "through its density funcion. This slider is used to specify the confidence interval P(a < X < b)"
         ),
     )
     if length_interval != (0, 100) and "length" not in filters:
@@ -197,14 +215,11 @@ def run_metric(testset, metric, ref_filename, language, labels):
 def run_all_metrics(collection, metrics, filters):
     refs_names = collection.refs_names
     labels = [" "]
-    target_language = "X"
-    source_language = "X"
+    source_language = collection.source_language
+    target_language = collection.target_language
 
     if collection.task == "classification":
         labels = collection.labels
-    else:
-        source_language = collection.source_language
-        target_language = collection.target_language
 
     if filters:
         for ref_name in refs_names:
@@ -307,173 +322,186 @@ st.title("Welcome to NLP-Telescope! :telescope:")
 
 collection_testsets = available_tasks[task].input_web_interface()
 
-if collection_testsets:
-    if metric not in metrics:
-        metrics = [
-            metric,
-        ] + metrics
+if not st.session_state["success_upload"]:
+    st.session_state["go_nlp"] = False
 
-    if available_tasks[task].bias_evaluations and bias_evaluations:
-        bias_results_per_evaluation = run_all_bias_evalutaions(collection_testsets)
-    metrics_results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
+_,go_col = st.columns([0.45,0.55])
+go = go_col.button("RUN!", on_click=go_nlp)
 
+if collection_testsets and st.session_state["success_upload"]:
+    if st.session_state["go_nlp"]:
+        if metric not in metrics:
+            metrics = [
+                metric,
+            ] + metrics
 
-    # ----------------------------| Informations About The Systems |-------------------------------
-
-    st.write("---")
-    st.title("Informations About The Systems")
-
-    st.header(":blue[Rename Systems:]")
-    system_filename = st.selectbox(
-        "**Select the System Filename**",
-        list(collection_testsets.systems_ids.keys()),
-        index=0)
-    sys_id = collection_testsets.systems_ids[system_filename]
-    system_name = st.text_input('Enter the system name')
-    if (collection_testsets.systems_names[sys_id] != system_name and collection_testsets.already_exists(system_name)):
-        st.warning("This system name already exists")
-    elif system_name:
-        st.session_state[task + "_" + sys_id + "_rename"] = system_name
-        collection_testsets.systems_names[sys_id] = st.session_state[task + "_" + sys_id + "_rename"]
-
-    st.header(":blue[Systems Names:]" )
-    st.text(collection_testsets.display_systems())
+        
+        if available_tasks[task].bias_evaluations and bias_evaluations:
+            bias_results_per_evaluation = run_all_bias_evalutaions(collection_testsets)
+        metrics_results_per_ref = run_all_metrics(collection_testsets, metrics, filters)
 
 
-    # ----------------------------| Select the Reference |-----------------------------------
+        # ----------------------------| Informations About The Systems |-------------------------------
 
-    st.write("---")
-    st.title("Reference")
-    ref_filename = st.selectbox(
-        "**:blue[Select the Reference:]**",
-        collection_testsets.refs_names,
-        index=0,
-    )
-    st.text("Reference: " + ref_filename)
-
-    path = collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_filename + "/" 
-
-    # ----------------------------| Ranking Models |-------------------------------
-
-    if available_tasks[task].universal_metrics and rank and len(collection_testsets.systems_names) > 1 and metrics_results_per_ref:
         st.write("---")
-        st.title("Models Rankings")
-        st.text("\n\n\n")
-        
+        st.title("Informations About The Systems")
 
-        universal_results = run_all_universal_metrics(collection_testsets,metrics_results_per_ref)
-        universal = None
-        system_a_name = ""
-        system_b_name = ""
-        universal_metric = st.selectbox("**:blue[Select Univeral Metric:]**", list(available_universal_metrics.keys()))
-        if universal_metric == "pairwise-comparison":
-            left, right = st.columns(2)
-            system_a_name = left.selectbox(
-                "Select the system a:",
-                collection_testsets.names_of_systems(),
-                index=0,
-                key = "pairwise_1"
-            )
-            system_b_name = right.selectbox(
-                "Select the system b:",
-                collection_testsets.names_of_systems(),
-                index=1,
-                key = "pairwise_2"
-            )
+        st.header(":blue[Rename Systems:]")
+        system_filename = st.selectbox(
+            "**Select the System Filename**",
+            list(collection_testsets.systems_ids.keys()),
+            index=0)
+        sys_id = collection_testsets.systems_ids[system_filename]
+        system_name = st.text_input('Enter the system name')
+        if (collection_testsets.systems_names[sys_id] != system_name and collection_testsets.already_exists(system_name)):
+            st.warning("This system name already exists")
+        elif system_name:
+            st.session_state[task + "_" + sys_id + "_rename"] = system_name
+            collection_testsets.systems_names[sys_id] = st.session_state[task + "_" + sys_id + "_rename"]
 
-            if system_a_name == system_b_name:
-                st.warning("The system x cannot be the same as system y")
-            else:
-                system_a_id = collection_testsets.system_name_id(system_a_name)
-                system_b_id = collection_testsets.system_name_id(system_b_name)
-                universal = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename], 
-                                                         [system_a_id,system_b_id])
-        else:
-            universal = universal_results[universal_metric][ref_filename]
+        st.header(":blue[Systems Names:]" )
+        st.text(collection_testsets.display_systems())
 
-        if universal:
-            universal.plots_web_interface(collection_testsets,ref_filename,system_a_name,system_b_name)
-        
-        _,col_rank_u,_ = st.columns(3)
 
-        rank_data_buf = io.BytesIO()
-        with zipfile.ZipFile(rank_data_buf, "w") as rank_zip:
-            for u_metric in list(available_universal_metrics.keys()):
-                if u_metric != "pairwise-comparison":
-                    universal_results[u_metric][ref_filename].dataframa_to_to_csv(collection_testsets,ref_filename, saving_dir = path, saving_zip=rank_zip)
-      
-        download_data_zip(
-                    label="Export all universal metrics (not included pairwise comparison)",
-                    data=rank_data_buf.getvalue(),
-                    filename="ranks-systems.zip",
-                    key = "ranks_systems_download"
+        # ----------------------------| Select the Reference |-----------------------------------
+
+        st.write("---")
+        st.title("Reference")
+        ref_filename = st.selectbox(
+            "**:blue[Select the Reference:]**",
+            collection_testsets.refs_names,
+            index=0,
         )
-        rank_data_buf.close()
+        st.text("Reference: " + ref_filename)
 
+        path = collection_testsets.task + "/" + collection_testsets.src_name + "/" + ref_filename + "/" 
 
-    # ----------------------------| NLP Evaluation and Plots |-------------------------------
+        # ----------------------------| Ranking Models |-------------------------------
 
-    if metrics_results_per_ref:
-        st.write("---")
-        st.title("NLP Evaluation")
-        st.text("\n\n\n")
-
-        metrics_results = metrics_results_per_ref[ref_filename] 
-
-        if len(metrics_results) > 0:
-
-            st.header(":blue[System-level analysis:]")
-
-            left,right = st.columns([0.3, 0.7]) 
-            sys_data_buf = io.BytesIO()
-        
-            dataframe = MultipleMetricResults.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
-
-            with zipfile.ZipFile(sys_data_buf, "w") as sys_zip:
-                 system_level_scores_table(dataframe,path,sys_zip,left)
-                 analysis_metrics_stacked_bar_plot(list(metrics_results.values()),collection_testsets.systems_names,saving_dir=path,
-                                                   saving_zip=sys_zip,column=right)
+        if available_tasks[task].universal_metrics and rank and len(collection_testsets.systems_names) > 1 and metrics_results_per_ref:
+            st.write("---")
+            st.title("Models Rankings")
+            st.text("\n\n\n")
             
-        if metric in metrics_results:
-            if available_tasks[task].bootstrap:
-                available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, path, zipfile.ZipFile(sys_data_buf, "a"),
-                                                          metrics, available_metrics, num_samples, sample_ratio)
+
+            universal_results = run_all_universal_metrics(collection_testsets,metrics_results_per_ref)
+            universal = None
+            system_a_name = ""
+            system_b_name = ""
+            universal_metric = st.selectbox("**:blue[Select Univeral Metric:]**", list(available_universal_metrics.keys()))
+            if universal_metric == "pairwise-comparison":
+                left, right = st.columns(2)
+                system_a_name = left.selectbox(
+                    "Select the system a:",
+                    collection_testsets.names_of_systems(),
+                    index=0,
+                    key = "pairwise_1"
+                )
+                system_b_name = right.selectbox(
+                    "Select the system b:",
+                    collection_testsets.names_of_systems(),
+                    index=1,
+                    key = "pairwise_2"
+                )
+
+                if system_a_name == system_b_name:
+                    st.warning("The system x cannot be the same as system y")
+                else:
+                    system_a_id = collection_testsets.system_name_id(system_a_name)
+                    system_b_id = collection_testsets.system_name_id(system_b_name)
+                    universal = run_universal_metric(collection_testsets.testsets[ref_filename], universal_metric, metrics_results_per_ref[ref_filename], 
+                                                            [system_a_id,system_b_id])
             else:
-                available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, path, zipfile.ZipFile(sys_data_buf, "a"))
-        
-        if len(metrics_results) > 0:
-            st.header(":blue[Download:]")
-            st.markdown("Download all available NLP Evaluation plots and tables in the browser.")
-            _, download_sys_analysis_col, _ = st.columns(3)
-            download_data_zip(
-                    label="Download NLP Evaluation",
-                    data=sys_data_buf.getvalue(),
-                    filename="nlp-evaluation.zip",
-                    column=download_sys_analysis_col,
-                    key = "nlp_evaluation_download"
-                )
-            sys_data_buf.close()
-    
-    # ----------------------------| Bias Evaluation |-------------------------------
+                universal = universal_results[universal_metric][ref_filename]
 
-    if available_tasks[task].bias_evaluations and bias_evaluations:
-        st.write("---")
-        st.title("Bias Evaluation")
-        for evaluation in bias_evaluations:
-            st.header(":blue[" + evaluation + " Bias Evaluation:]")
-            multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
-            bias_data_buf = io.BytesIO()
-            with zipfile.ZipFile(bias_data_buf, "w") as bias_zip:
-                multiple_bias_results.plots_bias_results_web_interface(collection_testsets,ref_filename,path,bias_zip,option_bias_evaluation)
+            if universal:
+                universal.plots_web_interface(collection_testsets,ref_filename,system_a_name,system_b_name)
             
-            st.subheader("Download")
-            st.markdown("Download all available " + evaluation + " Bias Evaluation plots and tables in the browser.")
-            _, download_bias_analysis_col, _ = st.columns(3)
+            _,col_rank_u,_ = st.columns(3)
+
+            rank_data_buf = io.BytesIO()
+            with zipfile.ZipFile(rank_data_buf, "w") as rank_zip:
+                for u_metric in list(available_universal_metrics.keys()):
+                    if u_metric != "pairwise-comparison":
+                        universal_results[u_metric][ref_filename].dataframa_to_to_csv(collection_testsets,ref_filename, saving_dir = path, saving_zip=rank_zip)
+        
             download_data_zip(
-                    label="Download " + evaluation + " Bias Evaluation",
-                    data=bias_data_buf.getvalue(),
-                    filename= evaluation.lower() + "-bias-evaluation.zip",
-                    column=download_bias_analysis_col,
-                    key = evaluation.lower() + "_bias_evaluation_download"
-                )
-            bias_data_buf.close()
+                        label="Export all universal metrics (not included pairwise comparison)",
+                        data=rank_data_buf.getvalue(),
+                        filename="ranks-systems.zip",
+                        key = "ranks_systems_download"
+            )
+            rank_data_buf.close()
+
+
+        # ----------------------------| NLP Evaluation and Plots |-------------------------------
+
+        if metrics_results_per_ref:
+            st.write("---")
+            st.title("NLP Evaluation")
+            st.text("\n\n\n")
+
+            metrics_results = metrics_results_per_ref[ref_filename] 
+
+            if len(metrics_results) > 0:
+                
+                if task != "classification":
+                    st.header(":blue[System-level analysis:]")
+                else:
+                    st.header(":blue[General results:]")
+
+                sys_data_buf = io.BytesIO()
+            
+                dataframe = MultipleMetricResults.results_to_dataframe(list(metrics_results.values()),collection_testsets.systems_names)
+
+                with zipfile.ZipFile(sys_data_buf, "w") as sys_zip:
+                    st.subheader("Table")
+                    system_level_scores_table(dataframe,path,sys_zip)
+                    st.subheader("Stacked bar plot")
+                    analysis_metrics_stacked_bar_plot(list(metrics_results.values()),collection_testsets.systems_names,saving_dir=path,saving_zip=sys_zip)
+                
+            if metric in metrics_results:
+                if available_tasks[task].bootstrap:
+                    available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, path, zipfile.ZipFile(sys_data_buf, "a"),
+                                                            metrics, available_metrics, filters, num_samples, sample_ratio)
+                else:
+                    available_tasks[task].plots_web_interface(metric, metrics_results, collection_testsets, ref_filename, path, zipfile.ZipFile(sys_data_buf, "a"),
+                                                            filters = filters)
+            
+            if len(metrics_results) > 0:
+                st.header(":blue[Download:]")
+                st.markdown("Download all available NLP Evaluation plots and tables in the browser.")
+                _, download_sys_analysis_col, _ = st.columns(3)
+                download_data_zip(
+                        label="Download NLP Evaluation",
+                        data=sys_data_buf.getvalue(),
+                        filename="nlp-evaluation.zip",
+                        column=download_sys_analysis_col,
+                        key = "nlp_evaluation_download"
+                    )
+                sys_data_buf.close()
+        
+        # ----------------------------| Bias Evaluation |-------------------------------
+
+        if available_tasks[task].bias_evaluations and bias_evaluations:
+            st.write("---")
+            st.title("Bias Evaluation")
+            for evaluation in bias_evaluations:
+                st.header(":blue[" + evaluation + " Bias Evaluation:]")
+                multiple_bias_results = bias_results_per_evaluation[evaluation][ref_filename]
+                bias_data_buf = io.BytesIO()
+                with zipfile.ZipFile(bias_data_buf, "w") as bias_zip:
+                    multiple_bias_results.plots_bias_results_web_interface(collection_testsets,ref_filename,path,bias_zip,option_bias_evaluation)
+                
+                st.subheader("Download")
+                st.markdown("Download all available " + evaluation + " Bias Evaluation plots and tables in the browser.")
+                _, download_bias_analysis_col, _ = st.columns(3)
+                download_data_zip(
+                        label="Download " + evaluation + " Bias Evaluation",
+                        data=bias_data_buf.getvalue(),
+                        filename= evaluation.lower() + "-bias-evaluation.zip",
+                        column=download_bias_analysis_col,
+                        key = evaluation.lower() + "_bias_evaluation_download"
+                    )
+                bias_data_buf.close()
+    st.session_state["go_nlp"] = False

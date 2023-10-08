@@ -82,6 +82,7 @@ class TestPlots(unittest.TestCase):
             "Sys 2": ["a", "k", "c"],
             "Sys 3": ["a", "p", "c"]
         },
+        task = "task",
         filenames = ["src.txt","ref.txt","sys1.txt","sys2.txt","sys3.txt"]
     )
 
@@ -184,6 +185,7 @@ class TestPlots(unittest.TestCase):
             "Sys 2": ["a", "b", "c"],
             "Sys 3": ["a", "p", "c"]
         },
+        task="task",
         filenames = ["src.txt","ref.txt","sys1.txt","sys2.txt","sys3.txt"],
     )
 
@@ -233,6 +235,7 @@ class TestPlots(unittest.TestCase):
         os.remove(DATA_PATH + "/Sys_C-label-b.png")
         os.remove(DATA_PATH + "/Sys_A-label-c.png")
         os.remove(DATA_PATH + "/mock" + FILENAME_ANALYSIS_LABELS)
+        os.remove(DATA_PATH + "/mock_results-by-label-table.csv")
         os.remove(DATA_PATH + "/Sys_A-incorrect-examples.csv")
         os.remove(DATA_PATH + "/number-of-correct-labels-of-each-system.png")
         os.remove(DATA_PATH + "/number-of-incorrect-labels-of-each-system.png")
@@ -322,6 +325,7 @@ class TestPlots(unittest.TestCase):
     def test_analysis_labels(self):
         analysis_labels(self.multiple_result_class, list(self.systems_names.values()), self.labels, DATA_PATH)
         self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "mock" + FILENAME_ANALYSIS_LABELS)))
+        self.assertTrue(os.path.isfile(os.path.join(DATA_PATH, "mock_results-by-label-table.csv")))
     
     def test_incorrect_examples(self):
         num = int(len(self.testset_class.ref)/4) + 1

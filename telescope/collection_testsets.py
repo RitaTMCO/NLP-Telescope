@@ -10,12 +10,20 @@ class CollectionTestsets:
 
     task = "nlp"
     title = "NLP"
-    type_of_source = "Source"
-    type_of_references = "References"
-    type_of_output = "Systems Outputs"
+    type_of_source = "source"
+    type_of_references = "reference(s)"
+    type_of_output = "model(s) output"
     message_of_success = "Source, References and Outputs were successfully uploaded!"
+    message_language = "Choose the language of the files (e.g. 'en')"
     last_sys_id = 1
     last_ref_id = 1
+    all_languages = ["X", "pt", "ar", "zh", "nl", "en", "fr", "de", "ru", "uk", "cs"]
+    all_language_pairs = []
+    for l1 in all_languages:
+        for l2 in all_languages:
+            if l1 != l2 or (l1==l2 and l1=="X"):
+                all_language_pairs.append(l1 + "-" + l2)
+
 
     def __init__(
         self,
@@ -26,6 +34,7 @@ class CollectionTestsets:
         systems_names: Dict[str, str], #name of each system. {sys_id:name} 
         filenames: List[str], # all filenames
         testsets: Dict[str, Testset], # set of testsets. Each testset refers to one reference. {reference_filename:testset}
+        language_pair: str,
     ) -> None:
         self.src_name = src_name
         self.refs_names = refs_names
@@ -34,6 +43,15 @@ class CollectionTestsets:
         self.systems_names = systems_names
         self.filenames = filenames
         self.testsets = testsets
+        self.language_pair = language_pair.lower()
+
+    @property
+    def source_language(self):
+        return self.language_pair.split("-")[0]
+
+    @property
+    def target_language(self):
+        return self.language_pair.split("-")[1]
     
     @staticmethod
     def hash_func(collection):
@@ -85,22 +103,22 @@ class CollectionTestsets:
     
 
     @staticmethod
-    def create_testsets(files:list) -> Dict[str, Testset]:
+    def create_testsets(files:list, task:str) -> Dict[str, Testset]:
         source_file, sources, _, references, refs_ids, _, systems_ids, _, outputs = files
         testsets = {}
         for ref_filename, ref in references.items():
             filenames = [source_file.name] + [ref_filename] + list(systems_ids.keys())
-            testsets[ref_filename] = MultipleTestset(sources, ref, refs_ids[ref_filename], outputs, filenames)
+            testsets[ref_filename] = MultipleTestset(sources, ref, refs_ids[ref_filename], outputs, task, filenames)
         return testsets
     
     @classmethod
     def upload_files(cls) -> list:
         st.subheader("Upload Files for :blue[" + cls.title + "] analysis:")
         
-        source_file = st.file_uploader("Upload **one** file with the " + cls.type_of_source)
+        source_file = st.file_uploader("Upload the **" + cls.type_of_source + "**")
         sources = read_lines(source_file)
 
-        ref_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_references, accept_multiple_files=True)
+        ref_files = st.file_uploader("Upload the **" + cls.type_of_references + "**", accept_multiple_files=True)
         references, refs_ids = {}, {}
         for ref_file in ref_files:
             if ref_file.name not in references:
@@ -109,7 +127,7 @@ class CollectionTestsets:
                 references[ref_file.name] = data
                 refs_ids[ref_file.name] = ref_id
 
-        outputs_files = st.file_uploader("Upload **one** or **more** files with the " + cls.type_of_output, accept_multiple_files=True)
+        outputs_files = st.file_uploader("Upload the **" + cls.type_of_output + "**", accept_multiple_files=True)
         systems_ids, systems_names, outputs = {}, {}, {}
         for output_file in outputs_files:
             if output_file.name not in systems_ids:
@@ -123,6 +141,19 @@ class CollectionTestsets:
                 outputs[sys_id] = output
 
         return source_file,sources,ref_files,references,refs_ids,outputs_files,systems_ids,systems_names,outputs
+
+    @classmethod
+    def upload_language(cls) -> str:
+        language_pair = ""
+        language  = st.selectbox(
+            cls.message_language + ":",
+            cls.all_languages,
+            index=0,
+            help=("If the language is indifferent and BERTScore metric is not used, then select X.")
+        )
+        if language != "":
+            language_pair = language + "-" + language
+        return language_pair
     
     @classmethod
     def upload_names(cls, systems_names:Dict[str,str]) -> list:
@@ -167,7 +198,7 @@ class CollectionTestsets:
 
     @classmethod
     def read_data_cli(cls, source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str="", labels_file:click.File=None): 
+                      language, labels_file:click.File=None): 
     
         systems_ids, systems_names, outputs = {}, {}, {}
         
@@ -211,17 +242,23 @@ class CollectionTestsets:
 
         src = [l.strip() for l in source.readlines()]
 
+        labels = []
         if labels_file:
-            extra_info = [l.strip() for l in labels_file.readlines()]
+            labels = [l.strip() for l in labels_file.readlines()]
 
         cls.validate_files(src,references,systems_names,outputs)
 
         files = [source,src,reference,references,refs_ids,systems_output,systems_ids,systems_names,outputs] 
 
-        testsets = cls.create_testsets(files)
+        testsets = cls.create_testsets(files,cls.task)
 
-        return cls(source.name, references.keys(), refs_ids, systems_ids, systems_names,
-                    [source.name] +  list(references.keys()) + list(systems_ids.values()), testsets, extra_info)
+        if labels:
+            return cls(source.name, references.keys(), refs_ids, systems_ids, systems_names,
+                    [source.name] +  list(references.keys()) + list(systems_ids.values()), testsets, language, labels)
+
+        else:
+            return cls(source.name, references.keys(), refs_ids, systems_ids, systems_names,
+                    [source.name] +  list(references.keys()) + list(systems_ids.values()), testsets, language)
     
 
 class NLGTestsets(CollectionTestsets):
@@ -238,28 +275,8 @@ class NLGTestsets(CollectionTestsets):
         testsets: Dict[str, Testset],
         language_pair: str
     ) -> None:
-        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, testsets)
-        self.language_pair = language_pair.lower()
+        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, testsets,language_pair)
     
-    @property
-    def source_language(self):
-        return self.language_pair.split("-")[0]
-
-    @property
-    def target_language(self):
-        return self.language_pair.split("-")[1]
-    
-    @staticmethod
-    def upload_language() -> str:
-        language_pair = ""
-        language = st.text_input(
-            "Please input the language of the files to analyse (e.g. 'en'):",
-            "", 
-            help=("If the language is indifferent and BERTScore metric is not used, then write X.")
-        )
-        if language != "":
-            language_pair = language + "-" + language
-        return language_pair
     
     @classmethod
     def read_data(cls):
@@ -279,18 +296,24 @@ class NLGTestsets(CollectionTestsets):
 
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)
+            st.session_state["success_upload"] = True
 
-            testsets = cls.create_testsets(files)
+            testsets = cls.create_testsets(files,cls.task)
 
             return cls(source_file.name, references.keys(), refs_ids, systems_ids, systems_names,
                 [source_file.name] +  list(references.keys()) + list(systems_ids.values()),
                 testsets, language)
+        else:
+            st.session_state["success_upload"] = False
 
 
 class MTTestsets(NLGTestsets):
     task = "machine-translation"
     title = "Machine Translation"
-    type_of_output = "Systems Translations"
+    type_of_source = "file with the source"
+    type_of_references = NLGTestsets.type_of_references + " (the file(s) should only contain the true translations)"
+    type_of_output = NLGTestsets.type_of_output + " (the file(s) should only contain the predicated translations; one file for each model)"
+    message_language = "Choose the language of the samples to translate (e.g. 'en-ru')"
     message_of_success = "Source, References, Translations and LP were successfully uploaded!"
     def __init__(
         self,
@@ -306,11 +329,13 @@ class MTTestsets(NLGTestsets):
         super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames,
                 testsets, language_pair)
     
-    @staticmethod
-    def upload_language():
-        language_pair = st.text_input(
-            "Please input the language pair of the files to analyse (e.g. 'en-ru'):",
-            "", help=("If the language is indifferent and BERTScore metric is not used, then write X-X.")
+    @classmethod
+    def upload_language(cls):
+        language_pair  = st.selectbox(
+            cls.message_language + ":",
+            cls.all_language_pairs,
+            index=0,
+            help=("If the language is indifferent and BERTScore metric is not used, then select X")
         )
         return language_pair
 
@@ -318,8 +343,10 @@ class MTTestsets(NLGTestsets):
 class SummTestsets(NLGTestsets):
     task = "summarization"
     title = "Summarization"
-    type_of_source = "Text to be summarized"
-    type_of_output = "Systems Summaries"
+    type_of_source = "file with the samples to summarize (no summaries)"
+    type_of_references = CollectionTestsets.type_of_references + " (the file(s) should only contain the true summaries)"
+    type_of_output = CollectionTestsets.type_of_output + " (the file(s) should only contain the predicated summaries; one file for each model)"
+    message_language = "Choose the language of the samples to summarize (e.g. 'en')"
     message_of_success = "Source, References, Summaries and Language were successfully uploaded!"
     def __init__(
         self,
@@ -360,9 +387,10 @@ class SummTestsets(NLGTestsets):
 class DialogueTestsets(NLGTestsets):
     task = "dialogue-system"
     title = "Dialogue System"
-    type_of_source = "Context"
-    type_of_references = "Truth Answers"
-    type_of_output = "Systems Answers"
+    type_of_source = "file with the context"
+    type_of_references = "file with the truth answers"
+    type_of_output = "file with the models answer"
+    message_language = "Choose the language of the answers (e.g. 'en')"
     message_of_success = "Source, References, Dialogues and Language were successfully uploaded!"
     def __init__(
         self,
@@ -402,10 +430,11 @@ class DialogueTestsets(NLGTestsets):
 class ClassTestsets(CollectionTestsets):
     task = "classification"
     title = "Classification"
-    type_of_source = "Samples"
-    type_of_references = "True Labels"
-    type_of_output = "Predicated Labels"
-    message_of_success = "Source and Labels were successfully uploaded!"
+    type_of_source = "file with the samples to be labeled (no lables)"
+    type_of_references = CollectionTestsets.type_of_references + " (the file(s) should only contains the true labels)"
+    type_of_output = CollectionTestsets.type_of_output + " (the file(s) should only contain the predicated labels; one file each model)"
+    message_language = "Choose the language of the samples to be labeled (e.g. 'en')"
+    message_of_success = "Samples and Labels were successfully uploaded!"
 
     def __init__(
         self,
@@ -416,37 +445,44 @@ class ClassTestsets(CollectionTestsets):
         systems_names: Dict[str, str],
         filenames: List[str],
         testsets: Dict[str, MultipleTestset],
+        language_pair: str,
         labels: List[str]
     ) -> None:
-        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, testsets)
+        super().__init__(src_name, refs_names, refs_ids, systems_ids, systems_names, filenames, testsets, language_pair)
         self.labels = labels
     
     @staticmethod
     def upload_labels() -> List[str]:
-        labels_file = st.file_uploader("Upload the file with the existing labels separated by line", accept_multiple_files=False)
+        labels_file = st.file_uploader("Upload a file with the full set of labels separated by line", accept_multiple_files=False)
         return labels_file
     
     @classmethod
     def read_data(cls):
+
         files = cls.upload_files()
         source_file,sources,ref_files,references,refs_ids,outputs_files,systems_ids,systems_names,outputs = files
         labels_file = cls.upload_labels()
+        language = cls.upload_language()
 
         systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
 
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
+            and (language != "")
             and (labels_file is not None)
             and ( not load_name or (load_name and file_sys_names is not None))):
             
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)
+            st.session_state["success_upload"] = True
 
-            testsets = cls.create_testsets(files)
+            testsets = cls.create_testsets(files,cls.task)
 
             labels = read_lines(labels_file)
 
             return cls(source_file.name, references.keys(), refs_ids, systems_ids, systems_names,
                 [source_file.name] +  list(references.keys()) + list(systems_ids.values()),
-                testsets, labels)
+                testsets, language, labels)
+        else:
+            st.session_state["success_upload"] = False

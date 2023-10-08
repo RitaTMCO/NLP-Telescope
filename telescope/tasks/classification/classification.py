@@ -17,6 +17,7 @@ from telescope.multiple_plotting import (
     incorrect_examples,
     rates_table,
     download_data_csv,
+    confusion_matrix_image
 )
 
 
@@ -35,13 +36,13 @@ class Classification(Task):
 
     @staticmethod
     def input_cli_interface(source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str="",labels_file:click.File=None) -> CollectionTestsets:
+                      language:str,labels_file:click.File=None) -> CollectionTestsets:
         """CLI Interface to collect the necessary inputs to realization of the task evaluation."""
-        return  ClassTestsets.read_data_cli(source, system_names_file, systems_output, reference, extra_info, labels_file)
+        return  ClassTestsets.read_data_cli(source, system_names_file, systems_output, reference, language, labels_file)
     
     @classmethod
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, path : str, saving_zip: zipfile.ZipFile,
-                            metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
+                            metrics:list = None, available_metrics:dict = None, filters:List[str] = [], num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interfave to display the plots"""
 
         ref_id = collection_testsets.refs_ids[ref_filename]
@@ -50,11 +51,11 @@ class Classification(Task):
         names_of_systems = collection_testsets.names_of_systems()
 
         def class_session(system_name:str, system:str, ref_id:str, ref:List[str]):
-            num = 'num_' + system_name + system + "_" + ref_id
-            incorrect_ids = 'incorrect_ids_' + system_name + system + "_" + ref_id
-            table = 'tables_' + system_name + system + "_" + ref_id
-            num_incorrect_ids = 'num_incorrect_ids_' + system_name + system + "_" + ref_id
-            click = "click_" + system_name + system + "class_evaluation"
+            num = 'num_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
+            incorrect_ids = 'incorrect_ids_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
+            table = 'tables_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
+            num_incorrect_ids = 'num_incorrect_ids_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
+            click = "click_" + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters) + "_class_evaluation"
             if num not in st.session_state:
                 if len(ref) <= 55:
                     st.session_state[num] = int(len(ref)/4) + 1
@@ -83,6 +84,9 @@ class Classification(Task):
 
         #-------------- |Confusion Matrix| --------------------
         st.header(":blue[Confusion Matrix:]")
+
+        confusion_matrix_image()
+
         system_name = st.selectbox(
             "Select the system:",
             names_of_systems,
@@ -93,20 +97,7 @@ class Classification(Task):
         # Rates
         st.subheader("Rates")
 
-        l_rate, r_rate = st.columns([0.6, 0.4])
-        r_rate.markdown(
-            """
-            **:blue[PPV:]** Positive Predictive Value or Precision.     
-            **:blue[TPR:]** True Positive Rate or Recall.   
-            **:blue[FDR:]** False Discovery Rate.    
-            **:blue[FPR:]** False Positive Rate.   
-            **:blue[FOR:]** False Omission Rate.   
-            **:blue[FNR:]** False Negative Rate.   
-            **:blue[NPV:]** Negative Predictive Value.   
-            **:blue[TNR:]** True Negative Rate.   
-            """
-        )
-        rates_table(labels,testset.ref,testset.systems_output[system],show=True,column=l_rate)
+        rates_table(labels,testset.ref,testset.systems_output[system],show=True)
 
         # Overall Confusion Matrix
         st.subheader("Confusion Matrix of :blue[" + system_name + "]")
@@ -123,7 +114,7 @@ class Classification(Task):
         confusion_matrix_focused_on_one_label(testset.ref,testset.systems_output[system],label,labels,system_name, show = True)
 
         #-------------- |Analysis Of Each Label| --------------------
-        st.header(":blue[Analysis Of Each Label:]")
+        st.header(":blue[Results by label:]")
         analysis_labels(results[metric], collection_testsets.names_of_systems(), labels, path, saving_zip)
         
         #-------------- |Examples| --------------------
@@ -141,8 +132,11 @@ class Classification(Task):
 
         if df is not None:
             st.dataframe(df)
-            download_data_csv("Export incorrect examples", df, system_name.replace(" ","_") + "-incorrect-examples.csv", "incorrect_example_load")
+
+            all_df = incorrect_examples(testset, system, system_name, len(testset.src), all_examples=True)
+            download_data_csv("Download of the incorrect examples", all_df, system_name.replace(" ","_") + "-incorrect-examples.csv", "incorrect_example_load")
             
+
             old_num_incorrect_ids = st.session_state[num_incorrect_ids]
             new_num_incorrect_ids = len(st.session_state[incorrect_ids])
 
@@ -184,8 +178,7 @@ class Classification(Task):
             output_file = saving_dir + sys_name + "/"         
             confusion_matrix_of_system(testset.ref,testset.systems_output[sys_id],labels,sys_name, saving_dir=output_file)
             rates_table(labels,testset.ref,testset.systems_output[sys_id],output_file)
-            num = 15
-            incorrect_examples(testset,sys_id,sys_name,num,[],[],[], output_file)
+            incorrect_examples(testset, sys_id, sys_name, len(testset),saving_dir=output_file,all_examples=True)
             label_file = output_file + "/" + "singular_confusion_matrix/"
             for label in labels:
                 confusion_matrix_focused_on_one_label(testset.ref, testset.systems_output[sys_id], label,labels,sys_name,saving_dir=label_file)

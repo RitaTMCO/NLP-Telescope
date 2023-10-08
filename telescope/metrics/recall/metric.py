@@ -9,7 +9,7 @@ from sklearn.metrics import recall_score
 class Recall(Metric):
 
     name = "Recall"
-    segment_level = False
+    segment_level = True
 
     def score(self, src: List[str], cand: List[str], ref: List[str]) -> MetricResult:
         if ref == []:

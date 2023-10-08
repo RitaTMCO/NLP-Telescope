@@ -27,6 +27,7 @@ class Testset:
         self.src = src
         self.ref = ref
         self.output = output
+        self.task = ""
 
         assert len(ref) == len(
             src
@@ -154,12 +155,14 @@ class MultipleTestset(Testset):
         ref: List[str], 
         ref_id: str,
         systems_output: Dict[str, List[str]], # {sys_id: system output}
+        task:str,
         filenames: List[str],
     ) -> None:
         self.src = src
         self.ref = ref
         self.ref_id = ref_id
         self.systems_output = systems_output
+        self.task = task
         self.filenames = filenames
 
     def __getitem__(self, i) -> Tuple[str]:

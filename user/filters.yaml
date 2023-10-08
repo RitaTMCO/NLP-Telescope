@@ -1,15 +1,15 @@
 All filters:
-      - duplicates
+      - remove-duplicates
       - length
       - named-entities
 
 NLP filters:
-      - duplicates
-
-NLG filters: 
+      - remove-duplicates
       - length
       - named-entities
-      
+
+NLG filters: []
+
 Machine Translation filters: []
 
 Summarization filters: []

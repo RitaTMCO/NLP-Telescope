@@ -15,10 +15,11 @@ class TestROUGETwo(unittest.TestCase):
         ref = ["this page includes the show transcript use the transcript to help students with reading comprehension and     vocabulary at the bottom of the page , comment for a chance to be mentiTwod on cnn student news . you must be a teac    her or a student age # # or older to request a mention on the cnn student news roll call . the weekly newsquiz tests     students ' knowledge of even ts in the news"]
 
         expected_sys =  0.23423422957552154
+        expected_seg = [0.23423422957552154]
 
         result = self.rouge_two.score([], cand, ref)
         self.assertEqual(result.sys_score, expected_sys)
-        self.assertFalse(result.seg_scores)
+        self.assertListEqual(result.seg_scores, expected_seg)
         self.assertListEqual(result.ref, ref)
         self.assertListEqual(result.src, [])
         self.assertListEqual(result.cand, cand)

@@ -26,6 +26,7 @@ import random
 import spacy
 import io
 import zipfile
+from PIL import Image
 
 from streamlit import runtime
 from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix, ConfusionMatrixDisplay
@@ -693,6 +694,27 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
 #######################################################| Classification |#######################################################
 ################################################################################################################################
 
+
+def confusion_matrix_image():
+
+    image = Image.open('data/confusion_matrix.png')
+    left,right = st.columns([0.7,0.3])
+    
+    left.image(image, caption="Confusion matrix (adapted from Verma and Rubin (2018)).")
+    right.markdown(
+            """
+            **:blue[PPV:]** Positive Predictive Value or Precision.     
+            **:blue[TPR:]** True Positive Rate or Recall.   
+            **:blue[FDR:]** False Discovery Rate.    
+            **:blue[FPR:]** False Positive Rate.   
+            **:blue[FOR:]** False Omission Rate.   
+            **:blue[FNR:]** False Negative Rate.   
+            **:blue[NPV:]** Negative Predictive Value.   
+            **:blue[TNR:]** True Negative Rate.   
+            """
+        )
+
+
 def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[str], system_name:str, show:bool = False, saving_dir: str = None, 
                                saving_zip:zipfile.ZipFile=None):    
     
@@ -746,7 +768,7 @@ def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], labe
 
 
 
-def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None, saving_zip: zipfile.ZipFile = None, show:bool = False, column = None):
+def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None, saving_zip: zipfile.ZipFile = None, show:bool = False):
     table = { "PPV" : [], "TPR": [], "FDR": [], "FPR":[], "FOR": [], "FNR":[], "NPV": [], "TNR": [] }
     
     precison_labels = list(Precision(labels=labels).score([], pred, true).seg_scores)
@@ -773,9 +795,7 @@ def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=No
     df.index = labels
 
     if runtime.exists():
-        if show and column != None:
-            column.dataframe(df)
-        elif show:
+        if show:
             st.dataframe(df)
         if saving_zip is not None and saving_dir is not None:
             create_and_save_table_zip(saving_dir + FILENAME_RATES, saving_zip, df)
@@ -786,7 +806,7 @@ def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=No
 
 
 def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], ids:List[int]=[],
-                       saving_dir:str = None):
+                       saving_dir:str = None, all_examples:bool = False):
     src = testset.src
     true = testset.ref
     pred = testset.systems_output[system]
@@ -795,6 +815,11 @@ def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num
     n = len(true)
     if not ids:
         ids = random.sample(range(n),n)
+    
+    if all_examples:
+        ids = [i for i in range(n)]
+        incorrect_ids = []
+        table = []
 
     lines = [int(id.split("\t")[-1]) for id in incorrect_ids]
     
@@ -817,30 +842,41 @@ def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num
         return None
 
 
-def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None, col=None):
-    seg_scores_list = [list(result_sys.seg_scores)
-                for result_sys in list(result.systems_metric_results.values())]
+def analysis_labels_plot(seg_scores_dict:Dict[str,List[float]], metric:str, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
+
+    filename = metric + FILENAME_ANALYSIS_LABELS
+    plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Results by label (with " + metric + " metric)" , "Score") 
+    if runtime.exists():
+        st.subheader("Stacked bar plot")
+        st.pyplot(plt)
+        if saving_dir and saving_zip:
+            create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
+    elif saving_dir is not None:
+        save_plot(saving_dir, filename, plt)
+    plt.clf()
+    plt.close()
+
+def analysis_labels_table(seg_scores_dict:Dict[str,List[float]], metric:str, sys_names: List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None, col=None):
+    filename = metric + "_results-by-label-table.csv"
+    df = pd.DataFrame.from_dict(seg_scores_dict)
+    df.index = sys_names
+    if runtime.exists():
+        st.subheader("Table")
+        st.dataframe(df)
+        if saving_dir and saving_zip:
+            create_and_save_table_zip(saving_dir + filename,saving_zip,df)
+    elif saving_dir is not None:
+        save_table(saving_dir,filename,df)
+
+def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
+    seg_scores_list = [list(result_sys.seg_scores) for result_sys in list(result.systems_metric_results.values())]
     
     if any(seg_scores_list):
     
-        seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
-                    for i, label in enumerate(labels)}
+        seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])  for i, label in enumerate(labels)}
         metric = result.metric
-        filename = metric + FILENAME_ANALYSIS_LABELS
-
-        plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" , "Score") 
-        if runtime.exists():
-            if col:
-                col.pyplot(plt)
-            else:
-                st.pyplot(plt)
-            if saving_dir and saving_zip:
-                create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
-        elif saving_dir is not None:
-            save_plot(saving_dir, filename, plt)
-        plt.clf()
-        plt.close()
-
+        analysis_labels_table(seg_scores_dict,metric,sys_names,saving_dir,saving_zip)
+        analysis_labels_plot(seg_scores_dict,metric,sys_names,labels,saving_dir,saving_zip)
 
 
 ######################################################################################################################
