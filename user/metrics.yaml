@@ -16,11 +16,9 @@ All metrics:
 
 NLP metrics: []
 
-NLG metrics: 
-      - BERTScore  
+NLG metrics: []
       
 Machine Translation metrics:  
-      - COMET
       - BLEU
       - chrF
       - ZeroEdit

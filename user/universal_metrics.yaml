@@ -17,20 +17,7 @@ NLP universal metrics: []
 
 NLG universal metrics: []
 
-Machine Translation universal metrics:
-  - average
-  - median
-  - pairwise-comparison
-  - social-choice-theory
-  - weighted-sum-seed-12-trials-1000_-1_1
-  - weighted-sum-seed-12-trials-1000_TER_0_1
-  - weighted-mean-seed-12-trials-1000_0_1
-  - weighted-sum-seed-24-trials-1000_-1_1
-  - weighted-sum-seed-24-trials-1000_TER_0_1
-  - weighted-mean-seed-24-trials-1000_0_1
-  - weighted-sum-seed-36-trials-1000_-1_1
-  - weighted-sum-seed-36-trials-1000_TER_0_1
-  - weighted-mean-seed-36-trials-1000_0_1
+Machine Translation universal metrics: []
 
 Summarization universal metrics: []
 

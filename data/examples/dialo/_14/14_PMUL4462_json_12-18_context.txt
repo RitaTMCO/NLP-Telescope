@@ -1,5 +1,0 @@
-USER: Yes I do. I'd like to make sure I arrive at the restaurant by the booked time. Can you check?
-SYSTEM: What time do you want to leave?
-USER: Actually all you have to do is set the taxi so it arrives by the arrived time. Am I better off booking it myself?
-SYSTEM: I have booked you a taxi for Friday to arrive at Old Schools at 10:45. Is there anything else I may help you with?
-USER: I need the contact number and car type also.

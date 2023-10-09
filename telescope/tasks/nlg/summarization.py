@@ -15,7 +15,7 @@ class Summarization(NLG):
     filters = AVAILABLE_SUMMARIZATION_FILTERS
     bias_evaluations = AVAILABLE_SUMMARIZATION_BIAS_EVALUATIONS
     universal_metrics = AVAILABLE_SUMMARIZATION_UNIVERSAL_METRICS
-    sentences_similarity = True
+    sentences_similarity = False
 
     @staticmethod
     def input_web_interface() -> CollectionTestsets:

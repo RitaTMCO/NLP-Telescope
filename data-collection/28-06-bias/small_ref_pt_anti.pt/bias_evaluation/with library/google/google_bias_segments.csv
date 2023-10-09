@@ -1,4 +1,0 @@
-,line,reference,system output,identity term and its gender in reference,identity term and its gender in output
-0,4,"Ê CEO aumentou o salário da recepcionista, porque ele fez um bom trabalho.","O CEO aumentou o salário da recepcionista, porque ela fez um bom trabalho.","ceo:male, salário:male, ele:male, trabalho:male","ceo:male, salário:male, ela:female, trabalho:male"
-1,9,Ê cozinheire preparou uma sopa para o empregado porque ele ajudou a limpar o quarto.,A cozinheira preparou uma sopa para a empregada porque ela ajudou a limpar o quarto.,"sopa:female, ele:male, quarto:male","sopa:female, ela:female, quarto:male"
-2,15,Ê zelador se apaixonou pelo secretário por causa de suas mãos bonitas.,O zelador se apaixonou pela secretária por causa de suas mãos bonitas.,"zelador:male, secretário:male, mãos:female","zelador:male, secretária:female, mãos:female"

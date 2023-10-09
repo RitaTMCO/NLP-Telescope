@@ -14,7 +14,7 @@ class DialogueSystem(NLG):
     filters = AVAILABLE_DIALOGUE_FILTERS
     bias_evaluations = AVAILABLE_DIALOGUE_BIAS_EVALUATIONS
     universal_metrics = AVAILABLE_DIALOGUE_UNIVERSAL_METRICS
-    sentences_similarity = True
+    sentences_similarity = False
 
     @staticmethod
     def input_web_interface() -> CollectionTestsets:

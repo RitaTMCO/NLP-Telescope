@@ -1,3 +1,0 @@
-,line,reference,system output,identity term and its gender in reference,identity term and its gender in output
-0,12,Ê movedore ultrapassou a cabeleireira porque ela não se sentia bem.,A moradora procurou o cabeleireiro porque não se sentia bem.,cabeleireira:female,cabeleireiro:male
-1,17,Ê advogado gritou com a cabeleireira porque ela fez um péssimo trabalho.,A advogada gritou com o cabeleireiro porque ela fez um mau trabalho.,"advogado:male, ela:female, trabalho:male","advogada:female, ela:female, trabalho:male"

@@ -1,5 +1,0 @@
-USER: Can I get the postcode for that? I also need to book a taxi to the Golden Wok.
-SYSTEM: The postcode is cb21tt. Are you looking for a taxi from Old Schools to the Golden Wok?
-USER: Yes I do. I'd like to make sure I arrive at the restaurant by the booked time. Can you check?
-SYSTEM: What time do you want to leave?
-USER: Actually all you have to do is set the taxi so it arrives by the arrived time. Am I better off booking it myself?

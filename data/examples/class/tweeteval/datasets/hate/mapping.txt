@@ -1,2 +1,0 @@
-0	not-hate
-1	hate

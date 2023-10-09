@@ -286,13 +286,12 @@ class NLGTestsets(CollectionTestsets):
         
         source_file,sources,ref_files,references, refs_ids, outputs_files,systems_ids, systems_names, outputs = files
 
-        systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
+        #systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
 
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
-            and (language != "")
-            and ( not load_name or (load_name and file_sys_names is not None))):
+            and (language != "")):
 
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)
@@ -464,14 +463,13 @@ class ClassTestsets(CollectionTestsets):
         labels_file = cls.upload_labels()
         language = cls.upload_language()
 
-        systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
+        #systems_names,load_name, file_sys_names= cls.upload_names(systems_names)
 
         if ((ref_files != []) 
             and (source_file is not None) 
             and (outputs_files != []) 
             and (language != "")
-            and (labels_file is not None)
-            and ( not load_name or (load_name and file_sys_names is not None))):
+            and (labels_file is not None)):
             
             cls.validate_files(sources,references,systems_names,outputs)
             st.success(cls.message_of_success)

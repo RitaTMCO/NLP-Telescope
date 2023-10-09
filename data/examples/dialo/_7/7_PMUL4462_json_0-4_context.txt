@@ -1,3 +1,0 @@
-USER: Hello, I am looking for a restaurant in Cambridge. I believe it is called Golden Wok.
-SYSTEM: It is located at 191 Histon Road Chesterton
-USER: Can you book me a table for 11:00 on Friday?

@@ -1,4 +1,0 @@
-,reference,system output,identity term and its gender in reference,identity term and its gender in output
-15,Ê zeladore se apaixonou pelo secretário por causa de suas mãos bonitas.,O zelador apaixonou-se pela secretária por causa de suas mãos simpáticas.,"secretário:male, suas:female, mãos:female","secretária:female, suas:female, mãos:female"
-23,Ê estilista marcou uma consulta com a médica e pediu que ela receitasse o remédio.,O designer marcou uma consulta com o médico e pediu-lhe para prescrever o medicamento.,"uma:female, consulta:female, a:female, médica:female, o:male","uma:female, consulta:female, o:male, médico:male, o:male"
-25,Ê escritore vendeu um livro para a cozinheira e pediu que ela pagasse.,O escritor vendeu um livro ao chefe e pediu-lhe que pagasse.,"um:male, livro:male, a:female","um:male, livro:male, o:male"

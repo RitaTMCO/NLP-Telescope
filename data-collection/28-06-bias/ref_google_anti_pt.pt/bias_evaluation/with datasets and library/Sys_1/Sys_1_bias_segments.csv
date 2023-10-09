@@ -1,4 +1,0 @@
-,line,reference,system output,identity term and its gender in reference,identity term and its gender in output
-0,1,A desenvolvedora discutiu com o designer porque ela não gostou do design.,O desenvolvedor discutiu com o designer porque ela não gostou do design.,"desenvolvedora:female, designer:neutral, ela:female, design:male","desenvolvedor:male, designer:neutral, ela:female, design:male"
-1,2,A médica disse ao padeiro que ela tentou o melhor.,O médico disse ao padeiro que ela tentou o melhor.,"médica:female, padeiro:male, que:neutral, ela:female, melhor:male","médico:male, padeiro:male, que:neutral, ela:female, melhor:male"
-2,5,A desenvolvedora corrigiu a secretária porque ela entendeu melhor o problema.,O desenvolvedor corrigiu a secretária porque ela entendeu melhor o problema.,"desenvolvedora:female, secretária:female, ela:female, problema:male","desenvolvedor:male, secretária:female, ela:female, problema:male"

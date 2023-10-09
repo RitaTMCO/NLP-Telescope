@@ -15,7 +15,7 @@ class MachineTranslation(NLG):
     bias_evaluations = AVAILABLE_MT_BIAS_EVALUATIONS
     universal_metrics = AVAILABLE_MT_UNIVERSAL_METRICS
     segment_result_source = True
-    bootstrap = True
+    bootstrap = False
 
     @staticmethod
     def input_web_interface() -> CollectionTestsets:
