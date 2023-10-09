@@ -61,7 +61,10 @@ class CollectionTestsets:
         return list(self.systems_ids.values())
     
     def names_of_systems(self) -> List[str]:
-        return list(self.systems_names.values())
+        ids = list(self.systems_names.keys())
+        ids.sort()
+        names = [self.systems_names[id] for id in ids]
+        return names
     
     def system_name_id(self, name:str) -> str:
         for sys_id, sys_name in self.systems_names.items():

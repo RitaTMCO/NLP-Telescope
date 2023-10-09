@@ -125,7 +125,7 @@ length_interval = ()
 if "length" in available_filters:
     st.sidebar.subheader("Segment length constraints:")
     length_interval = st.sidebar.slider(
-        "Specify the confidence interval for the length distribution:",
+        "Specify the interval for the length distribution:",
         0,
         100,
         step=5,
@@ -133,7 +133,7 @@ if "length" in available_filters:
         help=(
             "In order to isolate segments according to caracter length "
             "we will create a sequence length distribution that you can constraint "
-            "through its density funcion. This slider is used to specify the confidence interval P(a < X < b)"
+            "through its density funcion. This slider is used to specify the interval P(a < X < b)"
         ),
         on_change=stop_nlp
     )

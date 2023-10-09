@@ -19,11 +19,11 @@ NLP metrics: []
 NLG metrics: []
       
 Machine Translation metrics:  
+      - GLEU
       - BLEU
       - chrF
       - ZeroEdit
       - TER
-      - GLEU
 
 Summarization metrics:
       - ROUGE-1
