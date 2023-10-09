@@ -42,7 +42,7 @@ class Classification(Task):
     
     @classmethod
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, path : str, saving_zip: zipfile.ZipFile,
-                            metrics:list = None, available_metrics:dict = None, filters:List[str] = [], num_samples: int = None, sample_ratio: float = None) -> None:
+                            metrics:list = None, available_metrics:dict = None, filters:List[str] = [], length_interval:Tuple[int] = (), num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interfave to display the plots"""
 
         ref_id = collection_testsets.refs_ids[ref_filename]
@@ -51,11 +51,11 @@ class Classification(Task):
         names_of_systems = collection_testsets.names_of_systems()
 
         def class_session(system_name:str, system:str, ref_id:str, ref:List[str]):
-            num = 'num_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
-            incorrect_ids = 'incorrect_ids_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
-            table = 'tables_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
-            num_incorrect_ids = 'num_incorrect_ids_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters)
-            click = "click_" + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters) + "_class_evaluation"
+            num = 'num_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters) + "_".join([ str(i) for i in length_interval])
+            incorrect_ids = 'incorrect_ids_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters) +  "_".join([ str(i) for i in length_interval])
+            table = 'tables_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters) +  "_".join([ str(i) for i in length_interval])
+            num_incorrect_ids = 'num_incorrect_ids_' + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters) +  "_".join([ str(i) for i in length_interval])
+            click = "click_" + system_name + "_" + system + "_" + ref_id + "_" +  "_".join(filters) +  "_".join([ str(i) for i in length_interval]) + "_class_evaluation"
             if num not in st.session_state:
                 if len(ref) <= 55:
                     st.session_state[num] = int(len(ref)/4) + 1

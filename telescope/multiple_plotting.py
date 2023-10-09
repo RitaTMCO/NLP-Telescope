@@ -511,7 +511,8 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
     if runtime.exists():
 
         def define_value(bucket_1,bucket_2,value):
-            if (bucket_2!=None and bucket_1 < bucket_2) or st.session_state["reset_settings"]:
+            #if (bucket_2!=None and bucket_1 < bucket_2) or st.session_state["reset_settings"]:
+            if (bucket_2!=None and bucket_1 < bucket_2):
                 return value        
             elif st.session_state["first_time_error"] < 4:
                 st.session_state["first_time_error"] += 1
@@ -544,12 +545,12 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
                     """)
         
-        _, reset,_ = st.columns(3)
-        if reset.button("Reset settings", key="reset_settings"):
-            st.session_state["red_bucket_"+ multiple_result.metric] = values[0]
-            st.session_state["yellow_bucket_"+ multiple_result.metric] = values[1]
-            st.session_state["blue_bucket_"+ multiple_result.metric] = values[2]
-
+        #_, reset,_ = st.columns(3)
+        #if reset.button("Reset settings", key="reset_settings"):
+            #st.session_state["red_bucket_"+ multiple_result.metric] = values[0]
+            #st.session_state["yellow_bucket_"+ multiple_result.metric] = values[1]
+            #st.session_state["blue_bucket_"+ multiple_result.metric] = values[2]
+        
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -567,7 +568,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
                 st.session_state["blue_bucket_"+ multiple_result.metric] = st.slider(
                     "Blue bucket max threshold", st.session_state["yellow_bucket_"+ multiple_result.metric], limits[2], value=v3, step=step, key="bucket3")
 
-                
+
         left, right = st.columns([0.3,0.7])
         right.pyplot(update_multiple_buckets(systems_results_seg_scores,systems_names, 
                                              st.session_state["red_bucket_"+ multiple_result.metric], 

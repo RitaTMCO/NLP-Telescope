@@ -8,7 +8,7 @@ from telescope.metrics import AVAILABLE_NLG_METRICS
 from telescope.filters import AVAILABLE_NLG_FILTERS
 from telescope.bias_evaluation import AVAILABLE_NLG_BIAS_EVALUATIONS
 from telescope.universal_metrics import AVAILABLE_NLG_UNIVERSAL_METRICS
-from typing import List
+from typing import List, Tuple
 
 from telescope.plotting import plot_bootstraping_result
 from telescope.multiple_plotting import (
@@ -31,7 +31,7 @@ class NLG(Task):
 
     @classmethod
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, path :str, saving_zip: zipfile.ZipFile,
-                            metrics:list = None, available_metrics:dict = None, filters:List[str] = [], num_samples: int = None, sample_ratio: float = None) -> None:
+                            metrics:list = None, available_metrics:dict = None, filters:List[str] = [], length_interval:Tuple[int] = (),num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interfave to display the plots"""
 
         # --------------- |Source Sentences Similarity| ----------------
