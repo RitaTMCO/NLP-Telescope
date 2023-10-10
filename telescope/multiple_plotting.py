@@ -658,8 +658,8 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
     if source:
         chart_data["source"] = multiple_result.src
     chart_data["reference"] = multiple_result.ref
-    chart_data["x"] = multiple_result.systems_metric_results[sys_x_id].seg_scores
-    chart_data["y"] = multiple_result.systems_metric_results[sys_y_id].seg_scores
+    chart_data["x"] = multiple_result.system_cand(sys_x_id)
+    chart_data["y"] = multiple_result.system_cand(sys_y_id)
 
     if source:
         tool = ["x", "y", "reference", "difference", "source", "x_score", "y_score"]

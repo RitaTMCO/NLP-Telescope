@@ -133,10 +133,8 @@ class MultipleMetricResults:
         self.src = x_result.src
         self.ref = x_result.ref
 
-
-    @property
-    def system_cand(self,system_name) -> List[str]:
-        return self.systems_metric_results[system_name].cand
+    def system_cand(self,system_id) -> List[str]:
+        return self.systems_metric_results[system_id].cand
 
     @staticmethod
     def results_to_dataframe(multiple_metrics_results: list, systems_names:Dict[str, str]) -> pd.DataFrame:

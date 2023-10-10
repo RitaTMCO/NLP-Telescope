@@ -107,11 +107,14 @@ def identity_terms_found_info(s,m):
     tp = len(list_tp)
     fp = number_id_tool - tp
     fn = number_id_golden - tp
+    precison = (tp)/(tp + fp)
+    recall = (tp)/(tp + fn)
+    f1_score = (2 * precison * recall) / (precison + recall)
     diff_1, diff_2 = gender_list(index_list1,index_list2,gender_identity_terms_golden,gender_identity_terms_tool)
 
     number_of_match = read_csv_file(file_info)["Number of identity terms that were matched"][0]
 
-    return [number_id_golden, number_id_tool, tp, fp, fn, len(list_tp)-len(diff_1), number_of_match]
+    return [number_id_golden, number_id_tool, tp, fp, fn, precison, recall, f1_score, len(list_tp)-len(diff_1), number_of_match]
 
 def time_bias_evlaution(s,m):
     file_info_join = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/" + m + "/bias_evaluations_information.csv"
@@ -210,7 +213,7 @@ if __name__ == "__main__":
         print(Fore.CYAN + "Identity Terms Found Table")
         print(Fore.WHITE)
         p_fp_fn_gender_pd = pd.DataFrame(tp_fp_fn_gender)
-        p_fp_fn_gender_pd.index = ["Number of golden identity terms", "Number of identity terms found in tool", "TP", "FP", "FN", "Correct gender in TP", "Number of matches"]
+        p_fp_fn_gender_pd.index = ["Number of golden identity terms", "Number of identity terms found in tool", "TP", "FP", "FN","Precison", "Recall", "F1 Score", "Correct gender in TP", "Number of matches"]
         print(p_fp_fn_gender_pd)
         print("\n")
         p_fp_fn_gender_pd.to_csv("data_evaluation/" + s.replace(" ","-") + "_identity_terms_found.csv")
