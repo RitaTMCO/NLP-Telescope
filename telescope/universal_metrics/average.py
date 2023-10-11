@@ -14,9 +14,12 @@ class Average(UniversalMetric):
         num_metrics = len(metrics)
         average_sum = {sys_id:0.0 for sys_id in systems_ids}
     
-        for metric_results in list(self.multiple_metrics_results.values()):
+        for metric, metric_results in self.multiple_metrics_results.items():
+            min,max = 0,0
+            if metric == "COMET":
+                min,max = self.max_min_COMET(metric_results)
             for sys_id, metric_result in metric_results.systems_metric_results.items():
-                average_sum[sys_id] += metric_result.sys_score
+                average_sum[sys_id] += self.normalize_metrics(metric, metric_result.sys_score,max,min)
                 
         average_scores = {sys_id:score/num_metrics for sys_id,score in average_sum.items()}
         return average_scores

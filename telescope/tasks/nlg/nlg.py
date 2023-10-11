@@ -52,14 +52,14 @@ class NLG(Task):
         if metric == "COMET" or metric == "BERTScore":
             st.text("\n")
             st.header(":blue[Error-type analysis:]")
-            plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(),path, saving_zip)
+            plot_bucket_multiple_comparison(results[metric], collection_testsets.systems_names,path, saving_zip)
         
         # -------------- | Distribution of segment-level scores| -----------
         if len(collection_testsets.testsets[ref_filename]) > 1:
             st.text("\n")
             st.header(":blue[Distribution of segment-level scores:]")
-            if plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
-                plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), path, saving_zip)
+            if plot_multiple_distributions(results[metric], collection_testsets.systems_names, test=True):
+                plot_multiple_distributions(results[metric], collection_testsets.systems_names, path, saving_zip)
                 
         
         # -------------- |Pairwise comparison| -----------------
@@ -135,10 +135,10 @@ class NLG(Task):
                 sentences_similarity(collection_testsets.testsets[ref_filename].src, output, collection_testsets.target_language,output_file)
                 
         if metric == "COMET" or metric == "BERTScore":
-            plot_bucket_multiple_comparison(results[metric], collection_testsets.names_of_systems(), saving_dir)
+            plot_bucket_multiple_comparison(results[metric], collection_testsets.systems_names, saving_dir)
         
-        if len(collection_testsets.testsets[ref_filename]) > 1 and plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), test=True):
-            plot_multiple_distributions(results[metric], collection_testsets.names_of_systems(), saving_dir)
+        if len(collection_testsets.testsets[ref_filename]) > 1 and plot_multiple_distributions(results[metric], collection_testsets.systems_names, test=True):
+            plot_multiple_distributions(results[metric], collection_testsets.systems_names, saving_dir)
         
         if len(collection_testsets.systems_ids.values()) > 1: 
             x = [x_id,collection_testsets.systems_names[x_id]]

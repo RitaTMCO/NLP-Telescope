@@ -15,7 +15,7 @@
 from typing import List, Tuple, Dict
 import streamlit as st
 
-from telescope.utils import read_lines
+from telescope.utils import read_lines, sys_ids_sort
 
 class Testset:
     def __init__(
@@ -158,10 +158,11 @@ class MultipleTestset(Testset):
         task:str,
         filenames: List[str],
     ) -> None:
+        ids = sys_ids_sort(list(systems_output.keys()))
         self.src = src
         self.ref = ref
         self.ref_id = ref_id
-        self.systems_output = systems_output
+        self.systems_output = {id: systems_output[id] for id in ids}
         self.task = task
         self.filenames = filenames
 

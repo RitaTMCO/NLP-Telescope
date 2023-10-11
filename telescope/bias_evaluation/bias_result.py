@@ -162,7 +162,7 @@ class MultipleBiasResults():
         number_of_incorrect_labels_of_each_system(systems_names,self.groups_ref,groups_sys_per_system,self.groups, saving_dir,saving_zip)
     
     def display_analysis_labels(self,collection_testsets:CollectionTestsets,saving_dir:str=None,saving_zip:zipfile.ZipFile = None):
-        systems_names = collection_testsets.systems_names.values()
+        systems_names = collection_testsets.systems_names
         for _, multiple_metrics_results in self.multiple_metrics_results_per_metris.items():
             analysis_labels(multiple_metrics_results,systems_names,self.groups, saving_dir,saving_zip)
 
