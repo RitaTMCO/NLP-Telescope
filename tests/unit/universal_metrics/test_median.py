@@ -12,16 +12,15 @@ class TestMedian(unittest.TestCase):
     # sys_id:sys_name
     systems_names = {"Sys 1": "Sys A", "Sys 2":"Sys B", "Sys 3":"Sys C"}
 
-    metrics = ["mock_1","mock_2","mock_3","mock_4"]
-
+    metrics = ["mock_1","mock_2","mock_3","COMET", "TER", "mock_6"]
     testset = MultipleTestset(
-        src=["a", "b", "c"],
-        ref=["a", "b", "c"],
+        src=[],
+        ref=[],
         ref_id="Ref 1",
         systems_output={
-            "Sys 1": ["a", "d", "c"],
-            "Sys 2": ["a", "k", "c"],
-            "Sys 3": ["a", "p", "c"]
+            "Sys 1": [],
+            "Sys 2": [],
+            "Sys 3": []
         },
         task= "task",
         filenames = ["src.txt","ref.txt","sys1.txt","sys2.txt","sys3.txt"]
@@ -31,7 +30,7 @@ class TestMedian(unittest.TestCase):
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.1,
-                seg_scores=[1, 0.5, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 1"],
                 ref=testset.ref,
@@ -39,7 +38,7 @@ class TestMedian(unittest.TestCase):
             ),
             "Sys 2": MetricResult(
                 sys_score=0.1,
-                seg_scores=[1, 0.25, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
                 ref=testset.ref,
@@ -47,7 +46,7 @@ class TestMedian(unittest.TestCase):
             ),
             "Sys 3": MetricResult(
                 sys_score=0.3,
-                seg_scores=[1, 0.75, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
                 ref=testset.ref,
@@ -60,7 +59,7 @@ class TestMedian(unittest.TestCase):
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.1,
-                seg_scores=[1, 0.5, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 1"],
                 ref=testset.ref,
@@ -68,7 +67,7 @@ class TestMedian(unittest.TestCase):
             ),
             "Sys 2": MetricResult(
                 sys_score=0.2,
-                seg_scores=[1, 0.25, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
                 ref=testset.ref,
@@ -76,7 +75,7 @@ class TestMedian(unittest.TestCase):
             ),
             "Sys 3": MetricResult(
                 sys_score=0.3,
-                seg_scores=[1, 0.75, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
                 ref=testset.ref,
@@ -97,7 +96,7 @@ class TestMedian(unittest.TestCase):
             ),
             "Sys 2": MetricResult(
                 sys_score=0.3,
-                seg_scores=[1, 0.25, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
                 ref=testset.ref,
@@ -105,7 +104,7 @@ class TestMedian(unittest.TestCase):
             ),
             "Sys 3": MetricResult(
                 sys_score=0.3,
-                seg_scores=[1, 0.75, 1],
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
                 ref=testset.ref,
@@ -117,34 +116,93 @@ class TestMedian(unittest.TestCase):
     multiple_result_4 = MultipleMetricResults(
         systems_metric_results = {
             "Sys 1": MetricResult(
-                sys_score=1,
-                seg_scores=[1, 0.5, 1],
+                sys_score=-2,
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 1"],
                 ref=testset.ref,
-                metric="mock_4",
+                metric="COMET",
             ),
             "Sys 2": MetricResult(
-                sys_score=0.5,
-                seg_scores=[1, 0.25, 1],
+                sys_score=1,
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
                 ref=testset.ref,
-                metric="mock_4",
+                metric="COMET",
             ),
             "Sys 3": MetricResult(
-                sys_score=0.4,
-                seg_scores=[1, 0.75, 1],
+                sys_score=2,
+                seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
                 ref=testset.ref,
-                metric="mock_4",
+                metric="COMET",
             )
         }
     )
 
-    multiple_metric_result_odd = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3}
-    multiple_metric_result_even = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3,"mock_4":multiple_result_4}
+    multiple_result_5 = MultipleMetricResults(
+        systems_metric_results = {
+            "Sys 1": MetricResult(
+                sys_score=1,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 1"],
+                ref=testset.ref,
+                metric="TER",
+            ),
+            "Sys 2": MetricResult(
+                sys_score=0.3,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 2"],
+                ref=testset.ref,
+                metric="TER",
+            ),
+            "Sys 3": MetricResult(
+                sys_score=0,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 3"],
+                ref=testset.ref,
+                metric="TER",
+            )
+        }
+    )
+
+
+    multiple_result_6 = MultipleMetricResults(
+        systems_metric_results = {
+            "Sys 1": MetricResult(
+                sys_score=0.7,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 1"],
+                ref=testset.ref,
+                metric="mock_6",
+            ),
+            "Sys 2": MetricResult(
+                sys_score=0.8,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 2"],
+                ref=testset.ref,
+                metric="mock_6",
+            ),
+            "Sys 3": MetricResult(
+                sys_score=0.9,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 3"],
+                ref=testset.ref,
+                metric="mock_6",
+            )
+        }
+    )
+
+    multiple_metric_result_odd = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3, "COMET":multiple_result_4, "TER":multiple_result_5}
+    multiple_metric_result_even = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3, "COMET":multiple_result_4, "TER":multiple_result_5, "mock_6":multiple_result_6}
 
     median_odd = Median(multiple_metric_result_odd)
     median_even = Median(multiple_metric_result_even)
@@ -152,8 +210,8 @@ class TestMedian(unittest.TestCase):
 
     def test_score_calculation_and_ranking_odd(self):
 
-        expected_sys_score = {"Sys 1": 0.1, "Sys 2":0.2, "Sys 3":0.3}
-        expected_sys_rank = {"Sys 1": 3, "Sys 2": 2, "Sys 3": 1}
+        expected_sys_score = {"Sys 1": 0.1, "Sys 2":0.3, "Sys 3":0.3}
+        expected_sys_rank = {"Sys 1": 2, "Sys 2": 1, "Sys 3": 1}
         result = self.median_odd.universal_score_calculation_and_ranking(self.testset)
         for sys in list(self.systems_names.keys()):
             sys_result  = result.systems_universal_metrics_results[sys]
@@ -168,7 +226,7 @@ class TestMedian(unittest.TestCase):
 
     def test_score_calculation_and_ranking_even(self):
 
-        expected_sys_score = {"Sys 1": 0.1, "Sys 2":0.25, "Sys 3":0.3}
+        expected_sys_score = {"Sys 1": 0.1, "Sys 2":0.5, "Sys 3":0.6}
         expected_sys_rank = {"Sys 1": 3, "Sys 2": 2, "Sys 3": 1}
         result = self.median_even.universal_score_calculation_and_ranking(self.testset)
         for sys in list(self.systems_names.keys()):

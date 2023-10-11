@@ -471,7 +471,8 @@ def update_multiple_buckets(
 
 
 
-def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None, saving_zip: str = None) -> None:
+def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names_dict: Dict[str,str], saving_dir: str = None, saving_zip: str = None) -> None:
+    systems_names = multiple_result.all_systems_names(systems_names_dict)
 
     filename = multiple_result.metric + FILENAME_ERROR_TYPE_ANALYSIS
 
@@ -599,8 +600,11 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
         save_plot(saving_dir, filename, plot)
 
 
-def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None, 
+def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names_dict: Dict[str,str], saving_dir: str = None, 
                                 saving_zip: zipfile.ZipFile = None, test:str=False) -> bool:
+
+    sys_names = multiple_result.all_systems_names(sys_names_dict)
+
     scores_list = [
         metric_system.seg_scores 
         for metric_system in list(multiple_result.systems_metric_results.values())]
@@ -869,7 +873,8 @@ def analysis_labels_table(seg_scores_dict:Dict[str,List[float]], metric:str, sys
     elif saving_dir is not None:
         save_table(saving_dir,filename,df)
 
-def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
+def analysis_labels(result: MultipleMetricResults, sys_names_dict: Dict[str,str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
+    sys_names = result.all_systems_names(sys_names_dict)
     seg_scores_list = [list(result_sys.seg_scores) for result_sys in list(result.systems_metric_results.values())]
     
     if any(seg_scores_list):

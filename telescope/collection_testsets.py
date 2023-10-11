@@ -1,10 +1,17 @@
 from typing import List, Tuple, Dict
 from telescope.testset import Testset, MultipleTestset
-from telescope.utils import read_lines
+from telescope.utils import read_lines, sys_ids_sort, ref_ids_sort
 
 import streamlit as st
 import click
 import abc
+
+def stop_nlp():
+    st.session_state["show_results"] = False
+    st.session_state["metrics_results_per_ref"] = {}
+    st.session_state["bias_results_per_evaluation"] = {}
+    st.session_state["collection_testsets"] = None
+    st.session_state["metrics"] = None
 
 class CollectionTestsets:
 
@@ -36,14 +43,39 @@ class CollectionTestsets:
         testsets: Dict[str, Testset], # set of testsets. Each testset refers to one reference. {reference_filename:testset}
         language_pair: str,
     ) -> None:
+        
+        s_ids = sys_ids_sort(list(systems_names.keys()))
+        r_ids = ref_ids_sort(list(refs_ids.values()))
+
         self.src_name = src_name
         self.refs_names = refs_names
-        self.refs_ids = refs_ids
-        self.systems_ids = systems_ids
-        self.systems_names = systems_names
+
+        ref_filenames = list(refs_ids.keys())
+        ref_filenames_ids = list(refs_ids.values())
+        self.refs_ids = {}
+        for id in r_ids:
+            i = ref_filenames_ids.index(id)
+            filename = ref_filenames[i]
+            self.refs_ids[filename] = id
+
+        sys_filenames = list(systems_ids.keys())
+        sys_filenames_ids = list(systems_ids.values())
+        self.systems_ids  = {}
+        for id in s_ids:
+            i = sys_filenames_ids.index(id)
+            filename = sys_filenames[i]
+            self.systems_ids[filename] = id
+
+        self.systems_names = {id:systems_names[id] for id in s_ids}
+
+
         self.filenames = filenames
         self.testsets = testsets
         self.language_pair = language_pair.lower()
+        
+        assert len(self.refs_names) == len(self.refs_ids)
+        assert len(self.refs_ids) == len(self.testsets)
+        assert len(self.systems_ids) == len(self.systems_names)
 
     @property
     def source_language(self):
@@ -61,10 +93,7 @@ class CollectionTestsets:
         return list(self.systems_ids.values())
     
     def names_of_systems(self) -> List[str]:
-        ids = list(self.systems_names.keys())
-        ids.sort()
-        names = [self.systems_names[id] for id in ids]
-        return names
+        return list(self.systems_names.values())
     
     def system_name_id(self, name:str) -> str:
         for sys_id, sys_name in self.systems_names.items():
@@ -118,10 +147,10 @@ class CollectionTestsets:
     def upload_files(cls) -> list:
         st.subheader("Upload Files for :blue[" + cls.title + "] analysis:")
         
-        source_file = st.file_uploader("Upload the **" + cls.type_of_source + "**")
+        source_file = st.file_uploader("Upload the **" + cls.type_of_source + "**", on_change=stop_nlp)
         sources = read_lines(source_file)
 
-        ref_files = st.file_uploader("Upload the **" + cls.type_of_references + "**", accept_multiple_files=True)
+        ref_files = st.file_uploader("Upload the **" + cls.type_of_references + "**", accept_multiple_files=True, on_change=stop_nlp)
         references, refs_ids = {}, {}
         for ref_file in ref_files:
             if ref_file.name not in references:
@@ -130,7 +159,7 @@ class CollectionTestsets:
                 references[ref_file.name] = data
                 refs_ids[ref_file.name] = ref_id
 
-        outputs_files = st.file_uploader("Upload the **" + cls.type_of_output + "**", accept_multiple_files=True)
+        outputs_files = st.file_uploader("Upload the **" + cls.type_of_output + "**", accept_multiple_files=True, on_change=stop_nlp)
         systems_ids, systems_names, outputs = {}, {}, {}
         for output_file in outputs_files:
             if output_file.name not in systems_ids:
@@ -152,7 +181,8 @@ class CollectionTestsets:
             cls.message_language + ":",
             cls.all_languages,
             index=0,
-            help=("If the language is indifferent and BERTScore metric is not used, then select X.")
+            help=("If the language is indifferent and BERTScore metric is not used, then select X."),
+            on_change=stop_nlp
         )
         if language != "":
             language_pair = language + "-" + language
@@ -160,10 +190,10 @@ class CollectionTestsets:
     
     @classmethod
     def upload_names(cls, systems_names:Dict[str,str]) -> list:
-        load_name = st.checkbox('Upload systems names')
+        load_name = st.checkbox('Upload systems names', on_change=stop_nlp)
         name_file = None
         if load_name:
-            name_file = st.file_uploader("Upload the file with systems names", accept_multiple_files=False)
+            name_file = st.file_uploader("Upload the file with systems names", accept_multiple_files=False, on_change=stop_nlp)
             if name_file != None:
                 list_new_names = []
                 names = read_lines(name_file)
@@ -338,7 +368,8 @@ class MTTestsets(NLGTestsets):
             cls.message_language + ":",
             cls.all_language_pairs,
             index=0,
-            help=("If the language is indifferent and BERTScore metric is not used, then select X")
+            help=("If the language is indifferent and BERTScore metric is not used, then select X"),
+            on_change=stop_nlp
         )
         return language_pair
 
@@ -456,7 +487,7 @@ class ClassTestsets(CollectionTestsets):
     
     @staticmethod
     def upload_labels() -> List[str]:
-        labels_file = st.file_uploader("Upload a file with the full set of labels separated by line", accept_multiple_files=False)
+        labels_file = st.file_uploader("Upload a file with the full set of labels separated by line", accept_multiple_files=False, on_change=stop_nlp)
         return labels_file
     
     @classmethod

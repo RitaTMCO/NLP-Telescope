@@ -1,4 +1,5 @@
 import abc
+import numpy as np
 from typing import Dict
 from telescope.metrics.metric import MultipleMetricResults
 from telescope.testset import MultipleTestset
@@ -12,6 +13,22 @@ class UniversalMetric(metaclass=abc.ABCMeta):
 
     def __init__(self, multiple_metrics_results: Dict[str, MultipleMetricResults]):
         self.multiple_metrics_results = multiple_metrics_results #{metric:MultipleMetricResults}
+    
+    def normalize(self,min_score:float,max_score:float,score:float) -> float:
+        return (score-min_score)/(max_score-min_score)
+    
+    def normalize_metrics(self,metric:str,sys_score:float,max:float,min:float):
+        if metric == "TER":
+            return self.normalize(1.0,0.0, sys_score)
+        elif metric == "COMET":
+            return self.normalize(min,max,sys_score)
+        else:
+            return sys_score
+    
+    def max_min_COMET(self,metric_results:MultipleMetricResults):
+        list_scores = [metric_result.sys_score for metric_result in list(metric_results.systems_metric_results.values())]
+        return min(list_scores), max(list_scores)
+
 
     def ranking_systems(self, systems_universal_scores:Dict[str,float],reverse:bool=True):
         systems_ranks = {}

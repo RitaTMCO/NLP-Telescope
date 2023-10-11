@@ -115,7 +115,7 @@ class Classification(Task):
 
         #-------------- |Analysis Of Each Label| --------------------
         st.header(":blue[Results by label:]")
-        analysis_labels(results[metric], collection_testsets.names_of_systems(), labels, path, saving_zip)
+        analysis_labels(results[metric], collection_testsets.systems_names, labels, path, saving_zip)
         
         #-------------- |Examples| --------------------
         st.header(":blue[Examples That Are Incorrectly Labelled:]")
@@ -172,7 +172,7 @@ class Classification(Task):
         labels = collection_testsets.labels
         systems_names = collection_testsets.systems_names
 
-        analysis_labels(results[metric], collection_testsets.names_of_systems(), labels, saving_dir)
+        analysis_labels(results[metric], collection_testsets.systems_names, labels, saving_dir)
         
         for sys_id, sys_name in systems_names.items():
             output_file = saving_dir + sys_name + "/"         

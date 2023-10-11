@@ -52,3 +52,15 @@ def read_yaml_file(file_yaml):
     data = yaml.safe_load(file)
     file.close()
     return data
+
+def sys_ids_sort(ids):
+    ids_number = [ int(id.replace("Sys ", "")) for id in ids]
+    ids_number.sort()
+    ids_sort = [ "Sys " + str(num) for num in ids_number]
+    return ids_sort
+
+def ref_ids_sort(ids):
+    ids_number = [ int(id.replace("Ref ", "")) for id in ids]
+    ids_number.sort()
+    ids_sort = [ "Ref " + str(num) for num in ids_number]
+    return ids_sort
