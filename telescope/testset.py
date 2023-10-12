@@ -67,6 +67,7 @@ class PairwiseTestset(Testset):
         self.system_y = system_y
         self.language_pair = language_pair
         self.filenames = filenames
+        self.task = "machine-translation"
 
         assert len(ref) == len(
             src
