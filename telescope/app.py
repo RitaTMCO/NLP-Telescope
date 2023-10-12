@@ -122,7 +122,7 @@ filters = st.sidebar.multiselect(
 )
 
 length_interval = ()
-if "length" in available_filters:
+if "length" in filters:
     st.sidebar.subheader("Segment length constraints:")
     length_interval = st.sidebar.slider(
         "Specify the interval for the length distribution:",
@@ -259,7 +259,7 @@ def run_all_metrics(collection, metrics, filters):
             collection_testsets.testsets[ref_name] = apply_filters(testset,filters,ref_name,
                                                                 source_language,
                                                                 target_language)
-            st.success("Corpus reduced in {:.2f}%".format(
+            st.success("Filters applied: corpus reduced in {:.2f}%".format(
                 (1 - (len(collection_testsets.testsets[ref_name]) / corpus_size)) 
                     * 100) + " for reference " + ref_name)
 

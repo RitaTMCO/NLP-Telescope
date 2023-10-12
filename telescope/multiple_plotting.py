@@ -328,9 +328,10 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
 def update_multiple_buckets(
     systems_results_seg_scores: Dict[str, List[float]],
     systems_names: List[str],
+    metric:str,
     crit_err_thr: float = 0.0,
     major_err_thr: float = 0.3,
-    minor_err_thr: float = 0.6,
+    minor_err_thr: float = 0.6, 
 ):
 
     number_of_systems = len(systems_names)
@@ -463,6 +464,7 @@ def update_multiple_buckets(
         )
 
     # Custom x axis
+    plt.title("Error-type analysis of " + metric, fontsize=22 + ratio_font)
     plt.xticks(r, names,fontsize=18 + ratio_font,rotation = ROTATION)
     plt.yticks(fontsize=22 + ratio_font)
     plt.xlabel("Model",fontsize=22 + ratio_font)
@@ -503,6 +505,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
     plot = update_multiple_buckets(
             systems_results_seg_scores,
             systems_names,
+            multiple_result.metric,
             values[0],
             values[1],
             values[2],
@@ -534,7 +537,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
         st.markdown("""
                     
-                    This stacked bar plot separates segments into buckets based on the percentage of segments whose segment-level score 
+                    This stacked bar plot separates segments into buckets based on the percentage of segments whose """ + multiple_result.metric + """ segment-level score
                     is between the minimum and maximum threshold. 
 
                     Each bucket has the the minimum and maximum threshold and the :red[red bucket] minimum threshold is the lowest segment-level score 
@@ -571,7 +574,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
 
         left, right = st.columns([0.3,0.7])
-        right.pyplot(update_multiple_buckets(systems_results_seg_scores,systems_names, 
+        right.pyplot(update_multiple_buckets(systems_results_seg_scores,systems_names,multiple_result.metric,
                                              st.session_state["red_bucket_"+ multiple_result.metric], 
                                              st.session_state["yellow_bucket_"+ multiple_result.metric], 
                                              st.session_state["blue_bucket_"+ multiple_result.metric]))
@@ -590,7 +593,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
         if saving_dir and saving_zip:
             create_and_save_plot_zip(saving_dir + filename, saving_zip,
-                                     update_multiple_buckets(systems_results_seg_scores,systems_names, 
+                                     update_multiple_buckets(systems_results_seg_scores,systems_names, multiple_result.metric,
                                              st.session_state["red_bucket_"+ multiple_result.metric], 
                                              st.session_state["yellow_bucket_"+ multiple_result.metric], 
                                              st.session_state["blue_bucket_"+ multiple_result.metric]))
@@ -604,6 +607,7 @@ def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_nam
                                 saving_zip: zipfile.ZipFile = None, test:str=False) -> bool:
 
     sys_names = multiple_result.all_systems_names(sys_names_dict)
+    metric_name = multiple_result.metric
 
     scores_list = [
         metric_system.seg_scores 
@@ -620,7 +624,7 @@ def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_nam
             colors = colors
         ) 
 
-        fig.update_layout(xaxis_title="Score", yaxis_title="Probability Density")
+        fig.update_layout(xaxis_title= metric_name + " score", yaxis_title="Probability Density")
         fig.update_xaxes(title_standoff = 40)
 
 
@@ -650,6 +654,10 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
 
     sys_x_id, sys_x_name = system_x
     sys_y_id, sys_y_name = system_y
+    metric_name = multiple_result.metric
+
+    x_score = sys_x_name + " " + metric_name + " score"
+    y_score = sys_y_name + " " + metric_name + " score"
 
     filename = sys_x_name + "-" + sys_y_name + FILENAME_SEGMENT_COMPARISON
 
@@ -657,24 +665,24 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
         [multiple_result.systems_metric_results[sys_x_id].seg_scores, 
         multiple_result.systems_metric_results[sys_y_id].seg_scores]).T
 
-    chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
+    chart_data = pd.DataFrame(scores, columns=[x_score, y_score])
     chart_data["difference"] = np.absolute(scores[:, 0] - scores[:, 1])
     if source:
         chart_data["source"] = multiple_result.src
     chart_data["reference"] = multiple_result.ref
-    chart_data["x"] = multiple_result.system_cand(sys_x_id)
-    chart_data["y"] = multiple_result.system_cand(sys_y_id)
+    chart_data[sys_x_name] = multiple_result.system_cand(sys_x_id)
+    chart_data[sys_y_name] = multiple_result.system_cand(sys_y_id)
 
     if source:
-        tool = ["x", "y", "reference", "difference", "source", "x_score", "y_score"]
+        tool = [sys_x_name, sys_y_name, "reference", "difference", "source", x_score, y_score]
     else:
-        tool = ["x", "y", "reference", "difference", "x_score", "y_score"]
+        tool = [sys_x_name, sys_y_name, "reference", "difference", x_score, y_score]
 
     c = (alt.Chart(chart_data, width="container")
             .mark_circle()
             .encode(
-                x="x_score",
-                y="y_score",
+                x=x_score,
+                y=y_score,
                 size="difference",
                 color=alt.Color("difference"),
                 tooltip=tool,
@@ -850,7 +858,7 @@ def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num
 def analysis_labels_plot(seg_scores_dict:Dict[str,List[float]], metric:str, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
 
     filename = metric + FILENAME_ANALYSIS_LABELS
-    plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Results by label (with " + metric + " metric)" , "Score") 
+    plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Results by label (with " + metric + " metric)" , metric + " score") 
     if runtime.exists():
         st.subheader("Stacked bar plot")
         st.pyplot(plt)
