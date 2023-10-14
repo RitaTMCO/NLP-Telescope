@@ -958,6 +958,15 @@ def bias_segments(system_name:str, ref:List[str], output_sys:List[str], gender_r
         for token in text_groups:
             terms += token["term"] + ":" + token["gender"] + ", "
         return terms[:-2]
+    
+    def match_id_terms(text_ref_groups: List[Dict[str,str]], text_sys_groups:  List[Dict[str,str]]):
+        terms = ""
+        num = len(text_ref_groups)
+        for i in range(num):
+            token_ref = text_ref_groups[i]["term"] + ":" + text_ref_groups[i]["gender"]
+            token_sys = text_sys_groups[i]["term"] + ":" + text_sys_groups[i]["gender"]
+            terms += "[" + token_ref + ","  + token_sys + "]" + ", "
+        return terms[:-2]
 
     filename = system_name.replace(" ","_") + "-bias-segments.csv"
     n = len(gender_refs_seg)
@@ -973,13 +982,15 @@ def bias_segments(system_name:str, ref:List[str], output_sys:List[str], gender_r
         if (gender_refs_seg[i] != gender_sys_seg[i]) and ("line " + str(i+1) not in bias_segments):
             terms_ref = gender_terms(text_groups_ref_per_seg[i])
             terms_sys = gender_terms(text_groups_sys_per_seg[i])
+            match_id = match_id_terms(text_groups_ref_per_seg[i],text_groups_sys_per_seg[i] )
             bias_segments.append("line " + str(i+1))
             lines.append(i+1)
-            table.append([ref[i], output_sys[i], terms_ref, terms_sys])
+            table.append([ref[i], output_sys[i], terms_ref, terms_sys,match_id])
 
     if len(bias_segments) != 0:
         df = pd.DataFrame(np.array(table), index=lines, columns=["reference", "system output", 
-                                                    "identity term and its gender in reference", "identity term and its gender in output"])
+                                                    "identity term that were matched in reference", "identity term that were matched in output",
+                                                    "match of identity terms"])
         if saving_dir is not None:
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
@@ -997,6 +1008,15 @@ def all_identity_terms(system_name:str, gender_sys_seg: Dict[int, List[str]], ge
             terms += token["term"] + ":" + token["gender"] + ", "
         return terms[:-2]
 
+    def match_id_terms(text_ref_groups: List[Dict[str,str]], text_sys_groups:  List[Dict[str,str]]):
+        terms = ""
+        num = len(text_ref_groups)
+        for i in range(num):
+            token_ref = text_ref_groups[i]["term"] + ":" + text_ref_groups[i]["gender"]
+            token_sys = text_sys_groups[i]["term"] + ":" + text_sys_groups[i]["gender"]
+            terms += "[" + token_ref + ","  + token_sys + "]" + ", "
+        return terms[:-2]
+
     filename = system_name.replace(" ","_") + "_all_identity_terms_matched.csv"
     n = len(gender_refs_seg)
     bias_segments = list()
@@ -1005,6 +1025,7 @@ def all_identity_terms(system_name:str, gender_sys_seg: Dict[int, List[str]], ge
     for i in range(n):
         terms_ref = gender_terms(text_groups_ref_per_seg[i])
         terms_sys = gender_terms(text_groups_sys_per_seg[i])
+        match_id = match_id_terms(text_groups_ref_per_seg[i],text_groups_sys_per_seg[i])
         bias_segments.append("line " + str(i+1))
         lines.append(i+1)
         if (gender_refs_seg[i] != gender_sys_seg[i]):
@@ -1012,10 +1033,11 @@ def all_identity_terms(system_name:str, gender_sys_seg: Dict[int, List[str]], ge
         else:
             has_bias = "No"
 
-        table.append([has_bias, terms_ref, terms_sys])
+        table.append([has_bias, terms_ref, terms_sys, match_id])
 
     if len(bias_segments) != 0:
-        df = pd.DataFrame(np.array(table), index=lines, columns=["has_bias", "identity term and its gender in reference", "identity term and its gender in output"])
+        df = pd.DataFrame(np.array(table), index=lines, columns=["has_bias","identity term that were matched in reference", 
+                                                                 "identity term that were matched in output","match of identity terms"])
         
         if runtime.exists():
             if saving_zip is not None and saving_dir is not None:
