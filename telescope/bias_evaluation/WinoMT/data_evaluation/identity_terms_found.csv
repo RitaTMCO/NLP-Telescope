@@ -1,0 +1,10 @@
+,dictionary-based approach(google),linguistic approach(google),hybrid approach(google),dictionary-based approach(microsoft),linguistic approach(microsoft),hybrid approach(microsoft)
+Number of identity terms in gold data ,330.0,330.0,330.0,343.0,343.0,343.0
+Number of identity terms found in tool,889.0,420.0,420.0,903.0,436.0,436.0
+True Positive,287.0,238.0,238.0,283.0,227.0,227.0
+False Positive,602.0,182.0,182.0,620.0,209.0,209.0
+False Negative,43.0,92.0,92.0,60.0,116.0,116.0
+Precison,0.323,0.567,0.567,0.313,0.521,0.521
+Recall,0.87,0.721,0.721,0.825,0.662,0.662
+F1 Score,0.471,0.635,0.635,0.454,0.583,0.583
+Correct gender in True Positive,284.0,169.0,235.0,279.0,160.0,223.0

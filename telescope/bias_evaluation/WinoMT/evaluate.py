@@ -114,7 +114,7 @@ def identity_terms_found_info(s,m):
 
     number_of_match = read_csv_file(file_info)["Number of identity terms that were matched"][0]
 
-    return [number_id_golden, number_id_tool, tp, fp, fn, precison, recall, f1_score, len(list_tp)-len(diff_1), number_of_match]
+    return [number_id_golden, number_id_tool, tp, fp, fn, round(precison,3), round(recall,3), round(f1_score,3), len(list_tp)-len(diff_1)], [number_of_match, number_id_tool]
 
 def time_bias_evlaution(s,m):
     file_info_join = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/" + m + "/bias_evaluations_information.csv"
@@ -123,34 +123,25 @@ def time_bias_evlaution(s,m):
     time_join = read_csv_file(file_info_join)["Bias Evaluation Time"][0]
     time_pro = read_csv_file(file_info_pro)["Bias Evaluation Time"][0]
     time_anti = read_csv_file(file_info_anti)["Bias Evaluation Time"][0]
-    return [time_join, time_pro, time_anti]
+    return [round(time_join,3), round(time_pro,3), round(time_anti,3)]
 
-def compare_pro_anti(s,m):
+def compare_pro_anti(s,scene):
+    lower_scene = scene.lower()
+    metrics = ["Demographic-Parity","Accuracy","F1-score"]
+    file_scores= "test-WinoMT-"+ scene + "/tool_test-WinoMT-" + scene  +"/en_" + lower_scene + "_source.txt/pt_" + lower_scene + "_ref_" + s + ".txt/bias_evaluation/hybrid approach/bias_scores.csv"
 
-    metrics = ["Demographic-Parity","Accuracy", "Precision","Recall", "F1-score"]
-    file_scores_pro = "test-WinoMT-Pro/tool_test-WinoMT-Pro/en_pro_source.txt/pt_pro_ref_" + s + ".txt/bias_evaluation/" + m + "/bias_scores.csv"
-    file_scores_anti = "test-WinoMT-Anti/tool_test-WinoMT-Anti/en_anti_source.txt/pt_anti_ref_" + s + ".txt/bias_evaluation/" + m + "/bias_scores.csv"
+    data = pd.read_csv(file_scores,index_col=[0])
+    metrics_scores = data.to_dict("index")
+    scores = {m:list(scores.values())[0] for m, scores in metrics_scores.items()}
 
-    data_pro = pd.read_csv(file_scores_pro,index_col=[0])
-    metrics_scores_pro = data_pro.to_dict("index")
-    scores_pro = {m:list(scores.values())[0] for m, scores in metrics_scores_pro.items()}
-    
-    data_anti = pd.read_csv(file_scores_anti,index_col=[0])
-    metrics_scores_anti = data_anti.to_dict("index")
-    scores_anti = {m:list(scores.values())[0] for m, scores in metrics_scores_anti.items()}
+    return [round(scores[m],3) for m in metrics]
 
-    return [scores_pro[m] - scores_anti[m] for m in metrics]
+def compare_gender(s,g):
+    metrics = ["Accuracy", "F1-score", "PPV","TPR","FDR","FPR","FOR","FNR","NPV","TNR"]
 
-def compare_gender(s,m):
-    seg_metrics = ["Accuracy", "F1-score", "PPV","TPR","FDR","FPR","FOR","FNR","NPV","TNR"]
-    diff_male_female = []
-    diff_male_neutral = []
-    diff_female_neutral = []
-
-    file_scores_rates_seg = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/" + m + "/" + s + "/rates.csv"
-    file_scores_f1_seg = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/" + m + "/analysis_labels_bucket/F1-score_groups_bias_metrics.csv"
-    file_scores_accuracy_seg = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/" + m + "/analysis_labels_bucket/Accuracy_groups_bias_metrics.csv"
-    genders = ["neutral", "female", "male"]
+    file_scores_rates_seg = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/hybrid approach/" + s + "/rates.csv"
+    file_scores_f1_seg = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/hybrid approach/analysis_labels_bucket/F1-score_results-by-label-table.csv"
+    file_scores_accuracy_seg = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/hybrid approach/analysis_labels_bucket/Accuracy_results-by-label-table.csv"
 
     data = pd.read_csv(file_scores_rates_seg,index_col=[0])
     seg_metrics_scores = data.to_dict("index")
@@ -159,106 +150,76 @@ def compare_gender(s,m):
     data_a = pd.read_csv(file_scores_accuracy_seg,index_col=[0])
     metrics_scores_a = data_a.to_dict("index")[s]
 
-    for g in genders:
-        seg_metrics_scores[g]["Accuracy"] = metrics_scores_a[g]
-        seg_metrics_scores[g]["F1-score"] = metrics_scores_f1[g]
+    seg_metrics_scores[g]["Accuracy"] = metrics_scores_a[g]
+    seg_metrics_scores[g]["F1-score"] = metrics_scores_f1[g]
 
-    for s_m in seg_metrics:
-        diff_male_female.append(seg_metrics_scores["male"][s_m] - seg_metrics_scores["female"][s_m])
-        diff_male_neutral.append(seg_metrics_scores["male"][s_m] - seg_metrics_scores["neutral"][s_m])
-        diff_female_neutral.append(seg_metrics_scores["female"][s_m] - seg_metrics_scores["neutral"][s_m])
+    return [round(seg_metrics_scores[g][m],3) for m in metrics]
+def compare_systems(s):
+    metrics = ["Demographic-Parity","Accuracy","F1-score"]
+    file_scores= "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/hybrid approach/bias_scores.csv"
 
-    return diff_male_female, diff_male_neutral, diff_female_neutral
+    data= pd.read_csv(file_scores,index_col=[0])
+    metrics_scores= data.to_dict("index")
+    scores= {m:list(scores.values())[0] for m, scores in metrics_scores.items()}
 
-def compare_systems(m):
-    metrics = ["Demographic-Parity","Accuracy", "Precision","Recall", "F1-score"]
-    file_scores_google = "test-WinoMT-Pro/tool_test-WinoMT-Pro/en_pro_source.txt/pt_pro_ref_google.txt/bias_evaluation/" + m + "/bias_scores.csv"
-    file_scores_microsoft = "test-WinoMT-Anti/tool_test-WinoMT-Anti/en_anti_source.txt/pt_anti_ref_microsoft.txt/bias_evaluation/" + m + "/bias_scores.csv"
-
-    data_google = pd.read_csv(file_scores_google,index_col=[0])
-    metrics_scores_google = data_google.to_dict("index")
-    scores_google = {m:list(scores.values())[0] for m, scores in metrics_scores_google.items()}
-    
-    data_microsoft = pd.read_csv(file_scores_microsoft,index_col=[0])
-    metrics_scores_microsoft = data_microsoft.to_dict("index")
-    scores_microsoft = {m:list(scores.values())[0] for m, scores in metrics_scores_microsoft.items()}
-
-    return [scores_google[m] - scores_microsoft[m] for m in metrics]
+    return [round(scores[m],3) for m in metrics]
 
 
 
 if __name__ == "__main__":
     method = ["dictionary-based approach", "linguistic approach", "hybrid approach"]
+    genders = ["neutral","female","male"]
     sys = ["google", "microsoft"]
-    tp_fp_fn_gender = {"dictionary-based approach":[], "linguistic approach":[], "hybrid approach":[]}
+    tp_fp_fn_gender = {}
+    match_table_id = {}
     scores_pro_anti = {}
     times_method = {}
-    scores_male_female = {}
-    scores_male_neutral = {}
-    scores_female_neutral = {}
+    scores_gender = {}
     scores_sys = {}
     dataset_name = ["test-WinoMT (google)", "test-WinoMT-Pro (google)", "test-WinoMT-Anti (google)", 
                     "test-WinoMT (microsoft)", "test-WinoMT-Pro (microsoft)", "test-WinoMT-Anti (microsoft)"]
-    metrics = ["Demographic-Parity","Accuracy", "Precision","Recall", "F1-score"]
-    seg_metrics = ["Accuracy", "F1-score", "PPV","TPR","FDR","FPR","FOR","FNR","NPV","TNR"]
 
     for s in sys:
         print(Fore.GREEN + "-----------------------------------" + s + "-----------------------------------" )
         for m in method:
             print(Fore.WHITE)
-            tp_fp_fn_gender[m] = identity_terms_found_info(s,m)
-            scores_pro_anti[m] = compare_pro_anti(s,m)
-            scores_male_female[m], scores_male_neutral[m], scores_female_neutral[m] = compare_gender(s,m)
+            tp_fp_fn_gender[m + "(" + s +")"], match_table_id[m + "(" + s +")"] = identity_terms_found_info(s,m)
+        
+        for g in genders:
+            scores_gender[g + "(" + s +")"]  = compare_gender(s,g)
 
-        print(Fore.CYAN + "Identity Terms Found Table")
-        print(Fore.WHITE)
-        p_fp_fn_gender_pd = pd.DataFrame(tp_fp_fn_gender)
-        p_fp_fn_gender_pd.index = ["Number of golden identity terms", "Number of identity terms found in tool", "TP", "FP", "FN","Precison", "Recall", "F1 Score", "Correct gender in TP", "Number of matches"]
-        print(p_fp_fn_gender_pd)
-        print("\n")
-        p_fp_fn_gender_pd.to_csv("data_evaluation/" + s.replace(" ","-") + "_identity_terms_found.csv")
-
-        print(Fore.CYAN + "Scores Pro Anti Table")
-        print(Fore.WHITE)
-        scores_pro_anti_pd = pd.DataFrame(scores_pro_anti)
-        scores_pro_anti_pd.index = metrics
-        print(scores_pro_anti_pd)
-        print("\n")
-        scores_pro_anti_pd.to_csv("data_evaluation/" + s.replace(" ","-") + "_scores_pro_anti.csv")
-
-        print(Fore.CYAN + "Scores Male Female Table")
-        print(Fore.WHITE)
-        scores_male_female_pd = pd.DataFrame(scores_male_female)
-        scores_male_female_pd.index = seg_metrics
-        print(scores_male_female_pd)
-        print("\n")
-        scores_male_female_pd.to_csv("data_evaluation/" + s.replace(" ","-") + "_scores_male_female.csv")
-
-        print(Fore.CYAN + "Scores Male Neutral Table")
-        print(Fore.WHITE)
-        scores_male_neutral_pd = pd.DataFrame(scores_male_neutral)
-        scores_male_neutral_pd.index = seg_metrics
-        print(scores_male_neutral_pd)
-        print("\n")
-        scores_male_neutral_pd.to_csv("data_evaluation/" + s.replace(" ","-") + "_scores_male_neutral.csv")
-
-        print(Fore.CYAN + "Scores Female Neutral Table")
-        print(Fore.WHITE)
-        scores_female_neutral_pd = pd.DataFrame(scores_female_neutral)
-        scores_female_neutral_pd.index = seg_metrics
-        print(scores_female_neutral_pd)
-        print("\n")
-        scores_female_neutral_pd.to_csv("data_evaluation/" + s.replace(" ","-") + "_scores_female_neutral.csv")
-    
-    
+        for scene in ["Pro", "Anti"]:
+            scores_pro_anti[scene + "(" + s +")"]  = compare_pro_anti(s,scene)
+        
+        scores_sys[s] = compare_systems(s)
+     
     for m in method:
         time = []
         names_datasets_time = []
         for s in sys:
-            tp_fp_fn_gender[s] = identity_terms_found_info(s,m)
             time += time_bias_evlaution(s,m)
         times_method[m] = time 
-        scores_sys[m] = compare_systems(m)
+
+
+    print(Fore.CYAN + "Identity Terms Found Table")
+    print(Fore.WHITE)
+    p_fp_fn_gender_pd = pd.DataFrame(tp_fp_fn_gender)
+    p_fp_fn_gender_pd.index = ["Number of identity terms in gold data ", "Number of identity terms found in tool", 
+                                "True Positive", "False Positive", "False Negative","Precison", 
+                                "Recall", "F1 Score", "Correct gender in True Positive"]
+    print(p_fp_fn_gender_pd)
+    print("\n")
+    p_fp_fn_gender_pd.to_csv("data_evaluation/identity_terms_found.csv")
+
+
+    print(Fore.CYAN + "Matches Table")
+    print(Fore.WHITE)
+    p_fp_fn_gender_pd = pd.DataFrame(match_table_id)
+    p_fp_fn_gender_pd.index = ["Number of matches", "Number of identity terms found in tool"]
+    print(p_fp_fn_gender_pd)
+    print("\n")
+    p_fp_fn_gender_pd.to_csv("data_evaluation/identity_terms_matches.csv")
+
 
     print(Fore.CYAN + "Bias Evaluation Time")
     print(Fore.WHITE)
@@ -268,12 +229,28 @@ if __name__ == "__main__":
     print("\n")
     pd_time.to_csv("data_evaluation/time_evaluation.csv")
 
+
     print(Fore.CYAN + "Scores Google Microsoft Table")
     print(Fore.WHITE)
     pd_sys = pd.DataFrame(scores_sys)
-    pd_sys.index = metrics
+    pd_sys.index = ["Demographic-Parity","Accuracy","F1-score"]
     print(pd_sys)
     print("\n")
     pd_sys.to_csv("data_evaluation/scores_google_microsoft.csv")
-    
 
+    print(Fore.CYAN + "Gender")
+    print(Fore.WHITE)
+    pd_gender = pd.DataFrame(scores_gender)
+    pd_gender.index = ["Accuracy", "F1-score", "Precision","Recall" ,"FDR","FPR","FOR","FNR","NPV","TNR"]
+    print(pd_gender)
+    print("\n")
+    pd_gender.to_csv("data_evaluation/genders.csv")
+
+
+    print(Fore.CYAN + "Scores Pro Anti Table")
+    print(Fore.WHITE)
+    scores_pro_anti_pd = pd.DataFrame(scores_pro_anti)
+    scores_pro_anti_pd.index = ["Demographic-Parity","Accuracy","F1-score"]
+    print(scores_pro_anti_pd)
+    print("\n")
+    scores_pro_anti_pd.to_csv("data_evaluation/scores_pro_anti.csv")

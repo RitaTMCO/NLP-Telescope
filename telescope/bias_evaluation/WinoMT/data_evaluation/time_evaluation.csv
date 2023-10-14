@@ -1,7 +1,7 @@
 ,dictionary-based approach,linguistic approach,hybrid approach
-test-WinoMT (google),0.1318104267120361,1.1402785778045654,1.510307550430298
-test-WinoMT-Pro (google),0.0737640857696533,0.6318581104278564,0.5978467464447021
-test-WinoMT-Anti (google),0.0847256183624267,0.6094510555267334,0.6126697063446045
-test-WinoMT (microsoft),0.1505234241485595,1.212271213531494,1.674605369567871
-test-WinoMT-Pro (microsoft),0.0865464210510253,0.6840341091156006,0.8671481609344482
-test-WinoMT-Anti (microsoft),0.0726964473724365,0.6566338539123535,0.8436496257781982
+test-WinoMT (google),0.126,1.405,1.348
+test-WinoMT-Pro (google),0.081,0.738,0.728
+test-WinoMT-Anti (google),0.07,0.762,0.7
+test-WinoMT (microsoft),0.133,1.595,1.489
+test-WinoMT-Pro (microsoft),0.068,0.746,0.532
+test-WinoMT-Anti (microsoft),0.071,0.731,0.722
