@@ -1,7 +1,7 @@
 ,dictionary-based approach,linguistic approach,hybrid approach
-test-WinoMT (google),0.126,1.405,1.348
-test-WinoMT-Pro (google),0.081,0.738,0.728
-test-WinoMT-Anti (google),0.07,0.762,0.7
-test-WinoMT (microsoft),0.133,1.595,1.489
-test-WinoMT-Pro (microsoft),0.068,0.746,0.532
-test-WinoMT-Anti (microsoft),0.071,0.731,0.722
+test-WinoMT (google),0.128,1.567,1.728
+test-WinoMT-Pro (google),0.071,0.777,0.874
+test-WinoMT-Anti (google),0.075,0.698,0.827
+test-WinoMT (microsoft),0.162,1.542,1.483
+test-WinoMT-Pro (microsoft),0.07,0.802,0.794
+test-WinoMT-Anti (microsoft),0.083,0.849,0.779
