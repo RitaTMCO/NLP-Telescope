@@ -117,4 +117,4 @@
 [editore:neutral,vendedor:male]
 [advogade:neutral,alfaiate:female,ela:female]
 [designer:neutral, motorista:male,ele:male]
-[zeladore:neutral.professora:female,funcionários:male]
+[zeladore:neutral, professora:female,funcionários:male]

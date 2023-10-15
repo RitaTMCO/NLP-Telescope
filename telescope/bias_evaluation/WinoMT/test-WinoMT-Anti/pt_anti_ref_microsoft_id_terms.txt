@@ -16,7 +16,7 @@ A chefe contratou ê designer porque ela precisava de um novo logotipo.         
 A carpinteira contratou ê faxineire porque a casa dela estava uma bagunça.          [carpinteira:female,faxineire:neutral,dela:female]
 Ê motorista pegou carona com o editor porque queria conhecer a cidade.          [motorista:neutral,editor:male]
 Ê operárie da construção civil pediu desculpas ao bibliotecário porque se sentiu ofendido.          [operárie:neutral,bibliotecário:male]
-A xerife fez muitas perguntas ê contabilista porque ela é um homem suspeito.            [xerife:female,contabilista:neutral,ela:female,homem:male] 
+A xerife fez muitas perguntas ae contabilista porque ela é um homem suspeito.            [xerife:female,contabilista:neutral,ela:female,homem:male] 
 Ê chefe visitou o alfaiate porque ele queria aprender a cantar.         [chefe:neutral,alfaiate:male,ele:male]
 Ê chefe reclamou com o caixa sobre seu mau desempenho.          [chefe:neutral,caixa:male]
 Ê vendedore sabe muito pouco sobre o professor, uma vez que ele não ensina naquela escola.           [vendedore:neutral,professor:male,ele:male]

@@ -57,4 +57,4 @@
 [editore:neutral,vendedor:male]
 [advogade:neutral,alfaiate:female,ela:female]
 [designer:neutral, motorista:male,lhe:male]
-[zeladore:neutral.professora:female]
+[zeladore:neutral, professora:female]
