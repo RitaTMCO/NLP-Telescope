@@ -12,7 +12,8 @@ class TestSocialChoiceTheory(unittest.TestCase):
     # sys_id:sys_name
     systems_names = {"Sys 1": "Sys A", "Sys 2":"Sys B", "Sys 3":"Sys C"}
 
-    metrics = ["mock_1","mock_2","mock_3","COMET", "TER"]
+    metrics = ["mock_1","mock_2","mock_3", "COMET", "TER", "mock_4"]
+
     testset = MultipleTestset(
         src=[],
         ref=[],
@@ -30,7 +31,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.1,
-                seg_scores=[],
+                seg_scores=[1, 0.5, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 1"],
                 ref=testset.ref,
@@ -38,7 +39,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
             ),
             "Sys 2": MetricResult(
                 sys_score=0.1,
-                seg_scores=[],
+                seg_scores=[1, 0.25, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
                 ref=testset.ref,
@@ -46,7 +47,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
             ),
             "Sys 3": MetricResult(
                 sys_score=0.3,
-                seg_scores=[],
+                seg_scores=[1, 0.75, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
                 ref=testset.ref,
@@ -67,7 +68,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
             ),
             "Sys 2": MetricResult(
                 sys_score=0.2,
-                seg_scores=[],
+                seg_scores=[1, 0.25, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
                 ref=testset.ref,
@@ -75,7 +76,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
             ),
             "Sys 3": MetricResult(
                 sys_score=0.3,
-                seg_scores=[],
+                seg_scores=[1, 0.75, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
                 ref=testset.ref,
@@ -88,7 +89,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
         systems_metric_results = {
             "Sys 1": MetricResult(
                 sys_score=0.1,
-                seg_scores=[],
+                seg_scores=[1, 0.5, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 1"],
                 ref=testset.ref,
@@ -96,7 +97,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
             ),
             "Sys 2": MetricResult(
                 sys_score=0.3,
-                seg_scores=[],
+                seg_scores=[1, 0.25, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
                 ref=testset.ref,
@@ -104,7 +105,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
             ),
             "Sys 3": MetricResult(
                 sys_score=0.3,
-                seg_scores=[],
+                seg_scores=[1, 0.75, 1],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
                 ref=testset.ref,
@@ -116,7 +117,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
     multiple_result_4 = MultipleMetricResults(
         systems_metric_results = {
             "Sys 1": MetricResult(
-                sys_score=-2,
+                sys_score=-1.5,
                 seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 1"],
@@ -124,7 +125,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
                 metric="COMET",
             ),
             "Sys 2": MetricResult(
-                sys_score=1,
+                sys_score=0.5,
                 seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 2"],
@@ -132,7 +133,7 @@ class TestSocialChoiceTheory(unittest.TestCase):
                 metric="COMET",
             ),
             "Sys 3": MetricResult(
-                sys_score=2,
+                sys_score=1.5,
                 seg_scores=[],
                 src=testset.src,
                 cand=testset.systems_output["Sys 3"],
@@ -171,17 +172,60 @@ class TestSocialChoiceTheory(unittest.TestCase):
         }
     )
 
-    multiple_metric_result = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3, "COMET":multiple_result_4, "TER":multiple_result_5}
+    multiple_result_6 = MultipleMetricResults(
+        systems_metric_results = {
+            "Sys 1": MetricResult(
+                sys_score=-1,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 1"],
+                ref=testset.ref,
+                metric="mock_4",
+            ),
+            "Sys 2": MetricResult(
+                sys_score=0.6,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 2"],
+                ref=testset.ref,
+                metric="mock_4",
+            ),
+            "Sys 3": MetricResult(
+                sys_score=1.1,
+                seg_scores=[],
+                src=testset.src,
+                cand=testset.systems_output["Sys 3"],
+                ref=testset.ref,
+                metric="mock_4",
+            )
+        }
+    )
+
+    multiple_metric_result = {"mock_1":multiple_result_1,"mock_2":multiple_result_2,"mock_3":multiple_result_3, 
+                              "COMET":multiple_result_4, "TER":multiple_result_5, "mock_4":multiple_result_6}
+
+    metrics_scores = {
+                     "mock_1": {"Sys 1": 0.1, "Sys 2": 0.1, "Sys 3": 0.3},
+                      "mock_2": {"Sys 1": 0.1, "Sys 2": 0.2, "Sys 3": 0.3},
+                      "mock_3": {"Sys 1": 0.1, "Sys 2": 0.3, "Sys 3": 0.3},
+                      "COMET": {"Sys 1": -1.5, "Sys 2": 0.5, "Sys 3": 1.5},
+                      "TER": {"Sys 1": 1, "Sys 2": 0.3, "Sys 3": 0},
+                      "mock_4": {"Sys 1": -1, "Sys 2": 0.6, "Sys 3": 1.1},
+                      }
 
     social_choice_theory = SocialChoiceTheory(multiple_metric_result)
 
 
     def test_score_calculation_and_ranking(self):
 
-        expected_sys_score = {"Sys 1": 7, "Sys 2":11, "Sys 3":15}
+        expected_sys_score = {"Sys 1": 8, "Sys 2":13, "Sys 3":18}
         expected_sys_rank = {"Sys 1": 3, "Sys 2": 2, "Sys 3": 1}
 
         result = self.social_choice_theory.universal_score_calculation_and_ranking(self.testset)
+
+        sys_scores = SocialChoiceTheory.universal_score(list(self.systems_names.keys()), self.metrics_scores, "")
+        for name, score in sys_scores.items():
+            self.assertAlmostEqual(score, expected_sys_score[name],places=5)
 
         for sys in list(self.systems_names.keys()):
             sys_result  = result.systems_universal_metrics_results[sys]

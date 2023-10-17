@@ -43,8 +43,40 @@ class SystemsScores:
         metrics_scores = data.to_dict()
         sys_names = list(metrics_scores.keys())
         metrics = list(metrics_scores[sys_names[0]].keys())
+
+        for sys in sys_names:
+            for m in metrics:
+                score = SystemsScores.normalize_scores(m,metrics_scores[sys][m])
+                metrics_scores[sys][m] = score
         return metrics_scores, metrics
+
+    @staticmethod
+    def fix_bound(metric:str, score:float):
+        if score > 1.0:
+            return 1.0
+        if metric == "COMET":
+            if score < -1.0:
+                return -1.0
+            else:
+                return score
+        else:
+            if score < 0.0:
+                return 0.0
+            else:
+                return score
     
+    @staticmethod
+    def normalize_scores(metric:str,score:float):
+        score = SystemsScores.fix_bound(metric,score)
+        if metric == "COMET":
+            min_score = -1
+            max_score = 1
+            return (score - min_score) / (max_score - min_score)
+        elif metric == "TER":
+            return 1 - score
+        else:
+            return score
+        
     def systems_one_metric_scores(self, metric:str):
         sys_metric_scores = []
         for sys_name in self.systems_names:
@@ -66,6 +98,7 @@ class StudyWeights:
         self.systems_scores = systems_scores
         self.seed = seed
         self.trials = trials
+            
 
     @staticmethod
     def system_accuracy(metric_scores, gold_scores, systems_names) -> float:
@@ -85,17 +118,11 @@ class StudyWeights:
                 tp += 1
         return tp/len(pairs) 
 
-    def objective(self,trial,ter,weighted_mean) -> float:
+    def objective(self,trial,weighted_mean) -> float:
         metrics = self.systems_scores.metrics
-        if not ter and not weighted_mean:
+        if not weighted_mean:
             weights = [trial.suggest_float(m, -1, 1) for m in metrics]
-        elif ter:
-            weights = []
-            for m in metrics:
-                if m == "TER":
-                    weights.append(trial.suggest_float(m, -1, 0))
-                else:
-                    weights.append(trial.suggest_float(m, 0, 1))
+
         elif weighted_mean:
             weights = [trial.suggest_float(m, 0, 1) for m in metrics]
 
@@ -114,29 +141,25 @@ class StudyWeights:
             accuracy = self.system_accuracy(list(weighted_sum_scores_per_sys), gold_scores, self.systems_scores.systems_names)
         return accuracy
     
-    def optimize_weights(self,ter:bool,weighted_mean:bool) -> None:
+    def optimize_weights(self,weighted_mean:bool) -> None:
         study = optuna.create_study(sampler=optuna.samplers.TPESampler(seed=self.seed), direction="maximize")
-        study.optimize(lambda x: self.objective(x,ter,weighted_mean), n_trials=args.trials, show_progress_bar=True)
+        study.optimize(lambda x: self.objective(x,weighted_mean), n_trials=args.trials, show_progress_bar=True)
         self.weights = study.best_trial.params
         self.best_value = study.best_value
         self.best_trial = study.best_trial.number
         print(self.weights)
     
 
-    def write_yaml(self,filename:str, weighted_mean:bool,ter:bool) -> None:
+    def write_yaml(self,filename:str, weighted_mean:bool) -> None:
         file = open(filename, "r")
         data_yaml = yaml.safe_load(file)
         file.close()
 
         if weighted_mean:
-            u_name = "weighted-mean-" + "seed-" + str(self.seed) + "-trials-" + str(self.trials) + "_0_1" 
+            u_name = "weighted-mean-" + str(self.seed)
             data_yaml["Weighted Mean Weights"][u_name] = self.weights
         else:
-            u_name = "weighted-sum-" + "seed-" + str(self.seed) + "-trials-" + str(self.trials) + "_"
-            if ter:
-                u_name += "TER_0_1"
-            else:
-                u_name += "-1_1"
+            u_name = "weighted-sum-" + str(self.seed)
             data_yaml["Weighted Sum Weights"][u_name] = self.weights
         if u_name not in data_yaml["All universal metrics"]:
             data_yaml["All universal metrics"].append(u_name)
@@ -159,7 +182,7 @@ class StudyWeights:
         y.close()
 
 
-    def write_files(self, path:str,yaml_p:str,ter:bool,weighted_mean:bool) -> None:
+    def write_files(self, path:str,yaml_p:str,weighted_mean:bool) -> None:
         data = {}
         data["weights_metrics"] = self.weights
         data["best_value"] = self.best_value
@@ -178,14 +201,12 @@ class StudyWeights:
             extra += "weighted_mean_"
         if not weighted_mean:
             extra += "weighted_sum_"
-        if ter:
-            extra += "ter_"
         f = open(path + "/" + extra + "metrics_weights.json", "w")
         json.dump(data,f,indent=4)
         f.close()
 
         if yaml_p:
-            self.write_yaml(yaml_p,weighted_mean,ter)
+            self.write_yaml(yaml_p,weighted_mean)
 
 
 if __name__ == "__main__":
@@ -217,13 +238,6 @@ if __name__ == "__main__":
         type=int
     )
     parser.add_argument(
-        "-t",
-        "--ter", 
-        help="The Weight for TER is between [-1,0].", 
-        type=bool,
-        default=False
-    )
-    parser.add_argument(
         "-n",
         "--weighted_mean", 
         help="Weights is between [0,1].", 
@@ -247,15 +261,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     seed_everything(args.seed_everything)
 
-    if args.weighted_mean and args.ter:
-        args.ter = False
-    
     human_scores = SystemsScores.read_human_scores(args.human_scores_file)
     metrics_scores, metrics = SystemsScores.read_metrics_scores(args.metrics_scores_file)
     systems_scores = SystemsScores(human_scores,metrics_scores,metrics,args.human_scores_file,args.metrics_scores_file)
 
     if systems_scores.has_systems():
         study = StudyWeights(systems_scores,args.seed_everything,args.trials)
-        study.optimize_weights(args.ter, args.weighted_mean)
+        study.optimize_weights(args.weighted_mean)
         if args.output_path:
-            study.write_files(args.output_path,args.yaml,args.ter,args.weighted_mean)
+            study.write_files(args.output_path,args.yaml,args.weighted_mean)
