@@ -244,6 +244,12 @@ if __name__ == "__main__":
 
                     print(Fore.LIGHTYELLOW_EX + "\n------Reference: " + reference)
 
+                    path_lang_1 = args.output_path + "/" + args.languages_pair + "/"
+                    path_domain_2 = path_lang_1 + domain + "/"
+                    path_3 = path_domain_2 + "/" + reference + "/"
+                    if os.path.exists(path_3) and os.path.isfile(path_3 + "/evaluation.csv"):
+                        os.remove(path_3 + "/evaluation.csv")
+
                     metric_scores_file = reference_path + reference + "/results.csv"
                     evaluate_metrics(metric_scores_file, human_scores_file, args.languages_pair, reference, domain, args.output_path, args.metric)
 

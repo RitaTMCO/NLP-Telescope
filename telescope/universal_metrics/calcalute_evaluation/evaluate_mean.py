@@ -61,7 +61,7 @@ def calcualte_mean_per_domain(input_path:str, domain:str):
                 a_correlations_data[name].append(data["System Accuracy"])
 
     print(a_correlations_data)
-    pd_dict = pd.DataFrame({metric:[sum(corr)/len(corr)] for metric, corr in a_correlations_data.items()},index=["Average of System Accuracy"])
+    pd_dict = pd.DataFrame({metric:[sum(corr)/len(corr)] for metric, corr in a_correlations_data.items()},index=["Average of AccuracyRank"])
     pd_dict.to_csv(input_path + "/average/domain/" + domain  + "_evaluation.csv")    
     return {metric:sum(corr)/len(corr) for metric, corr in a_correlations_data.items()}
 
@@ -89,7 +89,7 @@ def calcualte_mean_per_language_pair(input_path:str, languages_pair:str):
                 a_correlations_data[name].append(data["System Accuracy"])
 
     print(a_correlations_data)
-    pd_dict = pd.DataFrame({metric:[sum(corr)/len(corr)] for metric, corr in a_correlations_data.items()},index=["Average of System Accuracy"])
+    pd_dict = pd.DataFrame({metric:[sum(corr)/len(corr)] for metric, corr in a_correlations_data.items()},index=["Average of AccuracyRank"])
     pd_dict.to_csv(input_path + "/average/language-pair/" + languages_pair  + "_evaluation.csv")
     return {metric:sum(corr)/len(corr) for metric, corr in a_correlations_data.items()}
 
@@ -134,8 +134,8 @@ def bars_ascending_plot(correlations_data:dict, t_name:str, output:str):
     plt.yticks(fontsize=size)
     
     plt.xticks(r, ["" for _ in range(len(metrics))],fontsize=30, weight='bold')
-    plt.ylabel("Average of System Accuracy",fontsize=size)
-    plt.title("Average of System Accuracy in " + t_name,fontsize=size, pad=25)
+    plt.ylabel("Average of AccuracyRank",fontsize=size)
+    plt.title("Average of AccuracyRank in " + t_name,fontsize=size, pad=25)
     plt.axhline(linewidth=1, color='black')
     plt.savefig(output + t_name  + "_evaluation.png")
     plt.clf()

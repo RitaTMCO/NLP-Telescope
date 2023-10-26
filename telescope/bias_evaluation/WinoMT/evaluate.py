@@ -111,10 +111,12 @@ def identity_terms_found_info(s,m):
     recall = (tp)/(tp + fn)
     f1_score = (2 * precison * recall) / (precison + recall)
     diff_1, diff_2 = gender_list(index_list1,index_list2,gender_identity_terms_golden,gender_identity_terms_tool)
+    gender_equal = len(list_tp)-len(diff_1)
+    per = round(gender_equal/tp,2) * 100
 
     number_of_match = read_csv_file(file_info)["Number of identity terms that were matched"][0]
 
-    return [number_id_golden, number_id_tool, tp, fp, fn, round(precison,3), round(recall,3), round(f1_score,3), len(list_tp)-len(diff_1)], [number_of_match, number_id_tool]
+    return [number_id_golden, number_id_tool, tp, fp, fn, round(precison,3), round(recall,3), round(f1_score,3), gender_equal, per], [number_of_match, number_id_tool]
 
 def time_bias_evlaution(s,m):
     file_info_join = "test-WinoMT/tool_test-WinoMT/en_source.txt/pt_ref_" + s + ".txt/bias_evaluation/" + m + "/bias_evaluations_information.csv"
@@ -198,7 +200,8 @@ if __name__ == "__main__":
         names_datasets_time = []
         for s in sys:
             time += time_bias_evlaution(s,m)
-        times_method[m] = time 
+        mean = sum(time)/len(time)
+        times_method[m] = time + [round(mean,3)]
 
 
     print(Fore.CYAN + "Identity Terms Found Table")
@@ -206,7 +209,7 @@ if __name__ == "__main__":
     p_fp_fn_gender_pd = pd.DataFrame(tp_fp_fn_gender)
     p_fp_fn_gender_pd.index = ["Number of identity terms in gold data ", "Number of identity terms found in tool", 
                                 "True Positive", "False Positive", "False Negative","Precison", 
-                                "Recall", "F1 Score", "Correct gender in True Positive"]
+                                "Recall", "F1 Score", "Correct gender in True Positive", "%"]
     print(p_fp_fn_gender_pd)
     print("\n")
     p_fp_fn_gender_pd.to_csv("data_evaluation/identity_terms_found.csv")
@@ -224,7 +227,7 @@ if __name__ == "__main__":
     print(Fore.CYAN + "Bias Evaluation Time")
     print(Fore.WHITE)
     pd_time = pd.DataFrame(times_method)
-    pd_time.index = dataset_name
+    pd_time.index = dataset_name + ["mean"]
     print(pd_time)
     print("\n")
     pd_time.to_csv("data_evaluation/time_evaluation.csv")

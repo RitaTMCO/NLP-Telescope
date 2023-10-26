@@ -24,7 +24,9 @@ class CollectionTestsets:
     message_language = "Choose the language of the files (e.g. 'en')"
     last_sys_id = 1
     last_ref_id = 1
-    all_languages = ["X", "pt", "ar", "zh", "nl", "en", "fr", "de", "ru", "uk", "cs"]
+    list_langauges = ["pt", "ar", "zh", "nl", "en", "fr", "de", "ru", "uk", "cs"]
+    list_langauges.sort()
+    all_languages = ["X"] + list_langauges
     all_language_pairs = []
     for l1 in all_languages:
         for l2 in all_languages:
