@@ -42,7 +42,7 @@ NLP-Telescope also offers new features compared to MT-Telescope, such as:
 
 + Being able to **rename systems** (important for systems to contain the names that the user requires in the plot) through the upload of one file (in which each line is a system name) or directly on the web browser;
 
-+ Being able to download plots and export tables neatly in a folder.
++ Being able to download plots and tables.
 
 For Natural Language Generation (NLG) tasks such as machine translation, text summarization and dialogue system, we have three types of visual interface:
 
@@ -98,7 +98,7 @@ The following files are required:
 
 You may see examples of files [here](data/examples/mt/ru-en/)
 
-You must also indicate the language in which the texts are written. In the web interface, you must write the language pair of the files as, for instance, 'en-ru', in which 'en' is the source language and 'ru' is the target language. In the command line interface, you must only indicate the target language. If the language is indifferent and BERTScore metric is not used, then write X-X.
+You must also indicate the language in which the texts are written. In the web interface, you must indicate the language pair of the files as, for instance, 'en-ru', in which 'en' is the source language and 'ru' is the target language. In the command line interface, you must only indicate the target language. If the language is indifferent and BERTScore metric is not used, then indicate X-X.
 
 You may also upload one file in which each line is a system name. The number of lines must be equal to the number of systems and the order must be the same as the user loaded systems.
 
@@ -117,7 +117,7 @@ The following files are required:
 
 You can see examples of files [here](data/examples/dialo/_472).
 
-You must also indicate the language in which the texts are written. If the language is indifferent and BERTScore metric is not used, then write X.
+You must also indicate the language in which the texts are written. If the language is indifferent and BERTScore metric is not used, then indicate X.
 
 You may also upload one file in which each line is a system name. The number of lines must be equal to the number of systems and the order must be the same as the user loaded systems.
 
@@ -128,7 +128,7 @@ The following files are required:
 
 1) **Text to be summarized file**: File that contains the text that will se summarized by the system;
 
-2) **One or more references files**:  File(s) that contain(s) tthe ext that will be the point of reference for the outputs of systems;
+2) **One or more references files**:  File(s) that contain(s) the text that will be the point of reference for the outputs of systems;
 
 3) **One or more systems summaries files**: File(s) that contain(s) the summary produced by the system.
 
@@ -136,7 +136,7 @@ The following files are required:
 
 You can see examples of files [here](data/examples/sum/CNN/_8/).
 
-You must also indicate the language in which the texts are written. If the language is indifferent and BERTScore metric is not used, then write X.
+You must also indicate the language in which the texts are written. If the language is indifferent and BERTScore metric is not used, then indicate X.
 
 You may also upload one file in which each line is a system name. The number of lines must be equal to the number of systems and the order must be the same as the user loaded systems.
 
@@ -156,6 +156,8 @@ The following files are required:
 **Samples file, true labels files and predicated labels files** must have the **same number of segments**.
 
 You can see examples of files [here](data/examples/class/positive-negative-neutral/).
+
+You must also indicate the language in which the texts are written. If the language is indifferent then indicate X.
 
 You may also upload one file in which each line is a system name. The number of lines must be equal to the number of systems and the order must be the same as the user loaded systems.
 
@@ -227,7 +229,7 @@ Options:
                                   multiple.  [required]
   -r, --reference FILENAME        Reference segments. This option can be
                                   multiple.  [required]
-  -t, --task [machine-translation|summarization|dialogue-system]
+  -t, --task [machine-translation|dialogue-system|summarization]
                                   NLG to evaluate.  [required]
   -l, --language TEXT             Language of the evaluated text.  [required]
   -m, --metric [COMET|BLEU|chrF|ZeroEdit|BERTScore|TER|GLEU|ROUGE-1|ROUGE-2|ROUGE-L|Accuracy|Precision|Recall|F1-score]
@@ -241,24 +243,24 @@ Options:
                                   
                                   |dialogue-system|: [BLEU, ROUGE-1, ROUGE-2,
                                   ROUGE-L, BERTScore].  [required]
-  -f, --filter [named-entities|length|duplicates]
+  -f, --filter [named-entities|length|remove-duplicates]
                                   Filter to run. This option can be multiple.
                                   
-                                  |machine-translation|: [duplicates, length,
+                                  |machine-translation|: [remove-duplicates,
+                                  length, named-entities].
+                                  
+                                  |summarization|: [remove-duplicates, length,
                                   named-entities].
                                   
-                                  |summarization|: [duplicates, length, named-
-                                  entities].
-                                  
-                                  |dialogue-system|: [duplicates, length,
-                                  named-entities].
+                                  |dialogue-system|: [remove-duplicates,
+                                  length, named-entities].
   --length_min_val FLOAT          Min interval value for length filtering.
   --length_max_val FLOAT          Max interval value for length filtering.
-  --seg_metric [COMET|ZeroEdit|BERTScore|GLEU|ROUGE-L|Accuracy|F1-score]
+  --seg_metric [COMET|ZeroEdit|BERTScore|GLEU|ROUGE-1|ROUGE-2|ROUGE-L|Accuracy|Precision|Recall|F1-score]
                                   Segment-level metric to use for segment-
                                   level analysis.
   -o, --output_folder TEXT        Folder in which you wish to save plots.
-  --bootstrap
+  --bootstrap                     Avaliable for machine-translation.
   -x, --system_x FILENAME         System X NLG outputs for segment-level
                                   comparison and bootstrap resampling.
   -y, --system_y FILENAME         System Y NLG outputs for segment-level
@@ -277,18 +279,16 @@ Options:
                                   |summarization|: [].
                                   
                                   |dialogue-system|: [].
-  --option_gender_bias_evaluation [with dataset|with library|with datasets and library]
+  --option_gender_bias_evaluation [dictionary-based approach|linguistic approach|hybrid approach]
                                   Options for Gender Bias Evaluation.
-  -u, --universal_metric [average|median|pairwise-comparison|social-choice-theory|weighted-mean-seed-12_-1_1|weighted-mean-seed-12_0_1_TER|weighted-mean-seed-24_-1_1|weighted-mean-seed-24_0_1_TER|weighted-mean-seed-36_-1_1|weighted-mean-seed-36_0_1_TER]
+  -u, --universal_metric [average|median|pairwise-comparison|social-choice-theory|weighted-sum-1000|weighted-sum-3000|weighted-sum-5000|weighted-mean-1000|weighted-mean-3000|weighted-mean-5000]
                                   Models Rankings from Universal Metric.
                                   
                                   |machine-translation|: [average, median,
                                   pairwise-comparison, social-choice-theory,
-                                  weighted-mean-seed-12_-1_1, weighted-mean-
-                                  seed-12_0_1_TER, weighted-mean-seed-24_-1_1,
-                                  weighted-mean-seed-24_0_1_TER, weighted-
-                                  mean-seed-36_-1_1, weighted-mean-
-                                  seed-36_0_1_TER].
+                                  weighted-sum-1000, weighted-mean-1000,
+                                  weighted-sum-3000, weighted-mean-3000,
+                                  weighted-sum-5000, weighted-mean-5000].
                                   
                                   |summarization|: [].
                                   
@@ -346,12 +346,14 @@ Options:
                                   multiple.  [required]
   -r, --reference FILENAME        Reference segments. This option can be
                                   multiple.  [required]
-  -l, --labels FILENAME           Existing labels  [required]
+  --labels FILENAME               Existing labels  [required]
+  -l, --language TEXT             Language of the evaluated text.  [required]
   -m, --metric [Accuracy|Precision|Recall|F1-score]
                                   Metric to run. This option can be multiple.
                                   [required]
-  -f, --filter [duplicates]       Filter to run. This option can be multiple.
-  --seg_metric [Accuracy|F1-score]
+  -f, --filter [remove-duplicates|length|named-entities]
+                                  Filter to run. This option can be multiple.
+  --seg_metric [Accuracy|Precision|Recall|F1-score]
                                   Segment-level metric to use for segment-
                                   level analysis.
   -o, --output_folder TEXT        Folder in which you wish to save plots.
@@ -375,7 +377,8 @@ telescope telescope n-compare-classification \
   -c path/to/system-z/file.txt \
   -r path/to/ref-1/file.txt \
   -r path/to/ref-2/file.txt \
-  -l path/to/all_labels.txt \
+  --labels path/to/all_labels.txt \
+  -l en \
   -m Accuracy -m F1-score
 ```
 
@@ -389,8 +392,9 @@ telescope telescope n-compare-classification \
   -c path/to/system-z/file.txt \
   -r path/to/ref-1/file.txt \
   -r path/to/ref-2/file.txt \
-  -l path/to/all_labels.txt \
+  --labels path/to/all_labels.txt \
   -m Accuracy -m F1-score \
+  -l en \
   --output_folder FOLDER-PATH
 ```
 
@@ -423,7 +427,7 @@ Options:
   -l, --language TEXT             Language of the evaluated text.  [required]
   -m, --metric [COMET|BLEU|chrF|ZeroEdit|TER|GLEU|BERTScore]
                                   MT metric to run.  [required]
-  -f, --filter [named-entities|length|duplicates]
+  -f, --filter [named-entities|length|remove-duplicates]
                                   MT metric to run.
   --length_min_val FLOAT          Min interval value for length filtering.
   --length_max_val FLOAT          Max interval value for length filtering.
