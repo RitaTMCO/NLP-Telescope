@@ -21,6 +21,7 @@ from telescope.multiple_plotting import (
     download_data_csv,
     all_identity_terms,
     table_identity_terms_found,
+    confusion_matrix_image
     )
 
 class BiasResult():
@@ -64,7 +65,7 @@ class BiasResult():
                                                   show,saving_dir,saving_zip)
 
     def display_rates(self, saving_dir:str=None,saving_zip:zipfile.ZipFile = None,show: bool = False, col = None):
-        return rates_table(self.groups,self.groups_ref,self.groups_system,saving_dir,saving_zip,show, col)
+        return rates_table(self.groups,self.groups_ref,self.groups_system,saving_dir,saving_zip,show)
 
     def display_bias_segments_of_system(self,system_name:str, ids:List[int], saving_dir:str = None):
         return bias_segments(system_name, self.ref, self.system_output, self.groups_ref_per_seg, self.groups_sys_per_seg, 
@@ -161,27 +162,9 @@ class MultipleBiasResults():
         number_of_incorrect_labels_of_each_system(systems_names,self.groups_ref,groups_sys_per_system,self.groups, saving_dir,saving_zip)
     
     def display_analysis_labels(self,collection_testsets:CollectionTestsets,saving_dir:str=None,saving_zip:zipfile.ZipFile = None):
-        systems_names = collection_testsets.systems_names.values()
-
-        for metric, multiple_metrics_results in self.multiple_metrics_results_per_metris.items():
-            right = None
-            left = None
-            if runtime.exists():
-                left,right = st.columns([0.3,0.7])
-            if metric != "Precision" and metric != "Recall":
-                seg_scores_list = [list(result_sys.seg_scores) for result_sys in list(multiple_metrics_results.systems_metric_results.values())]
-                if any(seg_scores_list):
-                    seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
-                        for i, label in enumerate(self.groups)}
-                    df = pd.DataFrame.from_dict(seg_scores_dict )
-                    df.index = systems_names
-                    if runtime.exists():
-                        left.dataframe(df)
-                        if saving_dir and saving_zip:
-                            create_and_save_table_zip(saving_dir + metric + "_groups_bias_metrics.csv",saving_zip,df)
-                    elif saving_dir:
-                        save_table(saving_dir,metric + "_groups_bias_metrics.csv",df)
-                analysis_labels(multiple_metrics_results,systems_names,self.groups, saving_dir,saving_zip,right)
+        systems_names = collection_testsets.systems_names
+        for _, multiple_metrics_results in self.multiple_metrics_results_per_metris.items():
+            analysis_labels(multiple_metrics_results,systems_names,self.groups, saving_dir,saving_zip)
 
     def display_bias_evaluations_informations(self, saving_dir:str=None, saving_zip:zipfile.ZipFile=None, col = None):
         table = { 
@@ -236,27 +219,17 @@ class MultipleBiasResults():
         self.system_level_scores_bias_table(dataframe, path,saving_zip)
 
 
+        st.subheader("Confusion Matrix Explanation")
+        confusion_matrix_image()
+
         st.subheader("Rates")
         system_name = st.selectbox(
             "**Select the System**",
             collection_testsets.names_of_systems(),
             index=0,
             key="cm")
-        l_rate_bias, r_rate_bias = st.columns([0.6, 0.4])
-        r_rate_bias.markdown(
-            """
-            **:blue[PPV:]** Positive Predictive Value or Precision.     
-            **:blue[TPR:]** True Positive Rate or Recall.   
-            **:blue[FDR:]** False Discovery Rate.    
-            **:blue[FPR:]** False Positive Rate.   
-            **:blue[FOR:]** False Omission Rate.   
-            **:blue[FNR:]** False Negative Rate.   
-            **:blue[NPV:]** Negative Predictive Value.   
-            **:blue[TNR:]** True Negative Rate.   
-            """
-        )
 
-        self.display_rates_of_one_system(collection_testsets, system_name, show=True, col=l_rate_bias)
+        self.display_rates_of_one_system(collection_testsets, system_name, show=True)
 
         st.subheader("Confusion Matrices")
         system_name = st.selectbox(

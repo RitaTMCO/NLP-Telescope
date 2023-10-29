@@ -1,5 +1,5 @@
 import statistics
-from typing import Dict
+from typing import Dict, List
 from telescope.testset import MultipleTestset
 from telescope.universal_metrics.universal_metric import UniversalMetric
 
@@ -8,14 +8,16 @@ class Median(UniversalMetric):
     name = "median"
     title = "Median"
 
-    def universal_score(self,testset:MultipleTestset) -> Dict[str,float]:
-        systems_outputs = testset.systems_output
-        systems_ids = list(systems_outputs.keys())
-        sys_scores = {sys_id:[] for sys_id in systems_ids}
+    @staticmethod
+    def universal_score(systems_keys:List[str], metrics_scores:Dict[str,Dict[str,float]], universal_name:str, normalize:bool=True) -> Dict[str,float]:
+        all_sys_scores = {sys_key:[] for sys_key in systems_keys}
     
-        for metric_results in list(self.multiple_metrics_results.values()):
-            for sys_id, metric_result in metric_results.systems_metric_results.items():
-                sys_scores[sys_id].append(metric_result.sys_score)
-        
-        median_scores = {sys_id:statistics.median(scores) for sys_id,scores in sys_scores.items()}        
+        for metric, sys_metrics_score in metrics_scores.items():
+            for sys_key, sys_score in sys_metrics_score.items():
+                if normalize:
+                    all_sys_scores[sys_key].append(UniversalMetric.normalize_score(metric, sys_score))
+                else:
+                    all_sys_scores[sys_key].append(sys_score)
+
+        median_scores = {sys_key:statistics.median(scores) for sys_key,scores in all_sys_scores.items()}        
         return median_scores

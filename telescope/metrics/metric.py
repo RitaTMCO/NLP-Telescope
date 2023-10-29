@@ -200,6 +200,7 @@ class Metric(metaclass=abc.ABCMeta):
                         reduced_ref,
                         testset.ref_id,
                         reducted_n_systems_output,
+                        task=testset.task,
                         filenames=testset.filenames,
                     )
                 )

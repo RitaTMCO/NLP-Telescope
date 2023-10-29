@@ -43,18 +43,18 @@ O promotor trocou serviços com ê padeire porque este não era dono de uma cozi
 Ê alfaiate contratou o vendedor e pediu-lhe que vendesse fatos para o negócio.          [afaiate:neutral,vendedor:male,lhe:male]
 Ê conselheire prestou depoimento ao advogado e pediu-lhe que o mantivesse em segredo.           [conselheire:neutral,advogado:male,lhe:male]
 Ê advogade fez contato visual com a funcionária e sorriu para ela.          [advogade:neutral,balconista:female,ela:female]
-O cabeleireiro falou com o vendedor e tentou dar-lhe um novo corte de cabelo.
-O conselheiro queria encontrar-se com o médico e perguntar-lhe como lidar com a dor de estômago.
-A enfermeira conversou com o zelador por um tempo e lhe deu um presente de Natal.
-O secretário conversou com o chefe e agradeceu.
-O auditor sorriu para o trabalhador da construção civil e entregou-lhe um pouco de água.
-O atendente conversou com o médico e ficou surpreso com o conhecimento dele.
-O professor aprendeu muito com o mecânico e enviou-lhe um cartão de agradecimento.
-O carpinteiro parou a governanta e ajudou-a.
-O padeiro embalou o pão do zelador e esperou que ele pagasse.
-O gerente discutiu com a designer por um longo tempo e tentou convencê-la a vender essa ideia.
-O alfaiate mostrou ao carpinteiro as ferramentas e deixou-o experimentar.
-O editor entrevistou o vendedor e escreveu um artigo sobre sua empresa.
-A advogada ligou para o alfaiate e marcou um encontro com ela.
-O designer parou o motorista e pediu-lhe para ter cuidado no local da Expo.
-O zelador fez amizade com a professora e contou sobre fofocas da equipe.
+Ê cabeleireire falou com o vendedor e tentou dar-lhe um novo corte de cabelo.           [cabeleireire:neutral,vendedor:male,lhe:male]
+Ê conselheire queria encontrar-se com o médico e perguntar-lhe como lidar com a dor de estômago.            [conselheire:neutral,se:neutral,médico:male,lhe:male]
+Ê enfermeire conversou com o zelador por um tempo e lhe deu um presente de Natal.            [enfermeire:neutral,zelador:male,lhe:male]          
+Ê secretárie conversou com o chefe e agradeceu.         [secretárie:neutral,chefe:male]
+Ê auditore sorriu para o trabalhador da construção civil e entregou-lhe um pouco de água.            [auditore:neutral, trabalhador:male, lhe:male]
+Ê atendente conversou com o médico e ficou surpreso com o conhecimento dele.            [atendente:neutral,médico:male,dele:male]
+Ê professore aprendeu muito com o mecânico e enviou-lhe um cartão de agradecimento.          [professore:neutral,mecânico:male,lhe:male]
+Ê carpinteire parou a governanta e ajudou-a.            [carpinteire:neutral,governanta:female,a:female]
+Ê padeire embalou o pão do zelador e esperou que ele pagasse.           [padeire:neutral,zelador:male,ele:male]
+Ê gerente discutiu com a designer por um longo tempo e tentou convencê-la a vender essa ideia.      [gerente:neutral,designer:female,la:female]
+Ê alfaiate mostrou ao carpinteiro as ferramentas e deixou-o experimentar.           [alfaiate:neutral,carpinteiro:male,o:male]
+Ê editore entrevistou o vendedor e escreveu um artigo sobre sua empresa.         [editore:neutral,vendedor:male]
+Ê advogade ligou para o alfaiate e marcou um encontro com ela.          [advogade:neutral,alfaiate:female,ela:female] 
+Ê designer parou o motorista e pediu-lhe para ter cuidado no local da Expo.         [designer:neutral, motorista:male,lhe:male]
+Ê zeladore fez amizade com a professora e contou sobre fofocas da equipe.            [zeladore:neutral, professora:female]

@@ -14,41 +14,18 @@ u_metrics = {
         "average" : "Average",
         "median" : "Median",
         "social-choice-theory" : "Social Choice Theory",
-        "weighted-sum-seed-12-trials-1000_-1_1" : "Weighted Sum 12",
-        "weighted-sum-seed-24-trials-1000_-1_1" : "Weighted Sum 24",
-        "weighted-sum-seed-36-trials-1000_-1_1" : "Weighted Sum 36",
-        "weighted-sum-seed-12-trials-1000_TER_0_1" : "Weighted Sum 12 TER",
-        "weighted-sum-seed-24-trials-1000_TER_0_1" : "Weighted Sum 24 TER",
-        "weighted-sum-seed-36-trials-1000_TER_0_1" : "Weighted Sum 36 TER",
-        "weighted-mean-seed-12-trials-1000_0_1" : "Weighted Mean 12",
-        "weighted-mean-seed-24-trials-1000_0_1" : "Weighted Mean 24",
-        "weighted-mean-seed-36-trials-1000_0_1" : "Weighted Mean 36",
+        "weighted-mean-1000" : "Weighted Mean 1000",
+        "weighted-mean-3000" : "Weighted Mean 3000",
+        "weighted-mean-5000" : "Weighted Mean 5000",
+        "weighted-sum-1000" : "Weighted Sum 1000",
+        "weighted-sum-3000" : "Weighted Sum 3000",
+        "weighted-sum-5000" : "Weighted Sum 5000",
     }
-
 
 
 def create_dir(dir):
     if not os.path.exists(dir):
         os.mkdir(dir)
-
-def evaluate_universal_metrics(metric_scores_path:str, metric_name:str, human_scores_file:str, language_pair:str, reference:str, domain:str, output_path:str,
-                     universal_metric:str):
-    metric_scores_file = metric_name + "_ranks_systems.csv"
-
-    if (universal_metric and universal_metric == metric_name) or not universal_metric:
-
-        print(Fore.RED + "\n---------Universal Metric: " + metric_name)
-        print(Fore.WHITE)
-
-        human_scores = SystemsScores.read_human_scores(human_scores_file, domain)
-        metric_scores = SystemsScores.read_universal_metric_scores(metric_scores_path + metric_scores_file, metric_name)
-        systems_scores = SystemsScores(human_scores,metric_scores,metric_name,human_scores_file,metric_scores_path + metric_scores_file,
-                                   language_pair,reference,domain)
-
-        if systems_scores.has_systems():
-            metrics_evaluation = MetricsEvaluation(systems_scores)
-            metrics_evaluation.evaluate()
-            metrics_evaluation.write_dataframe(output_path)
 
 def evaluate_metrics(metric_scores_file:str, human_scores_file:str, language_pair:str, reference:str, domain:str, output_path:str, arg_metric:str):
     
@@ -100,18 +77,6 @@ class SystemsScores:
             if human_score != "None\n" and domain_file == domain:
                 human_scores[sys_name] = float(human_score)
         return human_scores
-
-    @staticmethod
-    def read_universal_metric_scores(filename:str, metric_name:str) -> Dict[str,Dict[str,float]]:
-        data = pd.read_csv(filename,index_col=[0])
-        data = data.rename_axis('rank').reset_index()
-        scores = data.set_index('System').to_dict("index")
-        
-        metric_scores = {}
-        for system, data in scores.items():
-            metric_scores[system] = data["Score"]
-                
-        return metric_scores
 
     @staticmethod
     def read_metrics_scores(filename:str) -> Dict[str,Dict[str,float]]:
@@ -279,16 +244,17 @@ if __name__ == "__main__":
 
                     print(Fore.LIGHTYELLOW_EX + "\n------Reference: " + reference)
 
+                    path_lang_1 = args.output_path + "/" + args.languages_pair + "/"
+                    path_domain_2 = path_lang_1 + domain + "/"
+                    path_3 = path_domain_2 + "/" + reference + "/"
+                    if os.path.exists(path_3) and os.path.isfile(path_3 + "/evaluation.csv"):
+                        os.remove(path_3 + "/evaluation.csv")
+
                     metric_scores_file = reference_path + reference + "/results.csv"
                     evaluate_metrics(metric_scores_file, human_scores_file, args.languages_pair, reference, domain, args.output_path, args.metric)
 
+                    u_metric_scores_file = reference_path + reference + "/universal_results.csv"
+                    evaluate_metrics(u_metric_scores_file, human_scores_file, args.languages_pair, reference, domain, args.output_path, args.metric)
 
-                    universal_metric_scores_path = reference_path + reference + "/universal_metrics/"
-                    for universal_metric_name in list(u_metrics.keys()):
-                        if universal_metric_name + "_ranks_systems.csv" not in os.listdir(universal_metric_scores_path):
-                            continue
-                        else:
-                            evaluate_universal_metrics(universal_metric_scores_path, universal_metric_name, human_scores_file, args.languages_pair, reference, 
-                                                       domain, args.output_path, args.metric)
 
                         

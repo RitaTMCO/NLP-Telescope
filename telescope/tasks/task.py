@@ -7,7 +7,7 @@ from telescope.metrics import AVAILABLE_NLP_METRICS
 from telescope.filters import AVAILABLE_NLP_FILTERS
 from telescope.bias_evaluation import AVAILABLE_NLP_BIAS_EVALUATIONS
 from telescope.universal_metrics import AVAILABLE_NLP_UNIVERSAL_METRICS
-from typing import Tuple
+from typing import Tuple, List
 
 class Task(metaclass=abc.ABCMeta):
     name = None
@@ -26,7 +26,7 @@ class Task(metaclass=abc.ABCMeta):
     @staticmethod
     @abc.abstractmethod
     def input_cli_interface(source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str) -> CollectionTestsets:
+                      langauge:str) -> CollectionTestsets:
         """CLI Interface to collect the necessary inputs to realization of the task evaluation."""
         pass
 
@@ -34,7 +34,7 @@ class Task(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
     def plots_web_interface(cls, metric:str, results:dict, collection_testsets: CollectionTestsets, ref_filename: str, plot: str, saving_zip: zipfile.ZipFile,
-                            metrics:list = None, available_metrics:dict = None, num_samples: int = None, sample_ratio: float = None) -> None:
+                            metrics:list = None, available_metrics:dict = None, filters:List[str] = [], length_interval:Tuple[int] = (), num_samples: int = None, sample_ratio: float = None) -> None:
         """Web Interface to display the plots"""
         pass
     

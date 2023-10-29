@@ -781,11 +781,16 @@ def n_compare_nlg(
 )
 @click.option(
     "--labels",
-    "-l",
     required=True,
     multiple=False,
     type=click.File(),
     help="Existing labels"
+)
+@click.option(
+    "--language",
+    "-l",
+    required=True,
+    help="Language of the evaluated text.",
 )
 @click.option(
     "--metric",
@@ -854,6 +859,7 @@ def n_compare_classification(
     system_output: Tuple[click.File],
     reference: Tuple[click.File],
     labels: click.File,
+    language: str,
     metric: Union[Tuple[str], str],
     filter: Union[Tuple[str], str],
     seg_metric: str,
@@ -863,7 +869,7 @@ def n_compare_classification(
     system_x: click.File,
     system_y: click.File
 ):  
-    collection = Classification.input_cli_interface(source,systems_names,system_output,reference,"", labels)
+    collection = Classification.input_cli_interface(source,systems_names,system_output,reference,language, labels)
 
     click.secho("Systems:\n" + collection.display_systems(), fg="bright_blue")
 

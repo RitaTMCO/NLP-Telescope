@@ -20,13 +20,13 @@ from telescope.testset import Testset
 
 
 class DuplicatesFilter(Filter):
-    name = "duplicates"
+    name = "remove-duplicates"
 
     def __init__(self, testset: Testset, *args):
         self.testset = testset
 
     def apply_filter(self) -> List[int]:
-        if len(self.testset.ref) == len(self.testset.src):
+        if len(self.testset.ref) == len(self.testset.src) and self.testset.task != "summarization" and self.testset.task != "dialogue-system":
             counter = Counter(self.testset.src)
             file_item = 0
         else:

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 from telescope.metrics import MEAN_METRICS_WEIGHTS
 from telescope.metrics.metric import MultipleMetricResults
 from telescope.testset import MultipleTestset
@@ -11,29 +11,38 @@ class WeightedMean(UniversalMetric):
     def __init__(self, multiple_metrics_results: Dict[str, MultipleMetricResults], name:str, weights:Dict[str,float]={}):
         super().__init__(multiple_metrics_results)
         if name in list(MEAN_METRICS_WEIGHTS.keys()):
-            self.metrics_weight = MEAN_METRICS_WEIGHTS[name]
+            self.metrics_weights = MEAN_METRICS_WEIGHTS[name]
         else:
-            self.metrics_weight = weights
+            self.metrics_weights = weights
         self.name = name
 
-    def weight_metric(self, metric:str):
-        if metric in list(self.metrics_weight.keys()):
-            return float(self.metrics_weight[metric])
+    @staticmethod
+    def weight_metric(metric:str,metrics_weights:Dict[str,float]):
+        if metric in list(metrics_weights.keys()):
+            return float(metrics_weights[metric])
         else:
             return 0.0
 
-    def universal_score(self,testset:MultipleTestset) -> Dict[str,float]:
-        systems_outputs = testset.systems_output
-        systems_ids = list(systems_outputs.keys())
+    @staticmethod
+    def universal_score(systems_keys:List[str], metrics_scores:Dict[str,Dict[str,float]], universal_name:str, 
+                        metrics_weights_input:Dict[str,float]={}, normalize:bool=True) -> Dict[str,float]:
         total_weights = 0
-        weighted_sum = {sys_id:0.0 for sys_id in systems_ids}
-    
-        for metric, metric_results in self.multiple_metrics_results.items():
-            weight = self.weight_metric(metric)
-            for sys_id, result in metric_results.systems_metric_results.items():
-                weighted_sum[sys_id] += result.sys_score * weight
+        weighted_sum = {sys_id:0.0 for sys_id in systems_keys}
+
+        if metrics_weights_input:
+            metrics_weights = metrics_weights_input
+        else:
+            metrics_weights = MEAN_METRICS_WEIGHTS[universal_name]
+
+        for metric, sys_metrics_score in metrics_scores.items():
+            weight =  WeightedMean.weight_metric(metric,metrics_weights)
+            for sys_key, sys_score in sys_metrics_score.items():
+                if normalize:
+                    weighted_sum[sys_key] += UniversalMetric.normalize_score(metric, sys_score) * weight
+                else:
+                    weighted_sum[sys_key] += sys_score * weight
 
             total_weights += weight
-        weighted_scores = {sys_id:score/total_weights for sys_id,score in weighted_sum.items()}
+        weighted_scores = {sys_key:score/total_weights for sys_key,score in weighted_sum.items()}
         
         return weighted_scores

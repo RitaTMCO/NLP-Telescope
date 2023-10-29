@@ -25,7 +25,7 @@ class Summarization(NLG):
 
     @staticmethod
     def input_cli_interface(source:click.File, system_names_file:click.File, systems_output:Tuple[click.File], reference:Tuple[click.File], 
-                      extra_info:str="",labels_file:click.File=None) -> CollectionTestsets:
+                      language:str,labels_file:click.File=None) -> CollectionTestsets:
         """CLI Interface to collect the necessary inputs to realization of the task evaluation."""
-        target_language = extra_info
+        target_language = language
         return  SummTestsets.read_data_cli(source, system_names_file, systems_output, reference, "X-" + target_language)

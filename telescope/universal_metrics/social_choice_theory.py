@@ -11,8 +11,8 @@ class SocialChoiceTheory(UniversalMetric):
     title = "Social Choice Theory"
 
 
-    def points_sum(self,systems_ids:List[str], points_systems_per_metrics: Dict[str,dict]):
-        metrics = list(self.multiple_metrics_results.keys())
+    @staticmethod
+    def points_sum(systems_ids:List[str], points_systems_per_metrics: Dict[str,dict], metrics: List[str]):
         sum_points = {sys_id:0.0 for sys_id in systems_ids}
     
         for metric in metrics:
@@ -21,10 +21,10 @@ class SocialChoiceTheory(UniversalMetric):
                 sum_points[sys_id] += points_systems[sys_id]
         return sum_points
     
-    def point_assignment(self,systems_ids:List[str], ranking_systems_per_metrics: Dict[str,dict]):
+    @staticmethod
+    def point_assignment(systems_ids:List[str], ranking_systems_per_metrics: Dict[str,dict], metrics: List[str]):
         points_systems_per_metrics = {}
         n = len(systems_ids)
-        metrics = list(self.multiple_metrics_results.keys())
 
         for metric in metrics:
             ranking_systems = ranking_systems_per_metrics[metric]
@@ -35,26 +35,23 @@ class SocialChoiceTheory(UniversalMetric):
 
         return points_systems_per_metrics
 
-
-
-
-    def universal_score(self,testset:MultipleTestset) -> Dict[str,float]:
-        systems_outputs = testset.systems_output
-        systems_ids = list(systems_outputs.keys())
+    @staticmethod
+    def universal_score(systems_keys:List[str], metrics_scores:Dict[str,Dict[str,float]], universal_name:str, normalize:bool=True) -> Dict[str,float]:
+        metrics = list(metrics_scores.keys())
         ranking_systems_per_metrics= {}
     
-        for metric, metric_results in self.multiple_metrics_results.items():
+        for metric, sys_metrics_score in metrics_scores.items():
             scores = {}
-            for sys_id, result in metric_results.systems_metric_results.items():
-                scores[sys_id] = result.sys_score
-                
-            if metric == "TER":
-                rank_scores = self.ranking_systems(scores,False)
-            else:
-                rank_scores = self.ranking_systems(scores)
+            for sys_key, sys_score in sys_metrics_score.items():
+                if normalize:
+                    scores[sys_key] = UniversalMetric.normalize_score(metric,sys_score)
+                else:
+                    scores[sys_key] = sys_score
+            
+            rank_scores = UniversalMetric.ranking_systems(scores)
             ranking_systems_per_metrics[metric] = rank_scores
         
-        points_systems_per_metrics = self.point_assignment(systems_ids,ranking_systems_per_metrics)
-        sum_points = self.points_sum(systems_ids,points_systems_per_metrics)
+        points_systems_per_metrics = SocialChoiceTheory.point_assignment(systems_keys,ranking_systems_per_metrics, metrics)
+        sum_points = SocialChoiceTheory.points_sum(systems_keys,points_systems_per_metrics, metrics)
             
         return sum_points

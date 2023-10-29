@@ -25,15 +25,12 @@ u_metrics = [
         "Average",
         "Median",
         "Social Choice Theory",
-        "Weighted Sum 12",
-        "Weighted Sum 24",
-        "Weighted Sum 36",
-        "Weighted Sum 12 TER",
-        "Weighted Sum 24 TER",
-        "Weighted Sum 36 TER",
-        "Weighted Mean 12",
-        "Weighted Mean 24",
-        "Weighted Mean 36",
+        "Weighted Mean 1000",
+        "Weighted Mean 3000",
+        "Weighted Mean 5000",
+        "Weighted Sum 1000",
+        "Weighted Sum 3000",
+        "Weighted Sum 5000",
 ]
 
 all_metrics = u_metrics + mt_metrics
@@ -85,7 +82,6 @@ def bars_ascending_plot(input_file:str, domain:str, ref:str, languages_pair:str)
         plt.figure(figsize=(10,5))
         plt.clf()
         axs = plt.bar(r*1.05, cor_scores, edgecolor="white", width=0.9, color=colors)
-        plt.axhline(y = 0.75, color = 'r', linestyle = '-')
 
         for i in range(len(metrics)):
             h = axs[i].get_height()

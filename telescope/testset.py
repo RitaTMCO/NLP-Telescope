@@ -15,7 +15,7 @@
 from typing import List, Tuple, Dict
 import streamlit as st
 
-from telescope.utils import read_lines
+from telescope.utils import read_lines, sys_ids_sort
 
 class Testset:
     def __init__(
@@ -27,6 +27,7 @@ class Testset:
         self.src = src
         self.ref = ref
         self.output = output
+        self.task = ""
 
         assert len(ref) == len(
             src
@@ -66,6 +67,7 @@ class PairwiseTestset(Testset):
         self.system_y = system_y
         self.language_pair = language_pair
         self.filenames = filenames
+        self.task = "machine-translation"
 
         assert len(ref) == len(
             src
@@ -154,12 +156,15 @@ class MultipleTestset(Testset):
         ref: List[str], 
         ref_id: str,
         systems_output: Dict[str, List[str]], # {sys_id: system output}
+        task:str,
         filenames: List[str],
     ) -> None:
+        ids = sys_ids_sort(list(systems_output.keys()))
         self.src = src
         self.ref = ref
         self.ref_id = ref_id
-        self.systems_output = systems_output
+        self.systems_output = {id: systems_output[id] for id in ids}
+        self.task = task
         self.filenames = filenames
 
     def __getitem__(self, i) -> Tuple[str]:

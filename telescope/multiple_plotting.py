@@ -26,6 +26,7 @@ import random
 import spacy
 import io
 import zipfile
+from PIL import Image
 
 from streamlit import runtime
 from sklearn.metrics import confusion_matrix, multilabel_confusion_matrix, ConfusionMatrixDisplay
@@ -327,9 +328,10 @@ def sentences_similarity(src:List[str], output:str, language:str, saving_dir:str
 def update_multiple_buckets(
     systems_results_seg_scores: Dict[str, List[float]],
     systems_names: List[str],
+    metric:str,
     crit_err_thr: float = 0.0,
     major_err_thr: float = 0.3,
-    minor_err_thr: float = 0.6,
+    minor_err_thr: float = 0.6, 
 ):
 
     number_of_systems = len(systems_names)
@@ -462,6 +464,7 @@ def update_multiple_buckets(
         )
 
     # Custom x axis
+    plt.title("Error-type analysis of " + metric, fontsize=22 + ratio_font)
     plt.xticks(r, names,fontsize=18 + ratio_font,rotation = ROTATION)
     plt.yticks(fontsize=22 + ratio_font)
     plt.xlabel("Model",fontsize=22 + ratio_font)
@@ -470,7 +473,8 @@ def update_multiple_buckets(
 
 
 
-def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names: List[str], saving_dir: str = None, saving_zip: str = None) -> None:
+def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, systems_names_dict: Dict[str,str], saving_dir: str = None, saving_zip: str = None) -> None:
+    systems_names = multiple_result.all_systems_names(systems_names_dict)
 
     filename = multiple_result.metric + FILENAME_ERROR_TYPE_ANALYSIS
 
@@ -501,6 +505,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
     plot = update_multiple_buckets(
             systems_results_seg_scores,
             systems_names,
+            multiple_result.metric,
             values[0],
             values[1],
             values[2],
@@ -510,7 +515,8 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
     if runtime.exists():
 
         def define_value(bucket_1,bucket_2,value):
-            if (bucket_2!=None and bucket_1 < bucket_2) or st.session_state["reset_settings"]:
+            #if (bucket_2!=None and bucket_1 < bucket_2) or st.session_state["reset_settings"]:
+            if (bucket_2!=None and bucket_1 < bucket_2):
                 return value        
             elif st.session_state["first_time_error"] < 4:
                 st.session_state["first_time_error"] += 1
@@ -531,7 +537,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
         st.markdown("""
                     
-                    This stacked bar plot separates segments into buckets based on the percentage of segments whose segment-level score 
+                    This stacked bar plot separates segments into buckets based on the percentage of segments whose """ + multiple_result.metric + """ segment-level score
                     is between the minimum and maximum threshold. 
 
                     Each bucket has the the minimum and maximum threshold and the :red[red bucket] minimum threshold is the lowest segment-level score 
@@ -543,12 +549,12 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
                     """)
         
-        _, reset,_ = st.columns(3)
-        if reset.button("Reset settings", key="reset_settings"):
-            st.session_state["red_bucket_"+ multiple_result.metric] = values[0]
-            st.session_state["yellow_bucket_"+ multiple_result.metric] = values[1]
-            st.session_state["blue_bucket_"+ multiple_result.metric] = values[2]
-
+        #_, reset,_ = st.columns(3)
+        #if reset.button("Reset settings", key="reset_settings"):
+            #st.session_state["red_bucket_"+ multiple_result.metric] = values[0]
+            #st.session_state["yellow_bucket_"+ multiple_result.metric] = values[1]
+            #st.session_state["blue_bucket_"+ multiple_result.metric] = values[2]
+        
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -566,9 +572,9 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
                 st.session_state["blue_bucket_"+ multiple_result.metric] = st.slider(
                     "Blue bucket max threshold", st.session_state["yellow_bucket_"+ multiple_result.metric], limits[2], value=v3, step=step, key="bucket3")
 
-                
+
         left, right = st.columns([0.3,0.7])
-        right.pyplot(update_multiple_buckets(systems_results_seg_scores,systems_names, 
+        right.pyplot(update_multiple_buckets(systems_results_seg_scores,systems_names,multiple_result.metric,
                                              st.session_state["red_bucket_"+ multiple_result.metric], 
                                              st.session_state["yellow_bucket_"+ multiple_result.metric], 
                                              st.session_state["blue_bucket_"+ multiple_result.metric]))
@@ -587,7 +593,7 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
 
         if saving_dir and saving_zip:
             create_and_save_plot_zip(saving_dir + filename, saving_zip,
-                                     update_multiple_buckets(systems_results_seg_scores,systems_names, 
+                                     update_multiple_buckets(systems_results_seg_scores,systems_names, multiple_result.metric,
                                              st.session_state["red_bucket_"+ multiple_result.metric], 
                                              st.session_state["yellow_bucket_"+ multiple_result.metric], 
                                              st.session_state["blue_bucket_"+ multiple_result.metric]))
@@ -597,8 +603,12 @@ def plot_bucket_multiple_comparison(multiple_result: MultipleMetricResults, syst
         save_plot(saving_dir, filename, plot)
 
 
-def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names: List[str], saving_dir: str = None, 
+def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_names_dict: Dict[str,str], saving_dir: str = None, 
                                 saving_zip: zipfile.ZipFile = None, test:str=False) -> bool:
+
+    sys_names = multiple_result.all_systems_names(sys_names_dict)
+    metric_name = multiple_result.metric
+
     scores_list = [
         metric_system.seg_scores 
         for metric_system in list(multiple_result.systems_metric_results.values())]
@@ -614,7 +624,7 @@ def plot_multiple_distributions( multiple_result: MultipleMetricResults, sys_nam
             colors = colors
         ) 
 
-        fig.update_layout(xaxis_title="Score", yaxis_title="Probability Density")
+        fig.update_layout(xaxis_title= metric_name + " score", yaxis_title="Probability Density")
         fig.update_xaxes(title_standoff = 40)
 
 
@@ -644,6 +654,10 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
 
     sys_x_id, sys_x_name = system_x
     sys_y_id, sys_y_name = system_y
+    metric_name = multiple_result.metric
+
+    x_score = sys_x_name + " " + metric_name + " score"
+    y_score = sys_y_name + " " + metric_name + " score"
 
     filename = sys_x_name + "-" + sys_y_name + FILENAME_SEGMENT_COMPARISON
 
@@ -651,24 +665,24 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
         [multiple_result.systems_metric_results[sys_x_id].seg_scores, 
         multiple_result.systems_metric_results[sys_y_id].seg_scores]).T
 
-    chart_data = pd.DataFrame(scores, columns=["x_score", "y_score"])
+    chart_data = pd.DataFrame(scores, columns=[x_score, y_score])
     chart_data["difference"] = np.absolute(scores[:, 0] - scores[:, 1])
     if source:
         chart_data["source"] = multiple_result.src
     chart_data["reference"] = multiple_result.ref
-    chart_data["x"] = multiple_result.systems_metric_results[sys_x_id].seg_scores
-    chart_data["y"] = multiple_result.systems_metric_results[sys_y_id].seg_scores
+    chart_data[sys_x_name] = multiple_result.system_cand(sys_x_id)
+    chart_data[sys_y_name] = multiple_result.system_cand(sys_y_id)
 
     if source:
-        tool = ["x", "y", "reference", "difference", "source", "x_score", "y_score"]
+        tool = [sys_x_name, sys_y_name, "reference", "difference", "source", x_score, y_score]
     else:
-        tool = ["x", "y", "reference", "difference", "x_score", "y_score"]
+        tool = [sys_x_name, sys_y_name, "reference", "difference", x_score, y_score]
 
     c = (alt.Chart(chart_data, width="container")
             .mark_circle()
             .encode(
-                x="x_score",
-                y="y_score",
+                x=x_score,
+                y=y_score,
                 size="difference",
                 color=alt.Color("difference"),
                 tooltip=tool,
@@ -692,6 +706,27 @@ def plot_multiple_segment_comparison(multiple_result: MultipleMetricResults, sys
 ################################################################################################################################
 #######################################################| Classification |#######################################################
 ################################################################################################################################
+
+
+def confusion_matrix_image():
+
+    image = Image.open('data/confusion_matrix.png')
+    left,right = st.columns([0.7,0.3])
+    
+    left.image(image, caption="Confusion matrix (adapted from Verma and Rubin (2018)).")
+    right.markdown(
+            """
+            **:blue[PPV:]** Positive Predictive Value or Precision.     
+            **:blue[TPR:]** True Positive Rate or Recall.   
+            **:blue[FDR:]** False Discovery Rate.    
+            **:blue[FPR:]** False Positive Rate.   
+            **:blue[FOR:]** False Omission Rate.   
+            **:blue[FNR:]** False Negative Rate.   
+            **:blue[NPV:]** Negative Predictive Value.   
+            **:blue[TNR:]** True Negative Rate.   
+            """
+        )
+
 
 def confusion_matrix_of_system(true: List[str], pred: List[str], labels: List[str], system_name:str, show:bool = False, saving_dir: str = None, 
                                saving_zip:zipfile.ZipFile=None):    
@@ -746,7 +781,7 @@ def confusion_matrix_focused_on_one_label(true: List[str], pred: List[str], labe
 
 
 
-def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None, saving_zip: zipfile.ZipFile = None, show:bool = False, column = None):
+def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=None, saving_zip: zipfile.ZipFile = None, show:bool = False):
     table = { "PPV" : [], "TPR": [], "FDR": [], "FPR":[], "FOR": [], "FNR":[], "NPV": [], "TNR": [] }
     
     precison_labels = list(Precision(labels=labels).score([], pred, true).seg_scores)
@@ -773,9 +808,7 @@ def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=No
     df.index = labels
 
     if runtime.exists():
-        if show and column != None:
-            column.dataframe(df)
-        elif show:
+        if show:
             st.dataframe(df)
         if saving_zip is not None and saving_dir is not None:
             create_and_save_table_zip(saving_dir + FILENAME_RATES, saving_zip, df)
@@ -786,7 +819,7 @@ def rates_table(labels:List[str],true:List[str],pred:List[str],saving_dir:str=No
 
 
 def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num:int, incorrect_ids: List[str] = [] ,table: List[List[str]] = [], ids:List[int]=[],
-                       saving_dir:str = None):
+                       saving_dir:str = None, all_examples:bool = False):
     src = testset.src
     true = testset.ref
     pred = testset.systems_output[system]
@@ -795,6 +828,11 @@ def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num
     n = len(true)
     if not ids:
         ids = random.sample(range(n),n)
+    
+    if all_examples:
+        ids = [i for i in range(n)]
+        incorrect_ids = []
+        table = []
 
     lines = [int(id.split("\t")[-1]) for id in incorrect_ids]
     
@@ -817,30 +855,42 @@ def incorrect_examples(testset:MultipleTestset, system:str, system_name:str, num
         return None
 
 
-def analysis_labels(result: MultipleMetricResults, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None, col=None):
-    seg_scores_list = [list(result_sys.seg_scores)
-                for result_sys in list(result.systems_metric_results.values())]
+def analysis_labels_plot(seg_scores_dict:Dict[str,List[float]], metric:str, sys_names: List[str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
+
+    filename = metric + FILENAME_ANALYSIS_LABELS
+    plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Results by label (with " + metric + " metric)" , metric + " score") 
+    if runtime.exists():
+        st.subheader("Stacked bar plot")
+        st.pyplot(plt)
+        if saving_dir and saving_zip:
+            create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
+    elif saving_dir is not None:
+        save_plot(saving_dir, filename, plt)
+    plt.clf()
+    plt.close()
+
+def analysis_labels_table(seg_scores_dict:Dict[str,List[float]], metric:str, sys_names: List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None, col=None):
+    filename = metric + "_results-by-label-table.csv"
+    df = pd.DataFrame.from_dict(seg_scores_dict)
+    df.index = sys_names
+    if runtime.exists():
+        st.subheader("Table")
+        st.dataframe(df)
+        if saving_dir and saving_zip:
+            create_and_save_table_zip(saving_dir + filename,saving_zip,df)
+    elif saving_dir is not None:
+        save_table(saving_dir,filename,df)
+
+def analysis_labels(result: MultipleMetricResults, sys_names_dict: Dict[str,str], labels:List[str], saving_dir: str = None, saving_zip: zipfile.ZipFile = None):
+    sys_names = result.all_systems_names(sys_names_dict)
+    seg_scores_list = [list(result_sys.seg_scores) for result_sys in list(result.systems_metric_results.values())]
     
     if any(seg_scores_list):
     
-        seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])
-                    for i, label in enumerate(labels)}
+        seg_scores_dict = {label: np.array([seg_scores[i] for seg_scores in seg_scores_list])  for i, label in enumerate(labels)}
         metric = result.metric
-        filename = metric + FILENAME_ANALYSIS_LABELS
-
-        plt = analysis_bucket(seg_scores_dict, sys_names, labels, "Analysis of each label (with " + result.metric + " metric)" , "Score") 
-        if runtime.exists():
-            if col:
-                col.pyplot(plt)
-            else:
-                st.pyplot(plt)
-            if saving_dir and saving_zip:
-                create_and_save_plot_zip(saving_dir + filename, saving_zip, plt)
-        elif saving_dir is not None:
-            save_plot(saving_dir, filename, plt)
-        plt.clf()
-        plt.close()
-
+        analysis_labels_table(seg_scores_dict,metric,sys_names,saving_dir,saving_zip)
+        analysis_labels_plot(seg_scores_dict,metric,sys_names,labels,saving_dir,saving_zip)
 
 
 ######################################################################################################################
@@ -908,6 +958,15 @@ def bias_segments(system_name:str, ref:List[str], output_sys:List[str], gender_r
         for token in text_groups:
             terms += token["term"] + ":" + token["gender"] + ", "
         return terms[:-2]
+    
+    def match_id_terms(text_ref_groups: List[Dict[str,str]], text_sys_groups:  List[Dict[str,str]]):
+        terms = ""
+        num = len(text_ref_groups)
+        for i in range(num):
+            token_ref = text_ref_groups[i]["term"] + ":" + text_ref_groups[i]["gender"]
+            token_sys = text_sys_groups[i]["term"] + ":" + text_sys_groups[i]["gender"]
+            terms += "[" + token_ref + ","  + token_sys + "]" + ", "
+        return terms[:-2]
 
     filename = system_name.replace(" ","_") + "-bias-segments.csv"
     n = len(gender_refs_seg)
@@ -923,13 +982,15 @@ def bias_segments(system_name:str, ref:List[str], output_sys:List[str], gender_r
         if (gender_refs_seg[i] != gender_sys_seg[i]) and ("line " + str(i+1) not in bias_segments):
             terms_ref = gender_terms(text_groups_ref_per_seg[i])
             terms_sys = gender_terms(text_groups_sys_per_seg[i])
+            match_id = match_id_terms(text_groups_ref_per_seg[i],text_groups_sys_per_seg[i] )
             bias_segments.append("line " + str(i+1))
             lines.append(i+1)
-            table.append([ref[i], output_sys[i], terms_ref, terms_sys])
+            table.append([ref[i], output_sys[i], terms_ref, terms_sys,match_id])
 
     if len(bias_segments) != 0:
         df = pd.DataFrame(np.array(table), index=lines, columns=["reference", "system output", 
-                                                    "identity term and its gender in reference", "identity term and its gender in output"])
+                                                    "identity term that were matched in reference", "identity term that were matched in output",
+                                                    "match of identity terms"])
         if saving_dir is not None:
             if not os.path.exists(saving_dir):
                 os.makedirs(saving_dir)
@@ -947,6 +1008,15 @@ def all_identity_terms(system_name:str, gender_sys_seg: Dict[int, List[str]], ge
             terms += token["term"] + ":" + token["gender"] + ", "
         return terms[:-2]
 
+    def match_id_terms(text_ref_groups: List[Dict[str,str]], text_sys_groups:  List[Dict[str,str]]):
+        terms = ""
+        num = len(text_ref_groups)
+        for i in range(num):
+            token_ref = text_ref_groups[i]["term"] + ":" + text_ref_groups[i]["gender"]
+            token_sys = text_sys_groups[i]["term"] + ":" + text_sys_groups[i]["gender"]
+            terms += "[" + token_ref + ","  + token_sys + "]" + ", "
+        return terms[:-2]
+
     filename = system_name.replace(" ","_") + "_all_identity_terms_matched.csv"
     n = len(gender_refs_seg)
     bias_segments = list()
@@ -955,6 +1025,7 @@ def all_identity_terms(system_name:str, gender_sys_seg: Dict[int, List[str]], ge
     for i in range(n):
         terms_ref = gender_terms(text_groups_ref_per_seg[i])
         terms_sys = gender_terms(text_groups_sys_per_seg[i])
+        match_id = match_id_terms(text_groups_ref_per_seg[i],text_groups_sys_per_seg[i])
         bias_segments.append("line " + str(i+1))
         lines.append(i+1)
         if (gender_refs_seg[i] != gender_sys_seg[i]):
@@ -962,10 +1033,11 @@ def all_identity_terms(system_name:str, gender_sys_seg: Dict[int, List[str]], ge
         else:
             has_bias = "No"
 
-        table.append([has_bias, terms_ref, terms_sys])
+        table.append([has_bias, terms_ref, terms_sys, match_id])
 
     if len(bias_segments) != 0:
-        df = pd.DataFrame(np.array(table), index=lines, columns=["has_bias", "identity term and its gender in reference", "identity term and its gender in output"])
+        df = pd.DataFrame(np.array(table), index=lines, columns=["has_bias","identity term that were matched in reference", 
+                                                                 "identity term that were matched in output","match of identity terms"])
         
         if runtime.exists():
             if saving_zip is not None and saving_dir is not None:

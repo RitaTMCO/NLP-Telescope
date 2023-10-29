@@ -1,0 +1,4 @@
+,google,microsoft
+Demographic-Parity,0.809,0.841
+Accuracy,0.831,0.84
+F1-score,0.691,0.677

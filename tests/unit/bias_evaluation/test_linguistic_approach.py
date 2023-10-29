@@ -14,6 +14,7 @@ class TestWithLibrary(unittest.TestCase):
         systems_output={
             "Sys 1": ["She is a doctor."],
         },
+        task= "machine-translation",
         filenames = ["src.txt","ref.txt","sysA.txt"]
     )
 
@@ -24,6 +25,7 @@ class TestWithLibrary(unittest.TestCase):
         systems_output={
             "Sys 1": ["Ela é uma médica."],
         },
+        task= "machine-translation",
         filenames = ["src.txt","ref.txt","sysB.txt"]
     )
 

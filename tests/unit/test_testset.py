@@ -35,6 +35,7 @@ class TestTestset(unittest.TestCase):
         ref_id= "Ref 1",
         systems_output={"Sys 1": ['Greetings world', 'This is an experiment.'], 
         "Sys 2":['Hi world.', 'This is a Test.'], "Sys 3":['Hello world.', 'This is a test']},
+        task= "machine-translation",
         filenames=["src.txt", "ref_1.txt", "google.txt", "unbabel_1.txt", "unbabel_2.txt"]
     )
 
@@ -44,6 +45,7 @@ class TestTestset(unittest.TestCase):
         ref_id= "Ref 2",
         systems_output={"Sys 1": ['Greetings world', 'This is an experiment.'], 
         "Sys 2":['Hi world.', 'This is a Test.'], "Sys 3":['Hello world.', 'This is a test']},
+         task= "machine-translation",
         filenames=["src.txt", "ref_2.txt", "google.txt", "unbabel_1.txt", "unbabel_2.txt"]
     )
 

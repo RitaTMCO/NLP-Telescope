@@ -10,6 +10,7 @@ from telescope.bias_evaluation.bias_evaluation import BiasEvaluation
 from telescope.testset import MultipleTestset
 from telescope.metrics.metric import Metric
 
+
 class GenderBiasEvaluation(BiasEvaluation):
     name = "Gender"
     available_languages = ["en", "pt"]
@@ -53,9 +54,15 @@ class GenderBiasEvaluation(BiasEvaluation):
     def is_this_ner(self,term:str, ner:list):
         for term_e, ner_e in ner:
             if term_e == term:
-                return (ner_e == "PRODUCT" or ner_e == "TIME" or ner_e == "DATE" or ner_e == "PERCENT" or ner_e == "QUANTITY" or   ner_e == "CARDINAL")
+                if self.language == "en":
+                    return (ner_e == "PRODUCT" or ner_e == "TIME" or ner_e == "DATE" or ner_e == "PERCENT" 
+                            or ner_e == "QUANTITY" or ner_e == "ORG" or ner_e == "LOC" or ner_e == "GPE")
+                elif self.language == "pt":
+                    return (ner_e == "ORG" or ner_e == "LOC")
+                
 
     def find_extract_genders_match_identify_terms(self, output_per_sys:Dict[str,List[str]], ref:List[str], option_bias_evaluation:str):
+        self.i = 0
         num_segs = len(ref)
         sys_ids = list(output_per_sys.keys())
         genders_ref_per_seg = {}
@@ -165,7 +172,7 @@ class GenderBiasEvaluation(BiasEvaluation):
                     genders.append(gender)
             return len(genders)
         
-        gender_sets_of_terms = self.gender_sets_of_occupations + self.gender_sets_of_gender_terms + self.gender_sets_of_prons
+        gender_sets_of_terms = self.gender_sets_of_occupations + self.gender_sets_of_gender_terms
         dets_prep = self.gender_sets_of_dets + self.gender_sets_of_prep
         word = segemnet_words[word_k]
         next_word = find_next_word(segemnet_words, word_k)
@@ -175,12 +182,17 @@ class GenderBiasEvaluation(BiasEvaluation):
         for gender_set in gender_sets_of_terms:
             word, gender = is_word_in_set(word, next_word, gender_set) 
             if gender:
-                if how_many_gender(gender_set) == 2:
+                if how_many_gender(gender_set) < 3:
                 #gender_sets_deter_prep
                     for gender_det_set in dets_prep:
                         _, gender_det = is_word_in_set(pre_word, "", gender_det_set) 
                         if gender_det:   
-                            return word, gender_det, {}
+                            return word, gender_det, gender_set
+                return word, gender, gender_set
+        
+        for gender_set in self.gender_sets_of_prons:
+            word, gender = is_word_in_set(word, next_word, gender_set) 
+            if gender:
                 return word, gender, gender_set
         
         # gender_sets_of_suffixes
@@ -196,7 +208,7 @@ class GenderBiasEvaluation(BiasEvaluation):
         for gender_set in dets_prep:
             _, gender = is_word_in_set(pre_word, "", gender_set) 
             if gender:   
-                return word, gender, {}
+                return word, gender, gender_set
         return word, "", {}
         
 
@@ -218,11 +230,7 @@ class GenderBiasEvaluation(BiasEvaluation):
     
     def is_match_with_dataset(self,term_ref:dict,term_sys: dict):
         if term_ref["gender"] != "":
-            if term_ref["gender_set"] == {} and term_sys["gender_set"] == {}:
-                return term_ref["term"] == term_sys["term"]
-            else:
-                return self.intersection_gender_set(term_ref["gender_set"],term_sys["gender_set"])
-
+            return self.intersection_gender_set(term_ref["gender_set"],term_sys["gender_set"])
 
     def match_identify_terms_with_dataset(self, seg_terms_ref:List[dict], seg_terms_per_sys:Dict[str,List[dict]], genders_ref:List[str], 
                                           genders_per_sys:Dict[str,List[str]]):
@@ -241,7 +249,7 @@ class GenderBiasEvaluation(BiasEvaluation):
     def evaluation_with_dataset(self, ref_seg:str, seg_per_sys:Dict[str,str], genders_ref:List[str], genders_per_sys: Dict[str,List[str]]):     
         seg_terms_ref = self.find_identify_terms_and_extract_gender_with_dataset(ref_seg)
         seg_terms_per_sys = {sys_id:self.find_identify_terms_and_extract_gender_with_dataset(seg_per_sys[sys_id]) for sys_id in list(genders_per_sys.keys())}
-        
+
         identity_terms_found_ref = [ {"term":term["term"], "gender":term["gender"]} for term in seg_terms_ref]
         identity_terms_found_per_sys = {sys_id:[ {"term":term["term"], "gender":term["gender"]} for term in seg_terms_per_sys[sys_id]] for sys_id in list(genders_per_sys.keys())}
         
@@ -361,6 +369,7 @@ class GenderBiasEvaluation(BiasEvaluation):
     
     def is_match_with_combination(self,term_ref:dict,term_sys:dict):
         return (term_ref["token"].dep_ == term_sys["token"].dep_ and 
+                term_ref["token"].pos_ == term_sys["token"].pos_ and 
                 ((self.is_match_with_dataset(term_ref,term_sys) and term_ref["gender_set"] and term_sys["gender_set"]) or 
                  (self.is_match_with_library(term_ref,term_sys) and not term_ref["gender_set"] and not term_sys["gender_set"])))
     

@@ -14,6 +14,7 @@
 # limitations under the License.
 import abc
 from typing import List, Tuple, Dict
+from telescope.utils import sys_ids_sort
 
 import numpy as np
 import pandas as pd
@@ -120,7 +121,9 @@ class MultipleMetricResults:
         systems_metric_results: Dict[str, MetricResult],  # {sys_id:  MetricResult}
     ) -> None:
 
-        self.systems_metric_results = systems_metric_results
+        ids = sys_ids_sort(list(systems_metric_results.keys()))
+
+        self.systems_metric_results = {id:systems_metric_results[id] for id in ids}
         systems_metric_results_list = list(self.systems_metric_results.values())
         x_result = systems_metric_results_list[0]
 
@@ -133,10 +136,11 @@ class MultipleMetricResults:
         self.src = x_result.src
         self.ref = x_result.ref
 
-
-    @property
-    def system_cand(self,system_name) -> List[str]:
-        return self.systems_metric_results[system_name].cand
+    def system_cand(self,system_id) -> List[str]:
+        return self.systems_metric_results[system_id].cand
+    
+    def all_systems_names(self, systems_names:Dict[str,str]):
+        return [systems_names[id] for id in list(self.systems_metric_results.keys())]
 
     @staticmethod
     def results_to_dataframe(multiple_metrics_results: list, systems_names:Dict[str, str]) -> pd.DataFrame:

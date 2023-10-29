@@ -1,0 +1,2 @@
+,COMET,BERTScore,TER,BLEU,chrF,ZeroEdit,GLEU,Average,Median,Social Choice Theory,Weighted Mean 1000,Weighted Mean 3000,Weighted Mean 5000,Weighted Sum 1000,Weighted Sum 3000,Weighted Sum 5000
+Average of AccuracyRank,0.7784000000000001,0.7267999999999999,0.6968,0.6834,0.7002,0.7298,0.7068000000000001,0.7148,0.7002,0.7134,0.7266,0.7284,0.74,0.805,0.6068,0.785
